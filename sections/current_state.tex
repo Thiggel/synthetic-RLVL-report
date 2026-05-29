@@ -1,0 +1,26 @@
+\section{Current System State}
+
+The short operational truth is in \repo{}/\path{docs/current_system_state.md}.
+The live Slurm dashboard is in \repo{}/\path{docs/running_experiments.md}.
+
+\begin{longtable}{p{0.25\linewidth}p{0.23\linewidth}p{0.42\linewidth}}
+\toprule
+Experiment & State & Notes \\
+\midrule
+Full paired-family suite & Running & SFT array \texttt{3672212}; eval \texttt{3672213} dependency-pending. Rows 0--35 are complete, rows 36--41 are running, and later rows are pending by throttle. Covers official iGSM, maze navigation, and hardened attribute constraints across train ranges 1--5 through 1--25, both modalities, three seeds. \\
+Trace-control ablations & Running & SFT \texttt{3661118}; eval \texttt{3661119} dependency-pending. Covers terse NL, rule-annotated NL, pseudocode, shuffled logic/NL, and invalid logic. \\
+Shortcut-rate 0.3 & Running & SFT \texttt{3671431}; eval \texttt{3671432} dependency-pending. Complements existing 0.5 and 0.8 shortcut-rate results. \\
+Hybrid order & Evaluating & SFT complete; eval \texttt{3670783} has 4 JSON outputs and rows 4--7 running. Compares logic-then-NL and NL-then-logic with one final answer. \\
+Wordified length-control logic & Running & SFT \texttt{3674875}; eval \texttt{3674876} dependency-pending. Tests a cleaner equal-length control by naming predicates with words. \\
+Conditioned dual 50k & Running & Chained chunks \texttt{3674879--3674883}; first 10k chunk has rows 0--4 complete, rows 5--8 running, and rows 9--14 pending. Final and checkpoint evals are dependency-pending. Designed to test whether the weaker 10k conditioned-dual result was undertraining. \\
+Shortcut-kind controls & Running & Build complete; SFT \texttt{3674887}; eval \texttt{3674888} dependency-pending. Tests position and initial-marker shortcut mechanisms. \\
+\bottomrule
+\end{longtable}
+
+\paragraph{Housekeeping rule.}
+During pending-job checks, compatible partitions should be inspected. If a job
+can safely run on more partitions, widen it with
+\texttt{scontrol update JobId=<jobid> Partition=<partition1,partition2>} and
+record the change in the handoff docs. The 2026-05-29 12:34 CEST check found
+idle compatible A100 nodes, but pending active jobs were blocked by array
+limits, dependencies, or begin times, so no partition edit was made.

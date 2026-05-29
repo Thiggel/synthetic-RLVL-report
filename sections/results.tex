@@ -1,0 +1,57 @@
+\section{Current Results and Insights}
+
+\subsection{Main OLMo-7B HFSA Grid}
+
+The completed 3-seed grid supports a depth-scaling comparison between formal
+logic and one-to-one natural-language traces. The current key result is not
+that logic dominates everywhere, but that logic reaches stronger intermediate
+depth extrapolation earlier. At the broadest train range, natural-language
+exact traces narrow the gap or slightly catch up on strict joint validity.
+
+\begin{center}
+\begin{tabular}{lcc}
+\toprule
+Train range and eval point & Logic & NL exact \\
+\midrule
+Train 1--25, eval depth 50, joint@16 & 0.417 & 0.427 \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\subsection{Training Sequence Lengths}
+
+\begin{center}
+\begin{tabular}{lrrrr}
+\toprule
+Train range & Logic target & NL target & Logic total & NL total \\
+\midrule
+1--5 & 322 & 382 & 697 & 757 \\
+1--10 & 500 & 653 & 1166 & 1319 \\
+1--15 & 681 & 925 & 1637 & 1881 \\
+1--20 & 863 & 1196 & 2109 & 2442 \\
+1--25 & 1049 & 1469 & 2587 & 3008 \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\subsection{OOD Evaluation}
+
+Bare-format OOD reruns are complete for the main OLMo grid. NL transfers much
+better to GSM8K numeric exact match. Logic transfers much better to
+context-provided HotpotQA, 2WikiMultiHopQA, and MuSiQue EM/F1. The current
+interpretation is that the QA tasks measure context-QA robustness under the
+learned answer format; they do not yet establish explicit reasoning-trace
+quality.
+
+\subsection{Scratch Pretraining}
+
+Tiny Llama 20k and 100k scratch-pretraining runs are complete. They show useful
+train-band behavior and serve as mechanism smoke tests, but strict depth-50
+joint validity remains essentially absent.
+
+\subsection{Architecture Ablations}
+
+Qwen-2.5-7B, Qwen-2.5-1.5B, Gemma-3-4B, and an OLMo-2-32B short-context pilot
+are complete and tabulated in the generated analysis artifacts. These should be
+folded into the manuscript tables and architecture comparison figures once the
+current ablation wave finishes.

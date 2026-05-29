@@ -1,0 +1,23 @@
+\section{Overview}
+
+This report is the reader-facing running record for the synthetic-RLVL formal-logic
+chain-of-thought project. Operational handoff files remain in \repo{}, while this
+repo keeps the polished narrative, selected tables, selected figures, current
+system summaries, and short experiment logs.
+
+The main questions are whether formal-logic CoT is a better reasoning substrate
+than natural-language CoT, whether hybrid traces help, and whether formal traces
+improve depth extrapolation and downstream transfer under SFT or midtraining.
+
+\paragraph{Current headline.}
+The main OLMo-7B HFSA 3-seed depth-scaling grid is complete. Logic is more
+depth- and sample-efficient at intermediate train ranges; natural-language
+exact traces catch up at the largest train range on joint validity. At
+train depth 1--25, depth-50 joint@16 is currently similar: logic 0.417 and
+NL 0.427.
+
+\paragraph{Interpretation status.}
+The evidence is strongest for synthetic length extrapolation. Downstream
+LongBench-style QA runs are useful transfer probes, but current HotpotQA,
+2WikiMultiHopQA, and MuSiQue prompts are context-provided answer probes rather
+than verified explicit multi-hop-reasoning traces.
