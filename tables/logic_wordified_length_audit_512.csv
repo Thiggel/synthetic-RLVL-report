@@ -1,0 +1,4 @@
+template,n,target_mean,target_p95,total_mean,total_p95,truncation_rate_at_max_length
+logic,512,1038.0,1862.0,2559.3,4680.0,0.0
+logic_wordified,512,1469.7,2610.0,2990.9,5429.0,0.0
+nl_exact,512,1454.0,2668.0,2975.2,5490.0,0.0

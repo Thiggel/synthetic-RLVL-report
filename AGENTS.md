@@ -5,12 +5,12 @@ The experiment/code repo is expected at `../synthetic-RLVL`.
 
 ## Report Discipline
 
-- Keep `main.tex` and `sections/` as the polished report source.
-- Pull current operational state from `../synthetic-RLVL/docs/current_system_state.md`.
-- Pull live job state from `../synthetic-RLVL/docs/running_experiments.md`.
-- Pull planned experiments from `../synthetic-RLVL/docs/experiment_backlog.md`.
-- Pull selected stable figures/tables from `../synthetic-RLVL/analysis/logic_cot_report_2026-05-25/` only when they are needed by the LaTeX report.
-- Do not copy bulky raw eval outputs or transient job artifacts into this repo.
+- Mirror the full generated report bundle from `../synthetic-RLVL/analysis/logic_cot_report_2026-05-25/`.
+- `main.tex` should be copied from `../synthetic-RLVL/analysis/logic_cot_report_2026-05-25/logic_cot_report_2026-05-25.tex`.
+- `figures/` should contain all generated report figures, including PDFs referenced by `main.tex` and PNG copies.
+- `tables/` should contain all generated CSV result tables.
+- Copy Markdown generation supplements from the generated report root.
+- Do not copy raw eval JSON, checkpoints, transient Slurm logs, or `$WORK` checkpoint artifacts into this repo.
 
 ## Push Discipline
 

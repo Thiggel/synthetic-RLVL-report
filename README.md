@@ -14,6 +14,17 @@ Build locally when TeX is available:
 make
 ```
 
-The report is intentionally lean. Generated figures, raw eval JSON, and large analysis
-artifacts stay in the experiment repo unless a specific table or figure is selected for
-the manuscript.
+This repo mirrors the full generated report bundle from:
+
+```bash
+../synthetic-RLVL/analysis/logic_cot_report_2026-05-25/
+```
+
+It should contain:
+
+- `main.tex`
+- `figures/` with all generated PDF/PNG figures referenced by the report
+- `tables/` with all generated CSV result tables
+- Markdown supplements with full/sample generations
+
+Raw eval JSON, checkpoints, and Slurm logs stay in the experiment repo or `$WORK`.

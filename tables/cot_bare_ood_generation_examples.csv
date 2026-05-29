@@ -1,0 +1,336 @@
+task,doc_id,question,gold,logic_metric,logic_extracted,logic_generation,nl_metric,nl_extracted,nl_generation
+gsm8k,3,James decides to run 3 sprints 3 times a week. He runs 60 meters each sprint. How many total meters does he run a week?,540,0.0,,"<formal>
+<constants>
+a = 3
+b = 60
+</constants>
+<predicates>
+Ax: x is a sprint
+Bx: x is a week
+Cx: x is a meter
+Dx: x is a run
+Ex: x is a time
+Fx: x is a distance
+Gx: x is a number
+Hx: x is a total
+Ix: x is a run time
+Jx: x is a sprint time
+Kx: x is a sprint
+Lx: x is a week time
+Mx: x is a distance run
+Nx: x is a sprint distance
+Ox: x is a run distance
+Px: x is a sprint distance run
+Qx: x is a run distance run
+Rx: x is a sprint distance run
+Sx: x
+...[truncated]...
+La
+Ma
+Ja
+Ka
+La
+Ma
+Ja
+Ka
+La
+Ma
+Ja
+Ka
+La
+Ma
+Ja
+Ka
+La
+Ma
+Ja
+Ka
+La
+Ma
+Ja
+Ka
+La
+Ma
+Ja
+Ka
+La
+Ma
+Ja
+Ka
+La
+Ma
+Ja
+Ka
+La
+Ma
+Ja
+Ka
+La
+Ma
+Ja
+Ka
+La
+Ma
+Ja
+Ka
+La
+Ma
+Ja
+Ka
+La
+Ma
+Ja
+Ka
+La
+Ma
+Ja
+Ka
+La
+Ma
+Ja
+Ka
+La
+Ma
+Ja
+Ka
+La
+Ma
+Ja
+Ka
+La
+Ma
+Ja
+Ka
+La
+Ma
+Ja
+Ka
+La
+Ma
+Ja
+Ka
+La
+Ma
+Ja
+Ka
+La
+Ma
+Ja
+Ka
+La
+Ma
+Ja
+Ka
+La
+Ma
+Ja
+Ka
+La
+Ma
+Ja
+Ka
+La
+Ma
+Ja
+Ka
+La
+Ma
+Ja
+Ka
+La
+Ma
+Ja
+Ka
+La
+Ma
+Ja
+Ka
+La
+Ma
+Ja
+Ka
+La
+Ma
+Ja
+Ka
+La
+Ma
+Ja
+Ka
+La
+Ma
+Ja
+Ka
+La
+Ma
+Ja
+Ka
+La
+Ma
+Ja
+Ka
+La
+Ma
+Ja
+Ka
+La
+Ma",1.0,540,"<think>
+<premises>
+a = 3
+b = 3
+c = 60
+</premises>
+<proof>
+a = 3
+b = 3
+c = 60
+total = a * b * c
+total = 3 * 3 * 60
+total = 540
+</proof>
+<conclusion>
+James runs 540 meters a week.
+</conclusion>
+</think>
+<answer>
+540"
+hotpotqa,0,Question: Which case was brought to court first Miller v. California or Gates v. Collier ?,Miller v. California,0.3333333333333333,Gates v. Collier,"<answer>
+Gates v. Collier",0.0,,"<think>
+<premises>
+austrian supplier Gasser and Italian distributor MISAT entered into a contract together for the supply of children's clothes. In the contract, they included a choice-of-court agreement, stipulating that an Austrian court have jurisdiction in case of conflict. However, when a dispute arose between the two parties, MISAT seised an Italian court to declare that the contract had been terminated, contrary to the choice-of-court clau
+...[truncated]...
+ending the choice-of-court agreement experience substantive disadvantages in the other Member State, as the court situated there might declare the agreement invalid, the party may also be exposed to procedural disadvantages, caused by judicial system which is not chosen.: 573  This in turn can make the jurisdiction agreement ineffective altogether, going against the principle of party autonomy. Taking a formalistic and literal approach, the Court"
+2wikimqa,0,Question: Where was the wife of Francis I Rákóczi born?,Ozalj,1.0,Ozalj,"<answer>
+Ozalj",1.0,Ozalj,"<answer>
+Ozalj"
+musique,0,Question: Who plays the wife of the producer of Here Comes the Boom in Grown Ups?,Maria Bello,1.0,Maria Bello,"<answer>
+Maria Bello",0.0,,"<think>
+<premises>
+aikido
+aikido
+aikido
+aikido
+aikido
+aikido
+aikido
+aikido
+aikido
+aikido
+aikido
+aikido
+aikido
+aikido
+aikido
+aikido
+aikido
+aikido
+aikido
+aikido
+aikido
+aikido
+aikido
+aikido
+aikido
+aikido
+aikido
+aikido
+aikido
+aikido
+aikido
+aikido
+aikido
+aikido
+aikido
+aikido
+aikido
+aikido
+aikido
+aikido
+aikido
+aikido
+aikido
+aikido
+aikido
+aikido
+aikido
+aikido
+aikido
+aikido
+aikido
+aikido
+aikido
+aikido
+aikido
+aikido
+aikido
+aikido
+aikido
+aikido
+aikido
+aiki
+...[truncated]...
+aikido
+aikido
+aikido
+aikido
+aikido
+aikido
+aikido
+aikido
+aikido
+aikido
+aikido
+aikido
+aikido
+aikido
+aikido
+aikido
+aikido
+aikido
+aikido
+aikido
+aikido
+aikido
+aikido
+aikido
+aikido
+aikido
+aikido
+aikido
+aikido
+aikido
+aikido
+aikido
+aikido
+aikido
+aikido
+aikido
+aikido
+aikido
+aikido
+aikido
+aikido
+aikido
+aikido
+aikido
+aikido
+aikido
+aikido
+aikido
+aikido
+aikido
+aikido
+aikido
+aikido
+aikido
+aikido
+aikido
+aikido
+aikido
+aikido
+aikido
+aikido
+aikido
+aikido
+aikido
+a"

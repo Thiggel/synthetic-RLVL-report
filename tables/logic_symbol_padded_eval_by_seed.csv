@@ -1,0 +1,4 @@
+template,seed,ood_correct@16,ood_joint@16,depth50_correct@16,depth50_joint@16
+logic_symbol_padded,3407,0.71875,0.09375,0.6875,0.03125
+logic_symbol_padded,3408,0.54375,0.24375,0.5,0.25
+logic_symbol_padded,3409,0.7625,0.28125,0.5,0.0

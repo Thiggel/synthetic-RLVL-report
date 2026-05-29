@@ -6,7 +6,7 @@
 *.fls
 *.log
 *.out
-*.pdf
+/main.pdf
 *.run.xml
 *.synctex.gz
 _minted-*/

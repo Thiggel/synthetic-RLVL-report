@@ -15,3 +15,7 @@
   partition edit was applied.
 - Verification: report `git diff --check` passed. TeX compilation was not run
   because `latexmk` and `pdflatex` are not installed on this node.
+- After user clarification, replaced the lean scaffold with a full mirror of
+  `../synthetic-RLVL/analysis/logic_cot_report_2026-05-25/`, including
+  `main.tex`, all report figures, all CSV tables, and Markdown sample
+  supplements.
