@@ -13,7 +13,7 @@
 \begin{itemize}
 \item The main OLMo-7B HFSA grid is complete over three seeds. Logic is more sample- and depth-efficient at intermediate train ranges; NL exact catches up at train-1-to-25 on strict joint validity. At train-1-to-25, depth-50 joint@16 is logic 0.417 versus NL 0.427.
 \item The downstream OOD picture is split. NL transfers much better to GSM8K numeric EM, while logic transfers much better to context-provided HotpotQA, 2WikiMultiHopQA, and MuSiQue EM/F1. Treat the QA result as context-QA robustness, not proof-chain evidence.
-\item Token length is a real confound: NL targets are longer than logic targets at every train range. The symbol-padded equal-length logic control performs much worse than compact logic, so a naive token-length match is not enough; the wordified logic control is the cleaner next comparison once its eval finishes.
+\item Token length is a real confound: NL targets are longer than logic targets at every train range. Both equal-length logic controls underperform compact logic; symbol padding disrupts atom tokenization, and the cleaner wordified logic control is also weaker than compact logic and NL at train-1-to-25.
 \item Tiny random-init Llama pretraining is a mechanism smoke test. Logic is stronger than matched NL on answer-only synthetic OOD pass@8, but strict depth-50 joint validity is essentially absent.
 \item Architecture ablations show that the phenomenon is not OLMo-only: Qwen and Gemma runs also show strong formal-trace transfer, with model-specific variation in joint validity.
 \item Shortcut-rich training hurts NL more clearly than logic in the completed 0.5/0.8 shortcut-rate runs, supporting the hypothesis that NL relies more on brittle shortcut associations. The 0.3 shortcut-rate and shortcut-kind controls are still running.
@@ -556,7 +556,7 @@ OLMo-2-32B shortctx & nl\_exact & 20 & 1 & -- & -- & -- & -- & -- & -- & 1.000 &
 \end{figure}
 
 \section{Targeted ablations}
-Completed ablation results are shown here; active arrays are tracked in the handoff documents. The current same-token-budget experiment is more precisely a same target-token budget experiment. The logic row in that experiment is a control rerun at 10k steps; the NL row is shortened to 7140 steps so target-token exposure approximately matches 10k logic steps. It does not match total prompt-plus-target tokens; that would require roughly 8600 NL steps and has not been run yet. The symbol-padded logic control is the completed total-sequence-length match to NL at the same optimizer-step budget; the wordified logic length-control run is tracked as the cleaner follow-up once it completes. Shortcut rates 0.5 and 0.8 are complete; shortcut rate 0.3 is still training. Conditioned dual-modality eval is complete.
+Completed ablation results are shown here; active arrays are tracked in the handoff documents. The current same-token-budget experiment is more precisely a same target-token budget experiment. The logic row in that experiment is a control rerun at 10k steps; the NL row is shortened to 7140 steps so target-token exposure approximately matches 10k logic steps. It does not match total prompt-plus-target tokens; that would require roughly 8600 NL steps and has not been run yet. The symbol-padded logic control is the completed total-sequence-length match to NL at the same optimizer-step budget; the wordified logic length-control is the cleaner equal-length formal follow-up and is now complete. Shortcut rates 0.5 and 0.8 are complete; shortcut rate 0.3 is evaluating. Conditioned dual-modality 10k eval is complete, and the 50k continuation is running.
 
 The shortcut-rate ablation changes only the training distribution. With probability equal to the shortcut rate, a training example uses the \texttt{hard\_fsa\_schema} shortcut generator: the gold path obeys a shared marker-conditioned transition schema and carries redundant marker facts that make a family-level transition heuristic predictive. Non-gold branches remain coherent but do not follow that schema. Evaluation always resets \texttt{shortcut\_rate=0.0}, so these rows test whether training on shortcut-rich traces hurts or helps transfer back to shortcut-neutral depth extrapolation.
 
@@ -587,6 +587,7 @@ condition & n & OOD c@16 & OOD joint@16 & d50 c@16 & d50 joint@16 \\
 main compact logic & 3 & 0.921 & 0.710 & 0.833 & 0.417 \\
 main NL exact & 3 & 0.794 & 0.748 & 0.510 & 0.427 \\
 symbol-padded logic & 3 & 0.675 & 0.206 & 0.562 & 0.094 \\
+wordified logic & 3 & 0.508 & 0.323 & 0.344 & 0.094 \\
 \bottomrule
 \end{tabular}
 \caption{Logic length-control ablations compared with the main train-1-to-25 runs.}
@@ -1152,6 +1153,8 @@ logic_symbol_padded_eval_summary.csv
 logic_symbol_padded_eval_vs_main.csv
 logic_symbol_padded_length_audit_512.csv
 logic_symbol_padded_token_match.csv
+logic_wordified_eval_by_seed.csv
+logic_wordified_eval_summary.csv
 logic_wordified_length_audit_512.csv
 main_olmo7b_cot_bare_ood_by_seed.csv
 main_olmo7b_cot_bare_ood_summary.csv
