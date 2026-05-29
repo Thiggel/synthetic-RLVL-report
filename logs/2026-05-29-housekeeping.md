@@ -13,3 +13,5 @@
 - Checked pending jobs against available partitions. Pending active jobs were
   waiting on array throttles, dependencies, or begin times, so no safe
   partition edit was applied.
+- Verification: report `git diff --check` passed. TeX compilation was not run
+  because `latexmk` and `pdflatex` are not installed on this node.
