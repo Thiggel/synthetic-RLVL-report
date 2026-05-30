@@ -699,7 +699,7 @@ terse\_nl & 3 & 0.348 & 0.000 & 0.277 & 0.094 & 0.000 & 0.010 \\
 
 
 \subsection{Hybrid order}
-The hybrid-order ablation trains a single prompt containing both trace substrates and one answer at the end. \texttt{think\_formal} means formal logic first, then NL; \texttt{think\_natural} means NL first, then formal logic. The full suite is train-1-to-5/10/15/20/25 over three seeds and eval 1-to-50. Current completed rows are all \texttt{think\_formal} for train-1-to-5/10/15 and two seeds for train-1-to-20; \texttt{think\_natural} is still pending.
+The hybrid-order ablation trains a single prompt containing both trace substrates and one answer at the end. \texttt{think\_formal} means NL first, then formal logic; \texttt{formal\_think} means formal logic first, then NL. The full suite is train-1-to-5/10/15/20/25 over three seeds and eval 1-to-50. Current completed rows are all \texttt{think\_formal} for train-1-to-5/10/15 and two seeds for train-1-to-20; \texttt{formal\_think} is still pending.
 
 \begin{table}[H]
 \centering
@@ -714,7 +714,7 @@ think\_formal & 15 & 3 & 0.353 & 0.111 & 0.111 & 0.312 & 0.000 & 0.000 \\
 think\_formal & 20 & 2 & 0.419 & 0.016 & 0.078 & 0.594 & 0.000 & 0.000 \\
 \bottomrule
 \end{tabular}
-\caption{Hybrid-order partial summary. Treat train-1-to-20 as partial until the third seed finishes; train-1-to-25 and NL-then-formal are not yet evaluated.}
+\caption{Hybrid-order partial summary. Treat train-1-to-20 as partial until the third seed finishes; train-1-to-25 and formal-then-NL are not yet evaluated.}
 \end{table}
 
 \begin{figure}[H]\centering
