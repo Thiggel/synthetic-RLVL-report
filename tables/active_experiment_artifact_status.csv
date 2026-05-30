@@ -2,7 +2,7 @@ experiment,scope,sft_done,sft_expected,eval_done,eval_expected,status
 iGSM,paired-family full suite,30,30,0,30,eval pending
 maze,paired-family full suite,18,30,0,30,eval pending
 attribute constraints,paired-family full suite,0,30,0,30,eval pending
-trace controls,six train-1-to-25 perturbations,,,6,18,partial eval
+trace controls,six train-1-to-25 perturbations,,,9,18,partial eval
 shortcut-rate,"rates 0.3/0.5/0.8, logic and NL",,,18,18,complete
 hybrid order,formal-then-NL and NL-then-formal full train-depth suite,,,11,30,partial eval
 shortcut-kind,position and initial-marker shortcuts,,,0,24,not started
