@@ -5,7 +5,7 @@
 \usepackage{float}
 \usepackage{hyperref}
 \title{Formal Logic CoT Synthetic Results Update}
-\date{2026-05-29}
+\date{2026-05-30}
 \begin{document}
 \maketitle
 
@@ -16,8 +16,9 @@
 \item Token length is a real confound: NL targets are longer than logic targets at every train range. Both equal-length logic controls underperform compact logic; symbol padding disrupts atom tokenization, and the cleaner wordified logic control is also weaker than compact logic and NL at train-1-to-25.
 \item Tiny random-init Llama pretraining is a mechanism smoke test. Logic is stronger than matched NL on answer-only synthetic OOD pass@8, but strict depth-50 joint validity is essentially absent.
 \item Architecture ablations show that the phenomenon is not OLMo-only: Qwen and Gemma runs also show strong formal-trace transfer, with model-specific variation in joint validity.
-\item Shortcut-rich training hurts NL more clearly than logic in the completed 0.5/0.8 shortcut-rate runs, supporting the hypothesis that NL relies more on brittle shortcut associations. The 0.3 shortcut-rate and shortcut-kind controls are still running.
+\item Shortcut-rich training hurts NL more clearly than logic in the completed 0.3/0.5/0.8 shortcut-rate runs, supporting the hypothesis that NL relies more on brittle shortcut associations. The shortcut-kind controls for position and initial-marker shortcuts are still training.
 \item Conditioned dual-modality at 10k underperforms the best single-modality baselines, especially for conditioned logic at larger train ranges. The 50k continuation is running to test whether this is undertraining.
+\item Trace controls are only partially evaluated: terse NL and rule-annotated NL are complete; pseudocode is evaluating; shuffled/invalid negative controls are still pending. Rule-annotated NL gets nontrivial answer correctness but zero translated joint validity, so it is not yet a clean improvement over exact NL.
 \end{itemize}
 
 \section{Metric note for OOD benchmarks}
@@ -555,8 +556,32 @@ OLMo-2-32B shortctx & nl\_exact & 20 & 1 & -- & -- & -- & -- & -- & -- & 1.000 &
 \caption{Architecture comparison for eval-depth 30--50 correct@16.}
 \end{figure}
 
+\section{Active experiment status}
+This table is artifact-based at report-generation time: it counts completed SFT final adapters where applicable and completed sparse pass@k JSONs. Live Slurm state is maintained in \texttt{docs/running\_experiments.md}.
+
+\begin{table}[H]
+\centering
+\scriptsize
+\begin{tabular}{lllllll}
+\toprule
+experiment & scope & SFT done & SFT expected & eval done & eval expected & status \\
+\midrule
+iGSM & paired-family full suite & 30 & 30 & 0 & 30 & eval pending \\
+maze & paired-family full suite & 18 & 30 & 0 & 30 & eval pending \\
+attribute constraints & paired-family full suite & 0 & 30 & 0 & 30 & eval pending \\
+trace controls & six train-1-to-25 perturbations &  &  & 6 & 18 & partial eval \\
+shortcut-rate & rates 0.3/0.5/0.8, logic and NL &  &  & 18 & 18 & complete \\
+hybrid order & formal-then-NL and NL-then-formal full train-depth suite &  &  & 11 & 30 & partial eval \\
+shortcut-kind & position and initial-marker shortcuts &  &  & 0 & 24 & not started \\
+conditioned dual 10k & conditioned formal/NL dual modality &  &  & 30 & 30 & complete \\
+conditioned dual 50k & longer conditioned formal/NL dual modality &  &  & 0 & 30 & not started \\
+\bottomrule
+\end{tabular}
+\caption{Artifact status for paired-family repeats and active ablation families.}
+\end{table}
+
 \section{Targeted ablations}
-Completed ablation results are shown here; active arrays are tracked in the handoff documents. The current same-token-budget experiment is more precisely a same target-token budget experiment. The logic row in that experiment is a control rerun at 10k steps; the NL row is shortened to 7140 steps so target-token exposure approximately matches 10k logic steps. It does not match total prompt-plus-target tokens; that would require roughly 8600 NL steps and has not been run yet. The symbol-padded logic control is the completed total-sequence-length match to NL at the same optimizer-step budget; the wordified logic length-control is the cleaner equal-length formal follow-up and is now complete. Shortcut rates 0.5 and 0.8 are complete; shortcut rate 0.3 is evaluating. Conditioned dual-modality 10k eval is complete, and the 50k continuation is running.
+Completed ablation results are shown here; active arrays are tracked in the handoff documents. The current same-token-budget experiment is more precisely a same target-token budget experiment. The logic row in that experiment is a control rerun at 10k steps; the NL row is shortened to 7140 steps so target-token exposure approximately matches 10k logic steps. It does not match total prompt-plus-target tokens; that would require roughly 8600 NL steps and has not been run yet. The symbol-padded logic control is the completed total-sequence-length match to NL at the same optimizer-step budget; the wordified logic length-control is the cleaner equal-length formal follow-up and is now complete. Shortcut rates 0.3, 0.5, and 0.8 are complete. Conditioned dual-modality 10k eval is complete, and the 50k continuation is running.
 
 The shortcut-rate ablation changes only the training distribution. With probability equal to the shortcut rate, a training example uses the \texttt{hard\_fsa\_schema} shortcut generator: the gold path obeys a shared marker-conditioned transition schema and carries redundant marker facts that make a family-level transition heuristic predictive. Non-gold branches remain coherent but do not follow that schema. Evaluation always resets \texttt{shortcut\_rate=0.0}, so these rows test whether training on shortcut-rich traces hurts or helps transfer back to shortcut-neutral depth extrapolation.
 
@@ -639,6 +664,64 @@ nl\_exact & 0.800 & 3 & 0.638 & 0.565 & 0.281 & 0.146 \\
 \caption{Shortcut-rate ablation compared with shortcut-neutral main train-1-to-25 baselines.}
 \end{figure}
 
+\subsection{Other shortcut types}
+The shortcut-kind controls test two concrete shortcut mechanisms: a \texttt{position} shortcut, where the target path is statistically associated with position-like structure, and an \texttt{initial\_marker} shortcut, where an early marker fact is predictive of the target transition family. Both are trained at rates 0.5 and 0.8 for logic and NL over three seeds, with shortcut-neutral eval. At this report generation time, SFT is still running and no shortcut-kind eval JSON has been produced.
+
+\begin{table}[H]
+\centering
+\small
+No rows available.
+\caption{Shortcut-kind eval summary. No rows means the eval dependency has not started or has not written JSON yet.}
+\end{table}
+
+\subsection{Trace controls}
+The trace-control ablation trains train-1-to-25 models with six altered trace styles, always over three seeds and evaluated on the same 1-to-50 sparse protocol. The six controls are: \texttt{terse\_nl} (shorter natural-language reasoning), \texttt{rule\_annotated\_nl} (NL with explicit rule names), \texttt{pseudocode} (algorithm-like trace), \texttt{shuffled\_logic} (formal lines shuffled as a negative control), \texttt{invalid\_logic} (formally invalid proof trace negative control), and \texttt{shuffled\_nl} (NL trace order shuffled). Current completed rows are terse NL and rule-annotated NL; pseudocode is evaluating; the negative controls are pending.
+
+\begin{table}[H]
+\centering
+\scriptsize
+\begin{tabular}{llllllll}
+\toprule
+trace control & n & OOD c@16 & OOD formal joint & OOD translated joint & d50 c@16 & d50 formal joint & d50 translated joint \\
+\midrule
+rule\_annotated\_nl & 3 & 0.579 & 0.000 & 0.000 & 0.365 & 0.000 & 0.000 \\
+terse\_nl & 3 & 0.348 & 0.000 & 0.277 & 0.094 & 0.000 & 0.010 \\
+\bottomrule
+\end{tabular}
+\caption{Trace-control partial summary. Both formal and translated joint are shown because the controls intentionally move between formal, NL, and hybrid-like trace surfaces.}
+\end{table}
+
+\begin{figure}[H]\centering
+\includegraphics[width=0.95\linewidth]{figures/ablation_trace_controls_summary.pdf}
+\caption{Trace-control ablation summary for completed rows. Formal joint is citation-free formal validity; translated joint is NL-to-FOL translated validity.}
+\end{figure}
+
+
+\subsection{Hybrid order}
+The hybrid-order ablation trains a single prompt containing both trace substrates and one answer at the end. \texttt{think\_formal} means formal logic first, then NL; \texttt{think\_natural} means NL first, then formal logic. The full suite is train-1-to-5/10/15/20/25 over three seeds and eval 1-to-50. Current completed rows are all \texttt{think\_formal} for train-1-to-5/10/15 and two seeds for train-1-to-20; \texttt{think\_natural} is still pending.
+
+\begin{table}[H]
+\centering
+\scriptsize
+\begin{tabular}{lllllllll}
+\toprule
+mode & train max & n & OOD c@16 & OOD formal joint & OOD translated joint & d50 c@16 & d50 formal joint & d50 translated joint \\
+\midrule
+think\_formal & 5 & 3 & 0.480 & 0.022 & 0.297 & 0.219 & 0.000 & 0.000 \\
+think\_formal & 10 & 3 & 0.490 & 0.249 & 0.296 & 0.354 & 0.000 & 0.000 \\
+think\_formal & 15 & 3 & 0.353 & 0.111 & 0.111 & 0.312 & 0.000 & 0.000 \\
+think\_formal & 20 & 2 & 0.419 & 0.016 & 0.078 & 0.594 & 0.000 & 0.000 \\
+\bottomrule
+\end{tabular}
+\caption{Hybrid-order partial summary. Treat train-1-to-20 as partial until the third seed finishes; train-1-to-25 and NL-then-formal are not yet evaluated.}
+\end{table}
+
+\begin{figure}[H]\centering
+\includegraphics[width=0.95\linewidth]{figures/ablation_hybrid_order_partial.pdf}
+\caption{Hybrid order partial eval. The formal-then-NL direction has completed train-1-to-5/10/15 and partial train-1-to-20; NL-then-formal rows are still pending.}
+\end{figure}
+
+
 \begin{table}[H]
 \centering
 \scriptsize
@@ -674,6 +757,12 @@ train max & condition & n & OOD c@16 & OOD joint@16 & d50 c@16 & d50 joint@16 \\
 \includegraphics[width=0.95\linewidth]{figures/ablation_conditioned_dual_vs_main_by_train_depth.pdf}
 \caption{Conditioned dual-modality ablation compared with main logic and main NL across train-depth ranges. Dashed lines are conditioned runs; solid lines are single-modality baselines.}
 \end{figure}
+\begin{table}[H]
+\centering
+\scriptsize
+No rows available.
+\caption{Conditioned dual-modality 50k final eval summary. No rows means the 50k continuation/eval chain has not reached final pass@k output yet.}
+\end{table}
 
 
 \section{Qualitative samples}
@@ -1137,6 +1226,7 @@ The following generated artifacts are part of this report bundle.
 
 \paragraph{CSV result tables.}
 \begin{verbatim}
+active_experiment_artifact_status.csv
 all_group_summary.csv
 architecture_ablation_summary.csv
 conditioned_dual_by_seed.csv
@@ -1146,6 +1236,8 @@ conditioned_dual_summary.csv
 conditioned_dual_vs_main_by_train_depth.csv
 cot_bare_ood_generation_examples.csv
 group_summary_all.csv
+hybrid_order_ablation_by_seed.csv
+hybrid_order_ablation_summary.csv
 logic_length_control_depth_curve_vs_main_train25.csv
 logic_length_control_eval_vs_main.csv
 logic_length_control_token_match.csv
@@ -1185,15 +1277,19 @@ tiny_llama_depth_curves_k8.csv
 tiny_llama_final_summary.csv
 tiny_llama_ood_lmeval_by_seed.csv
 tiny_llama_ood_lmeval_summary.csv
+trace_control_ablation_by_seed.csv
+trace_control_ablation_summary.csv
 \end{verbatim}
 
 \paragraph{PDF figures.}
 \begin{verbatim}
 ablation_conditioned_dual_vs_main_by_train_depth.pdf
+ablation_hybrid_order_partial.pdf
 ablation_logic_length_control_depth_curve_train1to25.pdf
 ablation_same_target_token_budget_vs_main.pdf
 ablation_shortcut_rate_vs_main.pdf
 ablation_symbol_padded_depth_curve_train1to25.pdf
+ablation_trace_controls_summary.pdf
 architecture_depth30_50_correct16_by_train_depth.pdf
 architecture_ood_correct16_by_train_depth.pdf
 olmo7b_checkpoint_correct_k8_k16.pdf

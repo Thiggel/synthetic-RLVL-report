@@ -1,0 +1,7 @@
+template,seed,ood_correct@16,ood_formal_joint@16,ood_translated_joint@16,depth50_correct@16,depth50_formal_joint@16,depth50_translated_joint@16
+rule_annotated_nl,3407,0.55,0.0,0.0,0.59375,0.0,0.0
+rule_annotated_nl,3408,0.55,0.0,0.0,0.25,0.0,0.0
+rule_annotated_nl,3409,0.6375,0.0,0.0,0.25,0.0,0.0
+terse_nl,3407,0.43125,0.0,0.43125,0.03125,0.0,0.03125
+terse_nl,3408,0.475,0.0,0.31875,0.15625,0.0,0.0
+terse_nl,3409,0.1375,0.0,0.08125,0.09375,0.0,0.0
