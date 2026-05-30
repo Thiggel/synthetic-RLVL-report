@@ -568,10 +568,10 @@ experiment & scope & SFT done & SFT expected & eval done & eval expected & statu
 \midrule
 iGSM & paired-family full suite & 30 & 30 & 0 & 30 & eval pending \\
 maze & paired-family full suite & 24 & 30 & 0 & 30 & eval pending \\
-attribute constraints & paired-family full suite & 0 & 30 & 0 & 30 & eval pending \\
-trace controls & six train-1-to-25 perturbations &  &  & 9 & 18 & partial eval \\
+attribute constraints & paired-family full suite & 6 & 30 & 0 & 30 & eval pending \\
+trace controls & six train-1-to-25 perturbations &  &  & 10 & 18 & partial eval \\
 shortcut-rate & rates 0.3/0.5/0.8, logic and NL &  &  & 18 & 18 & complete \\
-hybrid order & formal-then-NL and NL-then-formal full train-depth suite &  &  & 13 & 30 & partial eval \\
+hybrid order & formal-then-NL and NL-then-formal full train-depth suite &  &  & 14 & 30 & partial eval \\
 shortcut-kind & position and initial-marker shortcuts &  &  & 0 & 24 & not started \\
 conditioned dual 10k & conditioned formal/NL dual modality &  &  & 30 & 30 & complete \\
 conditioned dual 50k & longer conditioned formal/NL dual modality &  &  & 0 & 30 & not started \\
@@ -684,6 +684,7 @@ The trace-control ablation trains train-1-to-25 models with six altered trace st
 \toprule
 trace control & n & OOD c@16 & OOD formal joint & OOD translated joint & d50 c@16 & d50 formal joint & d50 translated joint \\
 \midrule
+invalid\_logic & 1 & 0.856 & 0.519 & 0.000 & 0.625 & 0.094 & 0.000 \\
 rule\_annotated\_nl & 2 & 0.544 & 0.000 & 0.416 & 0.391 & 0.000 & 0.094 \\
 shuffled\_logic & 3 & 0.690 & 0.002 & 0.000 & 0.510 & 0.000 & 0.000 \\
 terse\_nl & 3 & 0.348 & 0.000 & 0.277 & 0.094 & 0.000 & 0.010 \\
@@ -699,7 +700,7 @@ terse\_nl & 3 & 0.348 & 0.000 & 0.277 & 0.094 & 0.000 & 0.010 \\
 
 
 \subsection{Hybrid order}
-The hybrid-order ablation trains a single prompt containing both trace substrates and one answer at the end. \texttt{think\_formal} means NL first, then formal logic; \texttt{formal\_think} means formal logic first, then NL. The full suite is train-1-to-5/10/15/20/25 over three seeds and eval 1-to-50. Current completed rows cover all \texttt{think\_formal} seeds through train-1-to-20; train-1-to-25 and \texttt{formal\_think} are still incomplete.
+The hybrid-order ablation trains a single prompt containing both trace substrates and one answer at the end. \texttt{think\_formal} means NL first, then formal logic; \texttt{formal\_think} means formal logic first, then NL. The full suite is train-1-to-5/10/15/20/25 over three seeds and eval 1-to-50. Current completed rows cover all \texttt{think\_formal} seeds through train-1-to-20; train-1-to-25 is partial, and \texttt{formal\_think} is still incomplete.
 
 \begin{table}[H]
 \centering
@@ -712,15 +713,15 @@ think\_formal & 5 & 3 & 0.480 & 0.022 & 0.297 & 0.219 & 0.000 & 0.000 \\
 think\_formal & 10 & 3 & 0.490 & 0.249 & 0.296 & 0.354 & 0.000 & 0.000 \\
 think\_formal & 15 & 3 & 0.353 & 0.111 & 0.111 & 0.312 & 0.000 & 0.000 \\
 think\_formal & 20 & 3 & 0.434 & 0.028 & 0.148 & 0.469 & 0.000 & 0.000 \\
-think\_formal & 25 & 1 & 0.625 & 0.244 & 0.469 & 0.406 & 0.000 & 0.125 \\
+think\_formal & 25 & 2 & 0.584 & 0.188 & 0.459 & 0.344 & 0.000 & 0.172 \\
 \bottomrule
 \end{tabular}
-\caption{Hybrid-order partial summary. Treat train-1-to-20 as partial until the third seed finishes; train-1-to-25 and formal-then-NL are not yet evaluated.}
+\caption{Hybrid-order partial summary. \texttt{think\_formal} train-1-to-25 is still partial; \texttt{formal\_think} remains pending.}
 \end{table}
 
 \begin{figure}[H]\centering
 \includegraphics[width=0.95\linewidth]{figures/ablation_hybrid_order_partial.pdf}
-\caption{Hybrid order partial eval. The formal-then-NL direction has completed train-1-to-5/10/15 and partial train-1-to-20; NL-then-formal rows are still pending.}
+\caption{Hybrid order partial eval. \texttt{think\_formal} is NL then formal and is complete through train-1-to-20, with train-1-to-25 partial; \texttt{formal\_think} is still pending.}
 \end{figure}
 
 
