@@ -18,7 +18,7 @@
 \item Architecture ablations show that the phenomenon is not OLMo-only: Qwen and Gemma runs also show strong formal-trace transfer, with model-specific variation in joint validity.
 \item Shortcut-rich training hurts NL more clearly than logic in the completed 0.3/0.5/0.8 shortcut-rate runs, supporting the hypothesis that NL relies more on brittle shortcut associations. The shortcut-kind controls for position and initial-marker shortcuts are still training.
 \item Conditioned dual-modality at 10k underperforms the best single-modality baselines, especially for conditioned logic at larger train ranges. The 50k continuation is running to test whether this is undertraining.
-\item Trace controls are only partially evaluated: terse NL and rule-annotated NL are complete; pseudocode is evaluating; shuffled/invalid negative controls are still pending. Rule-annotated NL gets nontrivial answer correctness but zero translated joint validity, so it is not yet a clean improvement over exact NL.
+\item Trace controls are only partially evaluated. The existing rule-annotated NL translated-validity numbers are stale because the older NL-to-FOL translator did not strip \texttt{[rule: ...]} suffixes; a repair eval is running after adding annotation/pseudocode unwrapping. Do not use the old zero translated-joint value as evidence.
 \end{itemize}
 
 \section{Metric note for OOD benchmarks}
@@ -675,7 +675,8 @@ No rows available.
 \end{table}
 
 \subsection{Trace controls}
-The trace-control ablation trains train-1-to-25 models with six altered trace styles, always over three seeds and evaluated on the same 1-to-50 sparse protocol. The six controls are: \texttt{terse\_nl} (shorter natural-language reasoning), \texttt{rule\_annotated\_nl} (NL with explicit rule names), \texttt{pseudocode} (algorithm-like trace), \texttt{shuffled\_logic} (formal lines shuffled as a negative control), \texttt{invalid\_logic} (formally invalid proof trace negative control), and \texttt{shuffled\_nl} (NL trace order shuffled). Current completed rows are terse NL and rule-annotated NL; pseudocode is evaluating; the negative controls are pending.
+The trace-control ablation trains train-1-to-25 models with six altered trace styles, always over three seeds and evaluated on the same 1-to-50 sparse protocol. The six controls are: \texttt{terse\_nl} (shorter natural-language reasoning), \texttt{rule\_annotated\_nl} (NL with explicit rule names), \texttt{pseudocode} (algorithm-like trace), \texttt{shuffled\_logic} (formal lines shuffled as a negative control), \texttt{invalid\_logic} (formally invalid proof trace negative control), and \texttt{shuffled\_nl} (NL trace order shuffled). Manual inspection found that the completed \texttt{rule\_annotated\_nl} translated-validity metrics were an evaluator artifact: lines such as \texttt{a is teal. [rule: R]} were not stripped before controlled NL-to-FOL parsing. The translator now unwraps rule annotations and pseudocode \texttt{derive "..."}
+lines, and repair eval \texttt{3680004\_[3-8]} is running/queued to overwrite \texttt{rule\_annotated\_nl} and rerun \texttt{pseudocode}.
 
 \begin{table}[H]
 \centering
