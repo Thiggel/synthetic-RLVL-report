@@ -569,7 +569,7 @@ experiment & scope & SFT done & SFT expected & eval done & eval expected & statu
 iGSM & paired-family full suite & 30 & 30 & 0 & 30 & eval pending \\
 maze & paired-family full suite & 24 & 30 & 0 & 30 & eval pending \\
 attribute constraints & paired-family full suite & 6 & 30 & 0 & 30 & eval pending \\
-trace controls & six train-1-to-25 perturbations &  &  & 10 & 18 & partial eval \\
+trace controls & six train-1-to-25 perturbations &  &  & 11 & 18 & partial eval \\
 shortcut-rate & rates 0.3/0.5/0.8, logic and NL &  &  & 18 & 18 & complete \\
 hybrid order & formal-then-NL and NL-then-formal full train-depth suite &  &  & 14 & 30 & partial eval \\
 shortcut-kind & position and initial-marker shortcuts &  &  & 0 & 24 & not started \\
@@ -684,7 +684,7 @@ The trace-control ablation trains train-1-to-25 models with six altered trace st
 \toprule
 trace control & n & OOD c@16 & OOD formal joint & OOD translated joint & d50 c@16 & d50 formal joint & d50 translated joint \\
 \midrule
-invalid\_logic & 1 & 0.856 & 0.519 & 0.000 & 0.625 & 0.094 & 0.000 \\
+invalid\_logic & 2 & 0.906 & 0.544 & 0.000 & 0.734 & 0.188 & 0.000 \\
 rule\_annotated\_nl & 2 & 0.544 & 0.000 & 0.416 & 0.391 & 0.000 & 0.094 \\
 shuffled\_logic & 3 & 0.690 & 0.002 & 0.000 & 0.510 & 0.000 & 0.000 \\
 terse\_nl & 3 & 0.348 & 0.000 & 0.277 & 0.094 & 0.000 & 0.010 \\
