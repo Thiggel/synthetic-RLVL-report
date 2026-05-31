@@ -16,7 +16,7 @@
 \item Token length is a real confound: NL targets are longer than logic targets at every train range. Both equal-length logic controls underperform compact logic; symbol padding disrupts atom tokenization, and the cleaner wordified logic control is also weaker than compact logic and NL at train-1-to-25.
 \item Tiny random-init Llama pretraining is a mechanism smoke test. Logic is stronger than matched NL on answer-only synthetic OOD pass@8, but strict depth-50 joint validity is essentially absent.
 \item Architecture ablations show that the phenomenon is not OLMo-only: Qwen and Gemma runs also show strong formal-trace transfer, with model-specific variation in joint validity.
-\item Shortcut-rich training hurts NL more clearly than logic in the completed 0.3/0.5/0.8 shortcut-rate runs, supporting the hypothesis that NL relies more on brittle shortcut associations. The shortcut-kind eval has started and has 9/24 JSONs so far.
+\item Shortcut-rich training hurts NL more clearly than logic in the completed 0.3/0.5/0.8 shortcut-rate runs, supporting the hypothesis that NL relies more on brittle shortcut associations. The shortcut-kind eval has started and has 13/24 JSONs so far.
 \item Conditioned dual-modality at 10k underperforms the best single-modality baselines, especially for conditioned logic at larger train ranges. The 50k continuation is running to test whether this is undertraining.
 \item Trace controls are complete at 18/18 rows. The repaired \texttt{rule\_annotated\_nl} rows now show nonzero translated validity, \texttt{invalid\_logic} keeps high answer accuracy but zero grounded validity, and shuffled NL parses while losing translated joint validity.
 \end{itemize}
@@ -567,12 +567,12 @@ This table is artifact-based at report-generation time: it counts completed SFT 
 experiment & scope & SFT done & SFT expected & eval done & eval expected & status \\
 \midrule
 iGSM & paired-family full suite & 30 & 30 & 0 & 30 & eval pending \\
-maze & paired-family full suite & 29 & 30 & 0 & 30 & eval pending \\
-attribute constraints & paired-family full suite & 24 & 30 & 0 & 30 & eval pending \\
+maze & paired-family full suite & 30 & 30 & 0 & 30 & eval pending \\
+attribute constraints & paired-family full suite & 30 & 30 & 0 & 30 & eval pending \\
 trace controls & six train-1-to-25 perturbations &  &  & 18 & 18 & complete \\
 shortcut-rate & rates 0.3/0.5/0.8, logic and NL &  &  & 18 & 18 & complete \\
-hybrid order & formal-then-NL and NL-then-formal full train-depth suite &  &  & 15 & 30 & partial eval \\
-shortcut-kind & position and initial-marker shortcuts &  &  & 9 & 24 & partial eval \\
+hybrid order & formal-then-NL and NL-then-formal full train-depth suite &  &  & 18 & 30 & partial eval \\
+shortcut-kind & position and initial-marker shortcuts &  &  & 13 & 24 & partial eval \\
 conditioned dual 10k & conditioned formal/NL dual modality &  &  & 30 & 30 & complete \\
 conditioned dual 50k & longer conditioned formal/NL dual modality &  &  & 0 & 30 & not started \\
 \bottomrule
@@ -674,9 +674,11 @@ The shortcut-kind controls test two concrete shortcut mechanisms: a \texttt{posi
 \toprule
 shortcut kind & template & rate & n & OOD c@16 & OOD joint@16 & d50 c@16 & d50 joint@16 \\
 \midrule
+initial\_marker & logic & 0p5 & 1 & 0.887 & 0.569 & 0.875 & 0.219 \\
 position & logic & 0p5 & 3 & 0.900 & 0.619 & 0.844 & 0.312 \\
 position & logic & 0p8 & 3 & 0.879 & 0.650 & 0.760 & 0.323 \\
 position & nl\_exact & 0p5 & 3 & 0.540 & 0.431 & 0.396 & 0.260 \\
+position & nl\_exact & 0p8 & 3 & 0.513 & 0.487 & 0.396 & 0.354 \\
 \bottomrule
 \end{tabular}
 \caption{Shortcut-kind eval summary. No rows means the eval dependency has not started or has not written JSON yet.}
@@ -719,6 +721,7 @@ The hybrid-order ablation trains a single prompt containing both trace substrate
 \toprule
 mode & train max & n & OOD c@16 & OOD formal joint & OOD translated joint & d50 c@16 & d50 formal joint & d50 translated joint \\
 \midrule
+formal\_think & 5 & 3 & 0.538 & 0.120 & 0.347 & 0.323 & 0.010 & 0.000 \\
 think\_formal & 5 & 3 & 0.480 & 0.022 & 0.297 & 0.219 & 0.000 & 0.000 \\
 think\_formal & 10 & 3 & 0.490 & 0.249 & 0.296 & 0.354 & 0.000 & 0.000 \\
 think\_formal & 15 & 3 & 0.353 & 0.111 & 0.111 & 0.312 & 0.000 & 0.000 \\
