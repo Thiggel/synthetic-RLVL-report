@@ -16,7 +16,7 @@
 \item Token length is a real confound: NL targets are longer than logic targets at every train range. Both equal-length logic controls underperform compact logic; symbol padding disrupts atom tokenization, and the cleaner wordified logic control is also weaker than compact logic and NL at train-1-to-25.
 \item Tiny random-init Llama pretraining is a mechanism smoke test. Logic is stronger than matched NL on answer-only synthetic OOD pass@8, but strict depth-50 joint validity is essentially absent.
 \item Architecture ablations show that the phenomenon is not OLMo-only: Qwen and Gemma runs also show strong formal-trace transfer, with model-specific variation in joint validity.
-\item Shortcut-rich training hurts NL more clearly than logic in the completed 0.3/0.5/0.8 shortcut-rate runs, supporting the hypothesis that NL relies more on brittle shortcut associations. The shortcut-kind eval has started and has 13/24 JSONs so far.
+\item Shortcut-rich training hurts NL more clearly than logic in the completed 0.3/0.5/0.8 shortcut-rate runs, supporting the hypothesis that NL relies more on brittle shortcut associations. The shortcut-kind eval has started and has 15/24 JSONs so far.
 \item Conditioned dual-modality at 10k underperforms the best single-modality baselines, especially for conditioned logic at larger train ranges. The 50k continuation is running to test whether this is undertraining.
 \item Trace controls are complete at 18/18 rows. The repaired \texttt{rule\_annotated\_nl} rows now show nonzero translated validity, \texttt{invalid\_logic} keeps high answer accuracy but zero grounded validity, and shuffled NL parses while losing translated joint validity.
 \end{itemize}
@@ -566,19 +566,45 @@ This table is artifact-based at report-generation time: it counts completed SFT 
 \toprule
 experiment & scope & SFT done & SFT expected & eval done & eval expected & status \\
 \midrule
-iGSM & paired-family full suite & 30 & 30 & 0 & 30 & eval pending \\
+iGSM & paired-family full suite & 30 & 30 & 14 & 30 & partial eval \\
 maze & paired-family full suite & 30 & 30 & 0 & 30 & eval pending \\
 attribute constraints & paired-family full suite & 30 & 30 & 0 & 30 & eval pending \\
 trace controls & six train-1-to-25 perturbations &  &  & 18 & 18 & complete \\
 shortcut-rate & rates 0.3/0.5/0.8, logic and NL &  &  & 18 & 18 & complete \\
 hybrid order & formal-then-NL and NL-then-formal full train-depth suite &  &  & 18 & 30 & partial eval \\
-shortcut-kind & position and initial-marker shortcuts &  &  & 13 & 24 & partial eval \\
+shortcut-kind & position and initial-marker shortcuts &  &  & 15 & 24 & partial eval \\
 conditioned dual 10k & conditioned formal/NL dual modality &  &  & 30 & 30 & complete \\
 conditioned dual 50k & longer conditioned formal/NL dual modality &  &  & 0 & 30 & not started \\
 \bottomrule
 \end{tabular}
 \caption{Artifact status for paired-family repeats and active ablation families.}
 \end{table}
+
+\section{Paired-family full-suite partial readout}
+The replacement paired-family eval has started writing artifacts. The table below is intentionally partial: at this report generation time, only \texttt{official\_igsm} rows have completed. The \texttt{joint} column is template-specific: citation-free internal formal validity for logic and translated NL-to-FOL validity for \texttt{nl\_exact}. For iGSM, grounded joint validity is currently zero away from trivial retrieval cases because generated variable names and arithmetic-substitution citations do not reliably align with the canonical grounded checker. The \texttt{nl\_exact} rows also still have zero parser coverage, so use correctness as the main provisional paired-family signal until the translator/grounded-validity caveats are resolved.
+
+\begin{table}[H]
+\centering
+\scriptsize
+\begin{tabular}{llllllllll}
+\toprule
+family & template & train max & n & OOD c@16 & OOD joint@16 & OOD grounded joint & OOD NL parse & d50 c@16 & d50 joint@16 \\
+\midrule
+official\_igsm & logic & 5 & 3 & 0.312 & 0.255 & 0.000 & 0.000 & 0.240 & 0.177 \\
+official\_igsm & logic & 10 & 3 & 0.507 & 0.377 & 0.000 & 0.000 & 0.458 & 0.281 \\
+official\_igsm & logic & 15 & 2 & 0.547 & 0.400 & 0.000 & 0.000 & 0.562 & 0.344 \\
+official\_igsm & nl\_exact & 5 & 3 & 0.366 & 0.000 & 0.000 & 0.000 & 0.333 & 0.000 \\
+official\_igsm & nl\_exact & 10 & 3 & 0.589 & 0.000 & 0.000 & 0.000 & 0.490 & 0.000 \\
+\bottomrule
+\end{tabular}
+\caption{Partial paired full-suite summary for completed eval JSONs.}
+\end{table}
+
+\begin{figure}[H]\centering
+\includegraphics[width=0.95\linewidth]{figures/paired_full_suite_official_igsm_partial.pdf}
+\caption{Partial official-iGSM full-suite readout from currently completed paired eval rows. Train-1-to-15 logic is still two-seed partial in this snapshot.}
+\end{figure}
+
 
 \section{Targeted ablations}
 Completed ablation results are shown here; active arrays are tracked in the handoff documents. The current same-token-budget experiment is more precisely a same target-token budget experiment. The logic row in that experiment is a control rerun at 10k steps; the NL row is shortened to 7140 steps so target-token exposure approximately matches 10k logic steps. It does not match total prompt-plus-target tokens; that would require roughly 8600 NL steps and has not been run yet. The symbol-padded logic control is the completed total-sequence-length match to NL at the same optimizer-step budget; the wordified logic length-control is the cleaner equal-length formal follow-up and is now complete. Shortcut rates 0.3, 0.5, and 0.8 are complete. Conditioned dual-modality 10k eval is complete, and the 50k continuation is running.
@@ -674,7 +700,7 @@ The shortcut-kind controls test two concrete shortcut mechanisms: a \texttt{posi
 \toprule
 shortcut kind & template & rate & n & OOD c@16 & OOD joint@16 & d50 c@16 & d50 joint@16 \\
 \midrule
-initial\_marker & logic & 0p5 & 1 & 0.887 & 0.569 & 0.875 & 0.219 \\
+initial\_marker & logic & 0p5 & 3 & 0.883 & 0.625 & 0.854 & 0.344 \\
 position & logic & 0p5 & 3 & 0.900 & 0.619 & 0.844 & 0.312 \\
 position & logic & 0p8 & 3 & 0.879 & 0.650 & 0.760 & 0.323 \\
 position & nl\_exact & 0p5 & 3 & 0.540 & 0.431 & 0.396 & 0.260 \\
@@ -1275,6 +1301,8 @@ main_olmo7b_sft_token_lengths.csv
 main_olmo7b_summary.csv
 olmo32_cot_bare_gsm8k.csv
 ood_gsm8k_strict_recompute_from_samples.csv
+paired_full_suite_partial_by_seed.csv
+paired_full_suite_partial_summary.csv
 qwen7b_partial_summary.csv
 same_target_token_budget_by_seed.csv
 same_target_token_budget_summary.csv
@@ -1327,6 +1355,7 @@ olmo7b_checkpoint_train1to5_joint16.pdf
 olmo7b_depth_correct16.pdf
 olmo7b_depth_joint16.pdf
 olmo7b_final_by_train_depth.pdf
+paired_full_suite_official_igsm_partial.pdf
 qwen7b_partial_ood_correct_joint.pdf
 sample_generation_panels.pdf
 tiny_llama_100k_100m_checkpoint_depthbands_correct_k8.pdf
@@ -1372,6 +1401,7 @@ tiny_llama_final_bands_correct_joint.pdf
 full_generation_sequences_olmo7b_olmo32b_2026-05-28.md
 ood_cot_bare_generation_examples_olmo7b_train1to25_seed3407.md
 ood_generation_examples_olmo7b_train1to25_seed3407.md
+paired_full_suite_partial_samples_2026-05-31.md
 \end{verbatim}
 
 CSV tables live under \texttt{tables/} and all plots are emitted as both PDF and PNG under \texttt{figures/}. This machine currently lacks \texttt{pdflatex}/\texttt{latexmk}, so the LaTeX source is generated but not compiled here.

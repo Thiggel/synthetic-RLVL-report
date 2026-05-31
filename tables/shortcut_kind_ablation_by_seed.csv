@@ -1,5 +1,7 @@
 shortcut_kind,template,shortcut_rate,seed,ood_correct@16,ood_joint@16,depth50_correct@16,depth50_joint@16
 initial_marker,logic,0p5,3407,0.8875,0.56875,0.875,0.21875
+initial_marker,logic,0p5,3408,0.90625,0.6375,0.9375,0.46875
+initial_marker,logic,0p5,3409,0.85625,0.66875,0.75,0.34375
 position,logic,0p5,3407,0.84375,0.45,0.8125,0.1875
 position,logic,0p5,3408,0.9625,0.6625,0.90625,0.21875
 position,logic,0p5,3409,0.89375,0.74375,0.8125,0.53125
