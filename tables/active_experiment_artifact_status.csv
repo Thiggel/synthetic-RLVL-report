@@ -1,5 +1,5 @@
 experiment,scope,sft_done,sft_expected,eval_done,eval_expected,status
-iGSM,paired-family full suite,30,30,29,30,partial eval
+iGSM,paired-family full suite,30,30,30,30,complete
 maze,paired-family full suite,30,30,0,30,eval pending
 attribute constraints,paired-family full suite,30,30,0,30,eval pending
 trace controls,six train-1-to-25 perturbations,,,18,18,complete
