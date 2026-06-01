@@ -7,4 +7,4 @@ shortcut-rate,"rates 0.3/0.5/0.8, logic and NL",,,18,18,complete
 hybrid order,formal-then-NL and NL-then-formal full train-depth suite,,,22,30,partial eval
 shortcut-kind,position and initial-marker shortcuts,,,24,24,complete
 conditioned dual 10k,conditioned formal/NL dual modality,,,30,30,complete
-conditioned dual 50k,longer conditioned formal/NL dual modality,,,0,30,not started
+conditioned dual 50k,longer conditioned formal/NL dual modality,,,0,30,checkpoint partial (6 JSONs)

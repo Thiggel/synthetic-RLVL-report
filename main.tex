@@ -574,14 +574,14 @@ shortcut-rate & rates 0.3/0.5/0.8, logic and NL &  &  & 18 & 18 & complete \\
 hybrid order & formal-then-NL and NL-then-formal full train-depth suite &  &  & 22 & 30 & partial eval \\
 shortcut-kind & position and initial-marker shortcuts &  &  & 24 & 24 & complete \\
 conditioned dual 10k & conditioned formal/NL dual modality &  &  & 30 & 30 & complete \\
-conditioned dual 50k & longer conditioned formal/NL dual modality &  &  & 0 & 30 & not started \\
+conditioned dual 50k & longer conditioned formal/NL dual modality &  &  & 0 & 30 & checkpoint partial (6 JSONs) \\
 \bottomrule
 \end{tabular}
 \caption{Artifact status for paired-family repeats and active ablation families.}
 \end{table}
 
 \section{Paired-family full-suite partial readout}
-The replacement paired-family eval has started writing artifacts. The table below is intentionally partial: at this report generation time, \texttt{official\_igsm} is complete and the first \texttt{maze\_navigation} row has completed, while remaining maze and hard attribute-constraint rows are still running or pending. The \texttt{joint} column is template-specific: citation-free internal formal validity for logic and translated NL-to-FOL validity for \texttt{nl\_exact}. For iGSM, grounded joint validity is currently zero away from trivial retrieval cases because generated variable names and arithmetic-substitution citations do not reliably align with the canonical grounded checker. The targeted iGSM NL rerun has improved parser coverage on completed rerun rows, but generated NL translated-validity is still zero so far; use correctness and parser coverage as provisional diagnostics until the rerun and non-iGSM rows complete.
+The replacement paired-family eval has started writing artifacts. The table below is intentionally partial: at this report generation time, \texttt{official\_igsm} is complete and the first \texttt{maze\_navigation} row has completed, while remaining maze and hard attribute-constraint rows are still running or pending. The \texttt{joint} column is template-specific: citation-free internal formal validity for logic and translated NL-to-FOL validity for \texttt{nl\_exact}. For iGSM, grounded joint validity is currently zero away from trivial retrieval cases because generated variable names and arithmetic-substitution citations do not reliably align with the canonical grounded checker. The targeted iGSM NL rerun has completed all 15 NL rows and recovers near-complete parser coverage, but generated NL translated-validity is still zero on OOD/depth-50 slices; use correctness and parser coverage as provisional diagnostics until non-iGSM rows complete and grounded/canonical checks are improved.
 
 \begin{table}[H]
 \centering
@@ -598,9 +598,9 @@ official\_igsm & logic & 20 & 3 & 0.536 & 0.245 & 0.000 & 0.000 & 0.510 & 0.219 
 official\_igsm & logic & 25 & 3 & 0.487 & 0.106 & 0.000 & 0.000 & 0.490 & 0.031 \\
 official\_igsm & nl\_exact & 5 & 3 & 0.359 & 0.000 & 0.000 & 1.000 & 0.260 & 0.000 \\
 official\_igsm & nl\_exact & 10 & 3 & 0.569 & 0.000 & 0.000 & 1.000 & 0.385 & 0.000 \\
-official\_igsm & nl\_exact & 15 & 3 & 0.612 & 0.000 & 0.000 & 0.664 & 0.479 & 0.000 \\
-official\_igsm & nl\_exact & 20 & 3 & 0.576 & 0.000 & 0.000 & 0.000 & 0.573 & 0.000 \\
-official\_igsm & nl\_exact & 25 & 3 & 0.585 & 0.000 & 0.000 & 0.000 & 0.521 & 0.000 \\
+official\_igsm & nl\_exact & 15 & 3 & 0.603 & 0.000 & 0.000 & 0.997 & 0.479 & 0.000 \\
+official\_igsm & nl\_exact & 20 & 3 & 0.592 & 0.000 & 0.000 & 1.000 & 0.583 & 0.000 \\
+official\_igsm & nl\_exact & 25 & 3 & 0.560 & 0.000 & 0.000 & 0.994 & 0.469 & 0.000 \\
 \bottomrule
 \end{tabular}
 \caption{Partial paired full-suite summary for completed eval JSONs.}
@@ -816,6 +816,11 @@ train max & condition & n & OOD c@16 & OOD joint@16 & d50 c@16 & d50 joint@16 \\
 No rows available.
 \caption{Conditioned dual-modality 50k final eval summary. No rows means the 50k continuation/eval chain has not reached final pass@k output yet.}
 \end{table}
+
+\begin{figure}[H]\centering
+\includegraphics[width=0.95\linewidth]{figures/ablation_conditioned_dual_50k_convergence_train1to25.pdf}
+\caption{Conditioned dual-modality 50k convergence curves for train-1-to-25. Points are three-seed means for checkpoint evals available at report generation time; pending 30k/40k/50k points will appear as the eval array writes JSONs.}
+\end{figure}
 
 
 \section{Qualitative samples}
@@ -1282,6 +1287,8 @@ The following generated artifacts are part of this report bundle.
 active_experiment_artifact_status.csv
 all_group_summary.csv
 architecture_ablation_summary.csv
+conditioned_dual_50k_checkpoint_by_seed.csv
+conditioned_dual_50k_checkpoint_summary.csv
 conditioned_dual_by_seed.csv
 conditioned_dual_partial_by_seed.csv
 conditioned_dual_partial_summary.csv
@@ -1340,6 +1347,7 @@ trace_control_ablation_summary.csv
 
 \paragraph{PDF figures.}
 \begin{verbatim}
+ablation_conditioned_dual_50k_convergence_train1to25.pdf
 ablation_conditioned_dual_vs_main_by_train_depth.pdf
 ablation_hybrid_order_partial.pdf
 ablation_logic_length_control_depth_curve_train1to25.pdf
