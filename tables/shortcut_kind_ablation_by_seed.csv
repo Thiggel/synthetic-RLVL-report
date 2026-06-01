@@ -2,8 +2,12 @@ shortcut_kind,template,shortcut_rate,seed,ood_correct@16,ood_joint@16,depth50_co
 initial_marker,logic,0p5,3407,0.8875,0.56875,0.875,0.21875
 initial_marker,logic,0p5,3408,0.90625,0.6375,0.9375,0.46875
 initial_marker,logic,0p5,3409,0.85625,0.66875,0.75,0.34375
+initial_marker,logic,0p8,3407,0.8375,0.5,0.8125,0.21875
+initial_marker,logic,0p8,3408,0.90625,0.6625,0.8125,0.28125
+initial_marker,logic,0p8,3409,0.9125,0.66875,0.96875,0.53125
 initial_marker,nl_exact,0p5,3407,0.60625,0.58125,0.25,0.21875
 initial_marker,nl_exact,0p5,3408,0.4125,0.38125,0.0,0.0
+initial_marker,nl_exact,0p5,3409,0.3875,0.3,0.09375,0.0625
 position,logic,0p5,3407,0.84375,0.45,0.8125,0.1875
 position,logic,0p5,3408,0.9625,0.6625,0.90625,0.21875
 position,logic,0p5,3409,0.89375,0.74375,0.8125,0.53125
