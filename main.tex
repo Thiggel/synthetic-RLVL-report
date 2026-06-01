@@ -16,7 +16,7 @@
 \item Token length is a real confound: NL targets are longer than logic targets at every train range. Both equal-length logic controls underperform compact logic; symbol padding disrupts atom tokenization, and the cleaner wordified logic control is also weaker than compact logic and NL at train-1-to-25.
 \item Tiny random-init Llama pretraining is a mechanism smoke test. Logic is stronger than matched NL on answer-only synthetic OOD pass@8, but strict depth-50 joint validity is essentially absent.
 \item Architecture ablations show that the phenomenon is not OLMo-only: Qwen and Gemma runs also show strong formal-trace transfer, with model-specific variation in joint validity.
-\item Shortcut-rich training hurts NL more clearly than logic in the completed 0.3/0.5/0.8 shortcut-rate runs, supporting the hypothesis that NL relies more on brittle shortcut associations. The shortcut-kind eval has started and has 24/24 JSONs so far.
+\item Shortcut-rich training hurts NL more clearly than logic in the completed 0.3/0.5/0.8 shortcut-rate runs, supporting the hypothesis that NL relies more on brittle shortcut associations. The shortcut-kind eval is complete at 24/24 JSONs.
 \item Conditioned dual-modality at 10k underperforms the best single-modality baselines, especially for conditioned logic at larger train ranges. The 50k continuation is running to test whether this is undertraining.
 \item Trace controls are complete at 18/18 rows. The repaired \texttt{rule\_annotated\_nl} rows now show nonzero translated validity, \texttt{invalid\_logic} keeps high answer accuracy but zero grounded validity, and shuffled NL parses while losing translated joint validity.
 \end{itemize}
@@ -567,7 +567,7 @@ This table is artifact-based at report-generation time: it counts completed SFT 
 experiment & scope & SFT done & SFT expected & eval done & eval expected & status \\
 \midrule
 iGSM & paired-family full suite & 30 & 30 & 30 & 30 & complete \\
-maze & paired-family full suite & 30 & 30 & 0 & 30 & eval pending \\
+maze & paired-family full suite & 30 & 30 & 1 & 30 & partial eval \\
 attribute constraints & paired-family full suite & 30 & 30 & 0 & 30 & eval pending \\
 trace controls & six train-1-to-25 perturbations &  &  & 18 & 18 & complete \\
 shortcut-rate & rates 0.3/0.5/0.8, logic and NL &  &  & 18 & 18 & complete \\
@@ -581,7 +581,7 @@ conditioned dual 50k & longer conditioned formal/NL dual modality &  &  & 0 & 30
 \end{table}
 
 \section{Paired-family full-suite partial readout}
-The replacement paired-family eval has started writing artifacts. The table below is intentionally partial: at this report generation time, only \texttt{official\_igsm} rows have completed. The \texttt{joint} column is template-specific: citation-free internal formal validity for logic and translated NL-to-FOL validity for \texttt{nl\_exact}. For iGSM, grounded joint validity is currently zero away from trivial retrieval cases because generated variable names and arithmetic-substitution citations do not reliably align with the canonical grounded checker. The \texttt{nl\_exact} rows also still have zero parser coverage, so use correctness as the main provisional paired-family signal until the translator/grounded-validity caveats are resolved.
+The replacement paired-family eval has started writing artifacts. The table below is intentionally partial: at this report generation time, \texttt{official\_igsm} is complete and the first \texttt{maze\_navigation} row has completed, while remaining maze and hard attribute-constraint rows are still running or pending. The \texttt{joint} column is template-specific: citation-free internal formal validity for logic and translated NL-to-FOL validity for \texttt{nl\_exact}. For iGSM, grounded joint validity is currently zero away from trivial retrieval cases because generated variable names and arithmetic-substitution citations do not reliably align with the canonical grounded checker. The targeted iGSM NL rerun has improved parser coverage on completed rerun rows, but generated NL translated-validity is still zero so far; use correctness and parser coverage as provisional diagnostics until the rerun and non-iGSM rows complete.
 
 \begin{table}[H]
 \centering
@@ -590,14 +590,15 @@ The replacement paired-family eval has started writing artifacts. The table belo
 \toprule
 family & template & train max & n & OOD c@16 & OOD joint@16 & OOD grounded joint & OOD NL parse & d50 c@16 & d50 joint@16 \\
 \midrule
+maze\_navigation & nl\_exact & 5 & 1 & 0.088 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 \\
 official\_igsm & logic & 5 & 3 & 0.312 & 0.255 & 0.000 & 0.000 & 0.240 & 0.177 \\
 official\_igsm & logic & 10 & 3 & 0.507 & 0.377 & 0.000 & 0.000 & 0.458 & 0.281 \\
 official\_igsm & logic & 15 & 3 & 0.546 & 0.392 & 0.000 & 0.000 & 0.542 & 0.292 \\
 official\_igsm & logic & 20 & 3 & 0.536 & 0.245 & 0.000 & 0.000 & 0.510 & 0.219 \\
 official\_igsm & logic & 25 & 3 & 0.487 & 0.106 & 0.000 & 0.000 & 0.490 & 0.031 \\
-official\_igsm & nl\_exact & 5 & 3 & 0.366 & 0.000 & 0.000 & 0.000 & 0.333 & 0.000 \\
-official\_igsm & nl\_exact & 10 & 3 & 0.589 & 0.000 & 0.000 & 0.000 & 0.490 & 0.000 \\
-official\_igsm & nl\_exact & 15 & 3 & 0.618 & 0.000 & 0.000 & 0.000 & 0.521 & 0.000 \\
+official\_igsm & nl\_exact & 5 & 3 & 0.359 & 0.000 & 0.000 & 1.000 & 0.260 & 0.000 \\
+official\_igsm & nl\_exact & 10 & 3 & 0.569 & 0.000 & 0.000 & 1.000 & 0.385 & 0.000 \\
+official\_igsm & nl\_exact & 15 & 3 & 0.612 & 0.000 & 0.000 & 0.664 & 0.479 & 0.000 \\
 official\_igsm & nl\_exact & 20 & 3 & 0.576 & 0.000 & 0.000 & 0.000 & 0.573 & 0.000 \\
 official\_igsm & nl\_exact & 25 & 3 & 0.585 & 0.000 & 0.000 & 0.000 & 0.521 & 0.000 \\
 \bottomrule
@@ -696,7 +697,7 @@ nl\_exact & 0.800 & 3 & 0.638 & 0.565 & 0.281 & 0.146 \\
 \end{figure}
 
 \subsection{Other shortcut types}
-The shortcut-kind controls test two concrete shortcut mechanisms: a \texttt{position} shortcut, where the target path is statistically associated with position-like structure, and an \texttt{initial\_marker} shortcut, where an early marker fact is predictive of the target transition family. Both are trained at rates 0.5 and 0.8 for logic and NL over three seeds, with shortcut-neutral eval. At this report generation time, SFT is complete and shortcut-kind eval is running; the completed eval artifacts are summarized below.
+The shortcut-kind controls test two concrete shortcut mechanisms: a \texttt{position} shortcut, where the target path is statistically associated with position-like structure, and an \texttt{initial\_marker} shortcut, where an early marker fact is predictive of the target transition family. Both are trained at rates 0.5 and 0.8 for logic and NL over three seeds, with shortcut-neutral eval. At this report generation time, SFT and shortcut-kind eval are complete; all eval artifacts are summarized below.
 
 \begin{table}[H]
 \centering
