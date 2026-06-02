@@ -571,10 +571,10 @@ maze & paired-family full suite & 30 & 30 & 1 & 30 & partial eval \\
 attribute constraints & paired-family full suite & 30 & 30 & 0 & 30 & eval pending \\
 trace controls & six train-1-to-25 perturbations &  &  & 18 & 18 & complete \\
 shortcut-rate & rates 0.3/0.5/0.8, logic and NL &  &  & 18 & 18 & complete \\
-hybrid order & formal-then-NL and NL-then-formal full train-depth suite &  &  & 22 & 30 & partial eval \\
+hybrid order & formal-then-NL and NL-then-formal full train-depth suite &  &  & 24 & 30 & partial eval \\
 shortcut-kind & position and initial-marker shortcuts &  &  & 24 & 24 & complete \\
 conditioned dual 10k & conditioned formal/NL dual modality &  &  & 30 & 30 & complete \\
-conditioned dual 50k & longer conditioned formal/NL dual modality &  &  & 0 & 30 & checkpoint partial (6 JSONs) \\
+conditioned dual 50k & longer conditioned formal/NL dual modality &  &  & 2 & 30 & partial eval \\
 \bottomrule
 \end{tabular}
 \caption{Artifact status for paired-family repeats and active ablation families.}
@@ -747,7 +747,7 @@ terse\_nl & 3 & 0.348 & 0.000 & 0.277 & 0.094 & 0.000 & 0.010 \\
 
 
 \subsection{Hybrid order}
-The hybrid-order ablation trains a single prompt containing both trace substrates and one answer at the end. \texttt{think\_formal} means NL first, then formal logic; \texttt{formal\_think} means formal logic first, then NL. The full suite is train-1-to-5/10/15/20/25 over three seeds and eval 1-to-50. Current completed rows cover all \texttt{think\_formal} seeds through train-1-to-25; \texttt{formal\_think} is still incomplete.
+The hybrid-order ablation trains a single prompt containing both trace substrates and one answer at the end. \texttt{think\_formal} means NL first, then formal logic; \texttt{formal\_think} means formal logic first, then NL. The full suite is train-1-to-5/10/15/20/25 over three seeds and eval 1-to-50. Current completed rows cover all \texttt{think\_formal} seeds through train-1-to-25; \texttt{formal\_think} is complete through train-1-to-15, with deeper rows still incomplete.
 
 \begin{table}[H]
 \centering
@@ -758,7 +758,7 @@ mode & train max & n & OOD c@16 & OOD formal joint & OOD translated joint & d50 
 \midrule
 formal\_think & 5 & 3 & 0.538 & 0.120 & 0.347 & 0.323 & 0.010 & 0.000 \\
 formal\_think & 10 & 3 & 0.626 & 0.279 & 0.381 & 0.396 & 0.000 & 0.000 \\
-formal\_think & 15 & 1 & 0.656 & 0.301 & 0.250 & 0.688 & 0.125 & 0.000 \\
+formal\_think & 15 & 3 & 0.568 & 0.258 & 0.264 & 0.479 & 0.083 & 0.000 \\
 think\_formal & 5 & 3 & 0.480 & 0.022 & 0.297 & 0.219 & 0.000 & 0.000 \\
 think\_formal & 10 & 3 & 0.490 & 0.249 & 0.296 & 0.354 & 0.000 & 0.000 \\
 think\_formal & 15 & 3 & 0.353 & 0.111 & 0.111 & 0.312 & 0.000 & 0.000 \\
@@ -766,12 +766,12 @@ think\_formal & 20 & 3 & 0.434 & 0.028 & 0.148 & 0.469 & 0.000 & 0.000 \\
 think\_formal & 25 & 3 & 0.573 & 0.204 & 0.419 & 0.344 & 0.000 & 0.135 \\
 \bottomrule
 \end{tabular}
-\caption{Hybrid-order partial summary. \texttt{think\_formal} train-1-to-25 is now three-seed complete; \texttt{formal\_think} remains pending.}
+\caption{Hybrid-order partial summary. \texttt{think\_formal} train-1-to-25 is now three-seed complete; \texttt{formal\_think} is complete through train-1-to-15, with deeper rows still incomplete.}
 \end{table}
 
 \begin{figure}[H]\centering
 \includegraphics[width=0.95\linewidth]{figures/ablation_hybrid_order_partial.pdf}
-\caption{Hybrid order partial eval. \texttt{think\_formal} is NL then formal and is complete through train-1-to-25; \texttt{formal\_think} is still pending.}
+\caption{Hybrid order partial eval. \texttt{think\_formal} is NL then formal and is complete through train-1-to-25; \texttt{formal\_think} is complete through train-1-to-15, with deeper rows still incomplete.}
 \end{figure}
 
 
@@ -813,13 +813,20 @@ train max & condition & n & OOD c@16 & OOD joint@16 & d50 c@16 & d50 joint@16 \\
 \begin{table}[H]
 \centering
 \scriptsize
-No rows available.
+\begin{tabular}{lllllll}
+\toprule
+train max & eval template & n & OOD c@16 & OOD joint@16 & d50 c@16 & d50 joint@16 \\
+\midrule
+5 & conditioned\_logic & 1 & 0.446 & 0.062 & 0.312 & 0.000 \\
+10 & conditioned\_logic & 1 & 0.787 & 0.403 & 0.531 & 0.000 \\
+\bottomrule
+\end{tabular}
 \caption{Conditioned dual-modality 50k final eval summary. No rows means the 50k continuation/eval chain has not reached final pass@k output yet.}
 \end{table}
 
 \begin{figure}[H]\centering
 \includegraphics[width=0.95\linewidth]{figures/ablation_conditioned_dual_50k_convergence_train1to25.pdf}
-\caption{Conditioned dual-modality 50k convergence curves for train-1-to-25. Points are three-seed means for checkpoint evals available at report generation time; pending 30k/40k/50k points will appear as the eval array writes JSONs.}
+\caption{Conditioned dual-modality 50k convergence curves for train-1-to-25. Points are three-seed means for checkpoint evals available at report generation time; the conditioned-logic curve now reaches 50k, while conditioned-NL points will appear if the remaining checkpoint rows write JSONs.}
 \end{figure}
 
 
@@ -1287,8 +1294,10 @@ The following generated artifacts are part of this report bundle.
 active_experiment_artifact_status.csv
 all_group_summary.csv
 architecture_ablation_summary.csv
+conditioned_dual_50k_by_seed.csv
 conditioned_dual_50k_checkpoint_by_seed.csv
 conditioned_dual_50k_checkpoint_summary.csv
+conditioned_dual_50k_summary.csv
 conditioned_dual_by_seed.csv
 conditioned_dual_partial_by_seed.csv
 conditioned_dual_partial_summary.csv

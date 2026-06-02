@@ -1,0 +1,3 @@
+train_max,seed,eval_template,ood_correct@16,ood_joint@16,depth50_correct@16,depth50_joint@16
+10,3407,conditioned_logic,0.7875,0.403125,0.53125,0.0
+5,3408,conditioned_logic,0.4460227272727273,0.0625,0.3125,0.0

@@ -4,7 +4,7 @@ maze,paired-family full suite,30,30,1,30,partial eval
 attribute constraints,paired-family full suite,30,30,0,30,eval pending
 trace controls,six train-1-to-25 perturbations,,,18,18,complete
 shortcut-rate,"rates 0.3/0.5/0.8, logic and NL",,,18,18,complete
-hybrid order,formal-then-NL and NL-then-formal full train-depth suite,,,22,30,partial eval
+hybrid order,formal-then-NL and NL-then-formal full train-depth suite,,,24,30,partial eval
 shortcut-kind,position and initial-marker shortcuts,,,24,24,complete
 conditioned dual 10k,conditioned formal/NL dual modality,,,30,30,complete
-conditioned dual 50k,longer conditioned formal/NL dual modality,,,0,30,checkpoint partial (6 JSONs)
+conditioned dual 50k,longer conditioned formal/NL dual modality,,,2,30,partial eval
