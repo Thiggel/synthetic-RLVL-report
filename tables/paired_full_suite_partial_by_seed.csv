@@ -1,5 +1,6 @@
 family,template,train_max,seed,ood_correct@16,ood_joint@16,ood_grounded_joint@16,ood_nl_parse@16,depth50_correct@16,depth50_joint@16,depth50_grounded_joint@16,depth50_nl_parse@16
 maze_navigation,nl_exact,5,3407,0.08806818181818182,0.0,0.0,0.0,0.0,0.0,0.0,0.0
+maze_navigation,nl_exact,5,3408,0.20738636363636365,0.0,0.0,0.0,0.0,0.0,0.0,0.0
 official_igsm,logic,10,3407,0.484375,0.33125,0.0,0.0,0.5,0.3125,0.0,0.0
 official_igsm,logic,10,3408,0.515625,0.375,0.0,0.0,0.5,0.21875,0.0,0.0
 official_igsm,logic,10,3409,0.521875,0.425,0.0,0.0,0.375,0.3125,0.0,0.0

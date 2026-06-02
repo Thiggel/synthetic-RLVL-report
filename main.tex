@@ -567,14 +567,14 @@ This table is artifact-based at report-generation time: it counts completed SFT 
 experiment & scope & SFT done & SFT expected & eval done & eval expected & status \\
 \midrule
 iGSM & paired-family full suite & 30 & 30 & 30 & 30 & complete \\
-maze & paired-family full suite & 30 & 30 & 1 & 30 & partial eval \\
+maze & paired-family full suite & 30 & 30 & 2 & 30 & partial eval \\
 attribute constraints & paired-family full suite & 30 & 30 & 0 & 30 & eval pending \\
 trace controls & six train-1-to-25 perturbations &  &  & 18 & 18 & complete \\
 shortcut-rate & rates 0.3/0.5/0.8, logic and NL &  &  & 18 & 18 & complete \\
-hybrid order & formal-then-NL and NL-then-formal full train-depth suite &  &  & 24 & 30 & partial eval \\
+hybrid order & formal-then-NL and NL-then-formal full train-depth suite &  &  & 26 & 30 & partial eval \\
 shortcut-kind & position and initial-marker shortcuts &  &  & 24 & 24 & complete \\
 conditioned dual 10k & conditioned formal/NL dual modality &  &  & 30 & 30 & complete \\
-conditioned dual 50k & longer conditioned formal/NL dual modality &  &  & 2 & 30 & partial eval \\
+conditioned dual 50k & longer conditioned formal/NL dual modality &  &  & 5 & 30 & partial eval \\
 \bottomrule
 \end{tabular}
 \caption{Artifact status for paired-family repeats and active ablation families.}
@@ -590,7 +590,7 @@ The replacement paired-family eval has started writing artifacts. The table belo
 \toprule
 family & template & train max & n & OOD c@16 & OOD joint@16 & OOD grounded joint & OOD NL parse & d50 c@16 & d50 joint@16 \\
 \midrule
-maze\_navigation & nl\_exact & 5 & 1 & 0.088 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 \\
+maze\_navigation & nl\_exact & 5 & 2 & 0.148 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 \\
 official\_igsm & logic & 5 & 3 & 0.312 & 0.255 & 0.000 & 0.000 & 0.240 & 0.177 \\
 official\_igsm & logic & 10 & 3 & 0.507 & 0.377 & 0.000 & 0.000 & 0.458 & 0.281 \\
 official\_igsm & logic & 15 & 3 & 0.546 & 0.392 & 0.000 & 0.000 & 0.542 & 0.292 \\
@@ -759,6 +759,7 @@ mode & train max & n & OOD c@16 & OOD formal joint & OOD translated joint & d50 
 formal\_think & 5 & 3 & 0.538 & 0.120 & 0.347 & 0.323 & 0.010 & 0.000 \\
 formal\_think & 10 & 3 & 0.626 & 0.279 & 0.381 & 0.396 & 0.000 & 0.000 \\
 formal\_think & 15 & 3 & 0.568 & 0.258 & 0.264 & 0.479 & 0.083 & 0.000 \\
+formal\_think & 20 & 2 & 0.698 & 0.250 & 0.536 & 0.531 & 0.031 & 0.250 \\
 think\_formal & 5 & 3 & 0.480 & 0.022 & 0.297 & 0.219 & 0.000 & 0.000 \\
 think\_formal & 10 & 3 & 0.490 & 0.249 & 0.296 & 0.354 & 0.000 & 0.000 \\
 think\_formal & 15 & 3 & 0.353 & 0.111 & 0.111 & 0.312 & 0.000 & 0.000 \\
@@ -817,8 +818,8 @@ train max & condition & n & OOD c@16 & OOD joint@16 & d50 c@16 & d50 joint@16 \\
 \toprule
 train max & eval template & n & OOD c@16 & OOD joint@16 & d50 c@16 & d50 joint@16 \\
 \midrule
-5 & conditioned\_logic & 1 & 0.446 & 0.062 & 0.312 & 0.000 \\
-10 & conditioned\_logic & 1 & 0.787 & 0.403 & 0.531 & 0.000 \\
+5 & conditioned\_logic & 3 & 0.309 & 0.049 & 0.198 & 0.000 \\
+10 & conditioned\_logic & 2 & 0.630 & 0.269 & 0.312 & 0.000 \\
 \bottomrule
 \end{tabular}
 \caption{Conditioned dual-modality 50k final eval summary. No rows means the 50k continuation/eval chain has not reached final pass@k output yet.}
