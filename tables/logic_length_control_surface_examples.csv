@@ -1,0 +1,37 @@
+condition,description,predicates,premises,proof
+compact_logic,Compact baseline formal symbols.,"Ax: x is willow
+Bx: x is ivory
+Cx: x is teal
+Dx: x is violet
+Ex: x is north","Da
+Fa
+Ea & Da -> Bb
+Bb -> Fb","Da ; R
+Fa ; R
+Ab ; ->E
+Gb ; ->E
+Bc ; ->E"
+symbol_padded_logic,Predicate-call symbols with padded constants.,"PA(x): x is willow
+PB(x): x is ivory
+PC(x): x is teal
+PD(x): x is violet
+PE(x): x is north","PD(ca)
+PF(ca)
+PE(ca) & PD(ca) -> PB(cb)
+PB(cb) -> PF(cb)","PD(ca) ; R
+PF(ca) ; R
+PA(cb) ; ->E
+PG(cb) ; ->E
+PB(cc) ; ->E"
+wordified_logic,Predicate-call symbols using semantic attribute words.,"Willow(x): x is willow
+Ivory(x): x is ivory
+Teal(x): x is teal
+Violet(x): x is violet
+North(x): x is north","Violet(a)
+South(a)
+North(a) & Violet(a) -> Ivory(b)
+Ivory(b) -> South(b)","Violet(a) ; R
+South(a) ; R
+Willow(b) ; ->E
+East(b) ; ->E
+Ivory(c) ; ->E"
