@@ -567,40 +567,41 @@ This table is artifact-based at report-generation time: it counts completed SFT 
 experiment & scope & SFT done & SFT expected & eval done & eval expected & status \\
 \midrule
 iGSM & paired-family full suite & 30 & 30 & 30 & 30 & complete \\
-maze & paired-family full suite & 30 & 30 & 2 & 30 & partial eval \\
+maze & paired-family full suite & 30 & 30 & 6 & 30 & partial eval \\
 attribute constraints & paired-family full suite & 30 & 30 & 0 & 30 & eval pending \\
 trace controls & six train-1-to-25 perturbations &  &  & 18 & 18 & complete \\
 shortcut-rate & rates 0.3/0.5/0.8, logic and NL &  &  & 18 & 18 & complete \\
-hybrid order & formal-then-NL and NL-then-formal full train-depth suite &  &  & 26 & 30 & partial eval \\
+hybrid order & formal-then-NL and NL-then-formal full train-depth suite &  &  & 30 & 30 & complete \\
 shortcut-kind & position and initial-marker shortcuts &  &  & 24 & 24 & complete \\
 conditioned dual 10k & conditioned formal/NL dual modality &  &  & 30 & 30 & complete \\
-conditioned dual 50k & longer conditioned formal/NL dual modality &  &  & 5 & 30 & partial eval \\
+conditioned dual 50k & longer conditioned formal/NL dual modality &  &  & 17 & 30 & partial eval \\
 \bottomrule
 \end{tabular}
 \caption{Artifact status for paired-family repeats and active ablation families.}
 \end{table}
 
 \section{Paired-family full-suite partial readout}
-The replacement paired-family eval has started writing artifacts. The table below is intentionally partial: at this report generation time, \texttt{official\_igsm} is complete and the first \texttt{maze\_navigation} row has completed, while remaining maze and hard attribute-constraint rows are still running or pending. The \texttt{joint} column is template-specific: citation-free internal formal validity for logic and translated NL-to-FOL validity for \texttt{nl\_exact}. For iGSM, grounded joint validity is currently zero away from trivial retrieval cases because generated variable names and arithmetic-substitution citations do not reliably align with the canonical grounded checker. The targeted iGSM NL rerun has completed all 15 NL rows and recovers near-complete parser coverage, but generated NL translated-validity is still zero on OOD/depth-50 slices; use correctness and parser coverage as provisional diagnostics until non-iGSM rows complete and grounded/canonical checks are improved.
+The replacement paired-family eval is still partial. At this report generation time, \texttt{official\_igsm} is complete, \texttt{maze\_navigation} has the full train-1-to-5 logic/NL slice, and hard attribute-constraint rows have no completed eval JSONs. The \texttt{joint} columns are template-specific: citation-free internal formal validity for logic and translated NL-to-FOL validity for \texttt{nl\_exact}. Maze train-1-to-5 shows a sharp train/OOD split rather than a bad gold generator: completed logic rows are perfect in-band but near-zero OOD/depth-50, while completed NL rows are also perfect in-band, somewhat higher on OOD answer correctness, and zero at depth 50. Sample inspection shows coherent complete depth-5 traces, occasional depth-10 success, and depth-25/50 failures dominated by long premise copying, malformed/truncated traces, and generation-cap pressure. For iGSM, grounded joint validity is currently zero away from trivial retrieval cases because generated variable names and arithmetic-substitution citations do not reliably align with the canonical grounded checker. The targeted iGSM NL rerun has completed all 15 NL rows and recovers near-complete parser coverage, but generated NL translated-validity is still zero on OOD/depth-50 slices; use correctness and parser coverage as provisional diagnostics until non-iGSM rows complete and grounded/canonical checks are improved.
 
 \begin{table}[H]
 \centering
 \scriptsize
-\begin{tabular}{llllllllll}
+\begin{tabular}{llllllllllll}
 \toprule
-family & template & train max & n & OOD c@16 & OOD joint@16 & OOD grounded joint & OOD NL parse & d50 c@16 & d50 joint@16 \\
+family & template & train max & n & train c@16 & train joint@16 & OOD c@16 & OOD joint@16 & OOD grounded joint & OOD NL parse & d50 c@16 & d50 joint@16 \\
 \midrule
-maze\_navigation & nl\_exact & 5 & 2 & 0.148 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 \\
-official\_igsm & logic & 5 & 3 & 0.312 & 0.255 & 0.000 & 0.000 & 0.240 & 0.177 \\
-official\_igsm & logic & 10 & 3 & 0.507 & 0.377 & 0.000 & 0.000 & 0.458 & 0.281 \\
-official\_igsm & logic & 15 & 3 & 0.546 & 0.392 & 0.000 & 0.000 & 0.542 & 0.292 \\
-official\_igsm & logic & 20 & 3 & 0.536 & 0.245 & 0.000 & 0.000 & 0.510 & 0.219 \\
-official\_igsm & logic & 25 & 3 & 0.487 & 0.106 & 0.000 & 0.000 & 0.490 & 0.031 \\
-official\_igsm & nl\_exact & 5 & 3 & 0.359 & 0.000 & 0.000 & 1.000 & 0.260 & 0.000 \\
-official\_igsm & nl\_exact & 10 & 3 & 0.569 & 0.000 & 0.000 & 1.000 & 0.385 & 0.000 \\
-official\_igsm & nl\_exact & 15 & 3 & 0.603 & 0.000 & 0.000 & 0.997 & 0.479 & 0.000 \\
-official\_igsm & nl\_exact & 20 & 3 & 0.592 & 0.000 & 0.000 & 1.000 & 0.583 & 0.000 \\
-official\_igsm & nl\_exact & 25 & 3 & 0.560 & 0.000 & 0.000 & 0.994 & 0.469 & 0.000 \\
+maze\_navigation & logic & 5 & 3 & 1.000 & 1.000 & 0.039 & 0.027 & 0.027 & 0.000 & 0.000 & 0.000 \\
+maze\_navigation & nl\_exact & 5 & 3 & 1.000 & 0.000 & 0.145 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 \\
+official\_igsm & logic & 5 & 3 & 0.990 & 0.986 & 0.312 & 0.255 & 0.000 & 0.000 & 0.240 & 0.177 \\
+official\_igsm & logic & 10 & 3 & 0.956 & 0.945 & 0.507 & 0.377 & 0.000 & 0.000 & 0.458 & 0.281 \\
+official\_igsm & logic & 15 & 3 & 0.918 & 0.903 & 0.546 & 0.392 & 0.000 & 0.000 & 0.542 & 0.292 \\
+official\_igsm & logic & 20 & 3 & 0.867 & 0.796 & 0.536 & 0.245 & 0.000 & 0.000 & 0.510 & 0.219 \\
+official\_igsm & logic & 25 & 3 & 0.866 & 0.744 & 0.487 & 0.106 & 0.000 & 0.000 & 0.490 & 0.031 \\
+official\_igsm & nl\_exact & 5 & 3 & 0.997 & 0.111 & 0.359 & 0.000 & 0.000 & 1.000 & 0.260 & 0.000 \\
+official\_igsm & nl\_exact & 10 & 3 & 0.987 & 0.094 & 0.569 & 0.000 & 0.000 & 1.000 & 0.385 & 0.000 \\
+official\_igsm & nl\_exact & 15 & 3 & 0.990 & 0.059 & 0.603 & 0.000 & 0.000 & 0.997 & 0.479 & 0.000 \\
+official\_igsm & nl\_exact & 20 & 3 & 0.977 & 0.038 & 0.592 & 0.000 & 0.000 & 1.000 & 0.583 & 0.000 \\
+official\_igsm & nl\_exact & 25 & 3 & 0.966 & 0.037 & 0.560 & 0.000 & 0.000 & 0.994 & 0.469 & 0.000 \\
 \bottomrule
 \end{tabular}
 \caption{Partial paired full-suite summary for completed eval JSONs.}
@@ -609,6 +610,12 @@ official\_igsm & nl\_exact & 25 & 3 & 0.560 & 0.000 & 0.000 & 0.994 & 0.469 & 0.
 \begin{figure}[H]\centering
 \includegraphics[width=0.95\linewidth]{figures/paired_full_suite_official_igsm_partial.pdf}
 \caption{Partial official-iGSM full-suite readout from currently completed paired eval rows. Inline n annotations mark any train-depth slices that are not yet three-seed complete.}
+\end{figure}
+
+
+\begin{figure}[H]\centering
+\includegraphics[width=0.95\linewidth]{figures/paired_full_suite_family_partial.pdf}
+\caption{Partial paired-family readout for completed eval rows. Empty panels mark family/train-depth slices with no completed JSON yet; inline n annotations mark slices that are not yet three-seed complete.}
 \end{figure}
 
 
@@ -747,7 +754,7 @@ terse\_nl & 3 & 0.348 & 0.000 & 0.277 & 0.094 & 0.000 & 0.010 \\
 
 
 \subsection{Hybrid order}
-The hybrid-order ablation trains a single prompt containing both trace substrates and one answer at the end. \texttt{think\_formal} means NL first, then formal logic; \texttt{formal\_think} means formal logic first, then NL. The full suite is train-1-to-5/10/15/20/25 over three seeds and eval 1-to-50. Current completed rows cover all \texttt{think\_formal} seeds through train-1-to-25; \texttt{formal\_think} is complete through train-1-to-15, with deeper rows still incomplete.
+The hybrid-order ablation trains a single prompt containing both trace substrates and one answer at the end. \texttt{think\_formal} means NL first, then formal logic; \texttt{formal\_think} means formal logic first, then NL. The full suite is train-1-to-5/10/15/20/25 over three seeds and eval 1-to-50. Current completed rows cover all \texttt{think\_formal} seeds through train-1-to-25; \texttt{formal\_think} is complete through train-1-to-25, with deeper rows still incomplete.
 
 \begin{table}[H]
 \centering
@@ -759,7 +766,8 @@ mode & train max & n & OOD c@16 & OOD formal joint & OOD translated joint & d50 
 formal\_think & 5 & 3 & 0.538 & 0.120 & 0.347 & 0.323 & 0.010 & 0.000 \\
 formal\_think & 10 & 3 & 0.626 & 0.279 & 0.381 & 0.396 & 0.000 & 0.000 \\
 formal\_think & 15 & 3 & 0.568 & 0.258 & 0.264 & 0.479 & 0.083 & 0.000 \\
-formal\_think & 20 & 2 & 0.698 & 0.250 & 0.536 & 0.531 & 0.031 & 0.250 \\
+formal\_think & 20 & 3 & 0.675 & 0.170 & 0.495 & 0.427 & 0.021 & 0.167 \\
+formal\_think & 25 & 3 & 0.879 & 0.379 & 0.804 & 0.646 & 0.083 & 0.510 \\
 think\_formal & 5 & 3 & 0.480 & 0.022 & 0.297 & 0.219 & 0.000 & 0.000 \\
 think\_formal & 10 & 3 & 0.490 & 0.249 & 0.296 & 0.354 & 0.000 & 0.000 \\
 think\_formal & 15 & 3 & 0.353 & 0.111 & 0.111 & 0.312 & 0.000 & 0.000 \\
@@ -767,12 +775,12 @@ think\_formal & 20 & 3 & 0.434 & 0.028 & 0.148 & 0.469 & 0.000 & 0.000 \\
 think\_formal & 25 & 3 & 0.573 & 0.204 & 0.419 & 0.344 & 0.000 & 0.135 \\
 \bottomrule
 \end{tabular}
-\caption{Hybrid-order partial summary. \texttt{think\_formal} train-1-to-25 is now three-seed complete; \texttt{formal\_think} is complete through train-1-to-15, with deeper rows still incomplete.}
+\caption{Hybrid-order partial summary. \texttt{think\_formal} train-1-to-25 is now three-seed complete; \texttt{formal\_think} is complete through train-1-to-25, with deeper rows still incomplete.}
 \end{table}
 
 \begin{figure}[H]\centering
 \includegraphics[width=0.95\linewidth]{figures/ablation_hybrid_order_partial.pdf}
-\caption{Hybrid order partial eval. \texttt{think\_formal} is NL then formal and is complete through train-1-to-25; \texttt{formal\_think} is complete through train-1-to-15, with deeper rows still incomplete.}
+\caption{Hybrid order partial eval. \texttt{think\_formal} is NL then formal and is complete through train-1-to-25; \texttt{formal\_think} is complete through train-1-to-25, with deeper rows still incomplete.}
 \end{figure}
 
 
@@ -819,7 +827,11 @@ train max & condition & n & OOD c@16 & OOD joint@16 & d50 c@16 & d50 joint@16 \\
 train max & eval template & n & OOD c@16 & OOD joint@16 & d50 c@16 & d50 joint@16 \\
 \midrule
 5 & conditioned\_logic & 3 & 0.309 & 0.049 & 0.198 & 0.000 \\
-10 & conditioned\_logic & 2 & 0.630 & 0.269 & 0.312 & 0.000 \\
+5 & conditioned\_nl & 2 & 0.656 & 0.327 & 0.547 & 0.000 \\
+10 & conditioned\_logic & 3 & 0.626 & 0.315 & 0.312 & 0.000 \\
+15 & conditioned\_logic & 3 & 0.482 & 0.204 & 0.260 & 0.010 \\
+20 & conditioned\_logic & 3 & 0.502 & 0.075 & 0.354 & 0.021 \\
+25 & conditioned\_logic & 3 & 0.833 & 0.348 & 0.677 & 0.146 \\
 \bottomrule
 \end{tabular}
 \caption{Conditioned dual-modality 50k final eval summary. No rows means the 50k continuation/eval chain has not reached final pass@k output yet.}
@@ -1384,6 +1396,7 @@ olmo7b_checkpoint_train1to5_joint16.pdf
 olmo7b_depth_correct16.pdf
 olmo7b_depth_joint16.pdf
 olmo7b_final_by_train_depth.pdf
+paired_full_suite_family_partial.pdf
 paired_full_suite_official_igsm_partial.pdf
 qwen7b_partial_ood_correct_joint.pdf
 sample_generation_panels.pdf
