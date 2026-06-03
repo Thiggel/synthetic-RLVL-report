@@ -18,7 +18,7 @@
 \item Architecture ablations show that the phenomenon is not OLMo-only: Qwen and Gemma runs also show strong formal-trace transfer, with model-specific variation in joint validity.
 \item Shortcut-rich training hurts NL more clearly than logic in the completed 0.3/0.5/0.8 shortcut-rate runs, supporting the hypothesis that NL relies more on brittle shortcut associations. The shortcut-kind eval is complete at 24/24 JSONs.
 \item Conditioned dual-modality at 10k underperforms the best single-modality baselines, especially for conditioned logic at larger train ranges. The 50k continuation is running to test whether this is undertraining.
-\item Trace controls are complete at 18/18 rows. The repaired \texttt{rule\_annotated\_nl} rows now show nonzero translated validity, \texttt{invalid\_logic} keeps high answer accuracy but zero grounded validity, and shuffled NL parses while losing translated joint validity.
+\item Trace controls are complete at 18/18 rows. The repaired \texttt{rule\_annotated\_nl} rows now show nonzero translated validity, \texttt{invalid\_logic} keeps high answer accuracy but zero grounded validity, and shuffled NL parses while losing translated joint validity. The token audit shows current \texttt{terse\_nl} is not actually shorter than \texttt{nl\_exact} on HFSA because the default NL proof text is already terse.
 \end{itemize}
 
 \section{Metric note for OOD benchmarks}
@@ -58,6 +58,28 @@ main NL exact & 512 & 1453.990 & 2668 & 2975.701 & 5490.500 & 1.000 & 1.000 & 0.
 \bottomrule
 \end{tabular}
 \caption{Token-length match for logic length-control ablations on the same 512 train-1-to-25 examples. Symbol-padded lengthens formal atoms mechanically; wordified logic uses natural attribute predicate names while preserving formal proof rules.}
+\end{table}
+
+\begin{table}[H]
+\centering
+\scriptsize
+\begin{tabular}{llllllllllll}
+\toprule
+condition & n & prompt & target & target p95 & total & total p95 & proof/body & syntax occ. & syntax tok. & tok/syntax & syntax share \\
+\midrule
+main\_logic & 512 & 1201.779 & 921.080 & 1678 & 2123.859 & 3866 & 156.248 & 215.459 & 251.459 & 1.167 & 0.273 \\
+main\_nl\_exact & 512 & 1201.779 & 1183.354 & 2118 & 2386.133 & 4303 & 117.164 & 10 & 35 & 3.500 & 0.030 \\
+terse\_nl & 512 & 1201.779 & 1183.354 & 2118 & 2386.133 & 4303 & 117.164 & 10 & 35 & 3.500 & 0.030 \\
+rule\_annotated\_nl & 512 & 1201.779 & 1349.119 & 2422 & 2551.898 & 4607 & 282.930 & 93.883 & 174.805 & 1.862 & 0.130 \\
+pseudocode & 512 & 1201.779 & 1460.963 & 2626 & 2663.742 & 4811 & 394.773 & 121.844 & 174.805 & 1.435 & 0.120 \\
+shuffled\_logic & 512 & 1201.779 & 921.080 & 1678 & 2123.859 & 3866 & 156.248 & 215.459 & 251.459 & 1.167 & 0.273 \\
+invalid\_logic & 512 & 1201.779 & 895.119 & 1631 & 2097.898 & 3817 & 130.287 & 215.459 & 251.459 & 1.167 & 0.281 \\
+shuffled\_nl & 512 & 1201.779 & 1183.354 & 2118 & 2386.133 & 4303 & 117.164 & 10 & 35 & 3.500 & 0.030 \\
+symbol\_padded\_logic & 512 & 1201.779 & 1245.162 & 2257 & 2447.941 & 4443 & 203.133 & 700.920 & 736.920 & 1.051 & 0.592 \\
+wordified\_logic & 512 & 1201.779 & 1272.768 & 2259 & 2475.547 & 4445 & 211.252 & 698.936 & 734.936 & 1.052 & 0.577 \\
+\bottomrule
+\end{tabular}
+\caption{Ablation token audit on 512 deterministic train-1-to-25 examples with the OLMo tokenizer. The syntax/operator columns count occurrences and tokenized length of a fixed audit lexeme set: proof tags, formal operators, rule labels, pseudocode markers, and common derivation words. They are diagnostics, not a model-internal category. In this generator, \texttt{terse\_nl} currently matches \texttt{nl\_exact} token-for-token because default HFSA NL proof lines are already short.}
 \end{table}
 
 \section{Main OLMo-7B downstream OOD}
@@ -725,9 +747,13 @@ position & nl\_exact & 0p8 & 3 & 0.513 & 0.487 & 0.396 & 0.354 \\
 \end{tabular}
 \caption{Shortcut-kind eval summary. No rows means the eval dependency has not started or has not written JSON yet.}
 \end{table}
+\begin{figure}[H]\centering
+\includegraphics[width=0.95\linewidth]{figures/ablation_shortcut_kind_summary.pdf}
+\caption{Shortcut-kind ablation for position and initial-marker shortcuts. Eval prompts are shortcut-neutral; bars show three-seed means for completed rows.}
+\end{figure}
 
 \subsection{Trace controls}
-The trace-control ablation trains train-1-to-25 models with six altered trace styles, always over three seeds and evaluated on the same 1-to-50 sparse protocol. The six controls are: \texttt{terse\_nl} (shorter natural-language reasoning), \texttt{rule\_annotated\_nl} (NL with explicit rule names), \texttt{pseudocode} (algorithm-like trace), \texttt{shuffled\_logic} (formal lines shuffled as a negative control), \texttt{invalid\_logic} (formally invalid proof trace negative control), and \texttt{shuffled\_nl} (NL trace order shuffled). Manual inspection found that the early \texttt{rule\_annotated\_nl} translated-validity metrics were an evaluator artifact: lines such as \texttt{a is teal. [rule: R]} were not stripped before controlled NL-to-FOL parsing. The translator now unwraps rule annotations and pseudocode \texttt{derive "..."}, and the completed repair rows are included in the table. All trace-control eval rows are now complete.
+The trace-control ablation trains train-1-to-25 models with six altered trace styles, always over three seeds and evaluated on the same 1-to-50 sparse protocol. The six controls are: \texttt{terse\_nl} (intended shorter natural-language reasoning; currently token-identical to \texttt{nl\_exact} on HFSA), \texttt{rule\_annotated\_nl} (NL with explicit rule names), \texttt{pseudocode} (algorithm-like trace), \texttt{shuffled\_logic} (formal lines shuffled as a negative control), \texttt{invalid\_logic} (formally invalid proof trace negative control), and \texttt{shuffled\_nl} (NL trace order shuffled). The table includes the normal train-1-to-25 compact-logic and exact-NL baselines for direct comparison. Manual inspection found that the early \texttt{rule\_annotated\_nl} translated-validity metrics were an evaluator artifact: lines such as \texttt{a is teal. [rule: R]} were not stripped before controlled NL-to-FOL parsing. The translator now unwraps rule annotations and pseudocode \texttt{derive "..."}, and the completed repair rows are included in the table. All trace-control eval rows are now complete.
 
 \begin{table}[H]
 \centering
@@ -736,6 +762,8 @@ The trace-control ablation trains train-1-to-25 models with six altered trace st
 \toprule
 trace control & n & OOD c@16 & OOD formal joint & OOD translated joint & d50 c@16 & d50 formal joint & d50 translated joint \\
 \midrule
+main\_logic & 3 & 0.921 & 0.710 &  & 0.833 & 0.417 &  \\
+main\_nl\_exact & 3 & 0.794 &  & 0.748 & 0.510 &  & 0.427 \\
 invalid\_logic & 3 & 0.892 & 0.427 & 0.000 & 0.750 & 0.146 & 0.000 \\
 pseudocode & 3 & 0.544 & 0.000 & 0.479 & 0.208 & 0.000 & 0.104 \\
 rule\_annotated\_nl & 3 & 0.575 & 0.000 & 0.485 & 0.344 & 0.000 & 0.146 \\
@@ -753,8 +781,611 @@ terse\_nl & 3 & 0.348 & 0.000 & 0.277 & 0.094 & 0.000 & 0.010 \\
 \end{figure}
 
 
+\subsection{Ablation training-sequence examples}
+Each block below is a complete depth-2 SFT training sequence: prompt followed by target. The examples are generated deterministically from the same underlying HFSA item where possible, so differences are due to the trace template rather than a different task instance.
+
+\paragraph{main\_logic.} Normal compact formal-logic baseline.
+\begin{verbatim}
+<question>
+1. a is violet.
+2. a is south.
+3. If a is north and a is violet, then b is ivory.
+4. If b is ivory, then b is south.
+5. If a is south and a is violet, then b is willow.
+6. If b is willow, then b is east.
+7. If a is east and a is violet, then b is teal.
+8. If b is teal, then b is north.
+9. If b is east and b is willow, then c is ivory.
+10. If c is ivory, then c is east.
+11. If b is north and b is teal, then c is teal.
+12. If c is teal, then c is south.
+13. If b is south and b is ivory, then c is willow.
+14. If c is willow, then c is north.
+Which state applies to c?
+</question>
+
+<formal>
+<constants>
+a = a
+b = b
+c = c
+</constants>
+<predicates>
+Ax: x is willow
+Bx: x is ivory
+Cx: x is teal
+Dx: x is violet
+Ex: x is north
+Fx: x is south
+Gx: x is east
+</predicates>
+<premises>
+Da
+Fa
+Ea & Da -> Bb
+Bb -> Fb
+Fa & Da -> Ab
+Ab -> Gb
+Ga & Da -> Cb
+Cb -> Eb
+Gb & Ab -> Bc
+Bc -> Gc
+Eb & Cb -> Cc
+Cc -> Fc
+Fb & Bb -> Ac
+Ac -> Ec
+</premises>
+<proof>
+Da ; R
+Fa ; R
+Ab ; ->E
+Gb ; ->E
+Bc ; ->E
+</proof>
+<conclusion>
+Bc
+</conclusion>
+</formal>
+<answer>
+ivory
+</answer>
+\end{verbatim}
+
+\paragraph{main\_nl\_exact.} Normal exact natural-language baseline.
+\begin{verbatim}
+<question>
+1. a is violet.
+2. a is south.
+3. If a is north and a is violet, then b is ivory.
+4. If b is ivory, then b is south.
+5. If a is south and a is violet, then b is willow.
+6. If b is willow, then b is east.
+7. If a is east and a is violet, then b is teal.
+8. If b is teal, then b is north.
+9. If b is east and b is willow, then c is ivory.
+10. If c is ivory, then c is east.
+11. If b is north and b is teal, then c is teal.
+12. If c is teal, then c is south.
+13. If b is south and b is ivory, then c is willow.
+14. If c is willow, then c is north.
+Which state applies to c?
+</question>
+
+<think>
+<premises>
+a is violet.
+a is south.
+If a is north and a is violet, then b is ivory.
+If b is ivory, then b is south.
+If a is south and a is violet, then b is willow.
+If b is willow, then b is east.
+If a is east and a is violet, then b is teal.
+If b is teal, then b is north.
+If b is east and b is willow, then c is ivory.
+If c is ivory, then c is east.
+If b is north and b is teal, then c is teal.
+If c is teal, then c is south.
+If b is south and b is ivory, then c is willow.
+If c is willow, then c is north.
+</premises>
+<proof>
+a is violet.
+a is south.
+b is willow.
+b is east.
+c is ivory.
+</proof>
+<conclusion>
+c is ivory.
+</conclusion>
+</think>
+<answer>
+ivory
+</answer>
+\end{verbatim}
+
+\paragraph{terse\_nl.} Natural-language trace with shorter proof wording.
+\begin{verbatim}
+<question>
+1. a is violet.
+2. a is south.
+3. If a is north and a is violet, then b is ivory.
+4. If b is ivory, then b is south.
+5. If a is south and a is violet, then b is willow.
+6. If b is willow, then b is east.
+7. If a is east and a is violet, then b is teal.
+8. If b is teal, then b is north.
+9. If b is east and b is willow, then c is ivory.
+10. If c is ivory, then c is east.
+11. If b is north and b is teal, then c is teal.
+12. If c is teal, then c is south.
+13. If b is south and b is ivory, then c is willow.
+14. If c is willow, then c is north.
+Which state applies to c?
+</question>
+
+<think>
+<premises>
+a is violet.
+a is south.
+If a is north and a is violet, then b is ivory.
+If b is ivory, then b is south.
+If a is south and a is violet, then b is willow.
+If b is willow, then b is east.
+If a is east and a is violet, then b is teal.
+If b is teal, then b is north.
+If b is east and b is willow, then c is ivory.
+If c is ivory, then c is east.
+If b is north and b is teal, then c is teal.
+If c is teal, then c is south.
+If b is south and b is ivory, then c is willow.
+If c is willow, then c is north.
+</premises>
+<proof>
+a is violet.
+a is south.
+b is willow.
+b is east.
+c is ivory.
+</proof>
+<conclusion>
+c is ivory.
+</conclusion>
+</think>
+<answer>
+ivory
+</answer>
+\end{verbatim}
+
+\paragraph{rule\_annotated\_nl.} Natural-language trace with explicit rule labels.
+\begin{verbatim}
+<question>
+1. a is violet.
+2. a is south.
+3. If a is north and a is violet, then b is ivory.
+4. If b is ivory, then b is south.
+5. If a is south and a is violet, then b is willow.
+6. If b is willow, then b is east.
+7. If a is east and a is violet, then b is teal.
+8. If b is teal, then b is north.
+9. If b is east and b is willow, then c is ivory.
+10. If c is ivory, then c is east.
+11. If b is north and b is teal, then c is teal.
+12. If c is teal, then c is south.
+13. If b is south and b is ivory, then c is willow.
+14. If c is willow, then c is north.
+Which state applies to c?
+</question>
+
+<think>
+<premises>
+a is violet.
+a is south.
+If a is north and a is violet, then b is ivory.
+If b is ivory, then b is south.
+If a is south and a is violet, then b is willow.
+If b is willow, then b is east.
+If a is east and a is violet, then b is teal.
+If b is teal, then b is north.
+If b is east and b is willow, then c is ivory.
+If c is ivory, then c is east.
+If b is north and b is teal, then c is teal.
+If c is teal, then c is south.
+If b is south and b is ivory, then c is willow.
+If c is willow, then c is north.
+</premises>
+<proof>
+a is violet. [rule: R]
+a is south. [rule: R]
+b is willow. [rule: ->E]
+b is east. [rule: ->E]
+c is ivory. [rule: ->E]
+</proof>
+<conclusion>
+c is ivory.
+</conclusion>
+</think>
+<answer>
+ivory
+</answer>
+\end{verbatim}
+
+\paragraph{pseudocode.} Algorithm-like natural-language derivation trace.
+\begin{verbatim}
+<question>
+1. a is violet.
+2. a is south.
+3. If a is north and a is violet, then b is ivory.
+4. If b is ivory, then b is south.
+5. If a is south and a is violet, then b is willow.
+6. If b is willow, then b is east.
+7. If a is east and a is violet, then b is teal.
+8. If b is teal, then b is north.
+9. If b is east and b is willow, then c is ivory.
+10. If c is ivory, then c is east.
+11. If b is north and b is teal, then c is teal.
+12. If c is teal, then c is south.
+13. If b is south and b is ivory, then c is willow.
+14. If c is willow, then c is north.
+Which state applies to c?
+</question>
+
+<think>
+<premises>
+a is violet.
+a is south.
+If a is north and a is violet, then b is ivory.
+If b is ivory, then b is south.
+If a is south and a is violet, then b is willow.
+If b is willow, then b is east.
+If a is east and a is violet, then b is teal.
+If b is teal, then b is north.
+If b is east and b is willow, then c is ivory.
+If c is ivory, then c is east.
+If b is north and b is teal, then c is teal.
+If c is teal, then c is south.
+If b is south and b is ivory, then c is willow.
+If c is willow, then c is north.
+</premises>
+<proof>
+step_1: derive "a is violet" using R.
+step_2: derive "a is south" using R.
+step_3: derive "b is willow" using ->E.
+step_4: derive "b is east" using ->E.
+step_5: derive "c is ivory" using ->E.
+</proof>
+<conclusion>
+c is ivory.
+</conclusion>
+</think>
+<answer>
+ivory
+</answer>
+\end{verbatim}
+
+\paragraph{shuffled\_logic.} Formal proof lines shuffled as an order negative control.
+\begin{verbatim}
+<question>
+1. a is violet.
+2. a is south.
+3. If a is north and a is violet, then b is ivory.
+4. If b is ivory, then b is south.
+5. If a is south and a is violet, then b is willow.
+6. If b is willow, then b is east.
+7. If a is east and a is violet, then b is teal.
+8. If b is teal, then b is north.
+9. If b is east and b is willow, then c is ivory.
+10. If c is ivory, then c is east.
+11. If b is north and b is teal, then c is teal.
+12. If c is teal, then c is south.
+13. If b is south and b is ivory, then c is willow.
+14. If c is willow, then c is north.
+Which state applies to c?
+</question>
+
+<formal>
+<constants>
+a = a
+b = b
+c = c
+</constants>
+<predicates>
+Ax: x is willow
+Bx: x is ivory
+Cx: x is teal
+Dx: x is violet
+Ex: x is north
+Fx: x is south
+Gx: x is east
+</predicates>
+<premises>
+Da
+Fa
+Ea & Da -> Bb
+Bb -> Fb
+Fa & Da -> Ab
+Ab -> Gb
+Ga & Da -> Cb
+Cb -> Eb
+Gb & Ab -> Bc
+Bc -> Gc
+Eb & Cb -> Cc
+Cc -> Fc
+Fb & Bb -> Ac
+Ac -> Ec
+</premises>
+<proof>
+Bc ; ->E
+Fa ; R
+Da ; R
+Ab ; ->E
+Gb ; ->E
+</proof>
+<conclusion>
+Bc
+</conclusion>
+</formal>
+<answer>
+ivory
+</answer>
+\end{verbatim}
+
+\paragraph{invalid\_logic.} Formal-looking trace with invalid rule citations.
+\begin{verbatim}
+<question>
+1. a is violet.
+2. a is south.
+3. If a is north and a is violet, then b is ivory.
+4. If b is ivory, then b is south.
+5. If a is south and a is violet, then b is willow.
+6. If b is willow, then b is east.
+7. If a is east and a is violet, then b is teal.
+8. If b is teal, then b is north.
+9. If b is east and b is willow, then c is ivory.
+10. If c is ivory, then c is east.
+11. If b is north and b is teal, then c is teal.
+12. If c is teal, then c is south.
+13. If b is south and b is ivory, then c is willow.
+14. If c is willow, then c is north.
+Which state applies to c?
+</question>
+
+<formal>
+<constants>
+a = a
+b = b
+c = c
+</constants>
+<predicates>
+Ax: x is willow
+Bx: x is ivory
+Cx: x is teal
+Dx: x is violet
+Ex: x is north
+Fx: x is south
+Gx: x is east
+</predicates>
+<premises>
+Da
+Fa
+Ea & Da -> Bb
+Bb -> Fb
+Fa & Da -> Ab
+Ab -> Gb
+Ga & Da -> Cb
+Cb -> Eb
+Gb & Ab -> Bc
+Bc -> Gc
+Eb & Cb -> Cc
+Cc -> Fc
+Fb & Bb -> Ac
+Ac -> Ec
+</premises>
+<proof>
+Da ; R
+Fa ; R
+Ab ; R
+Gb ; R
+Bc ; R
+</proof>
+<conclusion>
+Bc
+</conclusion>
+</formal>
+<answer>
+ivory
+</answer>
+\end{verbatim}
+
+\paragraph{shuffled\_nl.} Natural-language proof lines shuffled as an order negative control.
+\begin{verbatim}
+<question>
+1. a is violet.
+2. a is south.
+3. If a is north and a is violet, then b is ivory.
+4. If b is ivory, then b is south.
+5. If a is south and a is violet, then b is willow.
+6. If b is willow, then b is east.
+7. If a is east and a is violet, then b is teal.
+8. If b is teal, then b is north.
+9. If b is east and b is willow, then c is ivory.
+10. If c is ivory, then c is east.
+11. If b is north and b is teal, then c is teal.
+12. If c is teal, then c is south.
+13. If b is south and b is ivory, then c is willow.
+14. If c is willow, then c is north.
+Which state applies to c?
+</question>
+
+<think>
+<premises>
+a is violet.
+a is south.
+If a is north and a is violet, then b is ivory.
+If b is ivory, then b is south.
+If a is south and a is violet, then b is willow.
+If b is willow, then b is east.
+If a is east and a is violet, then b is teal.
+If b is teal, then b is north.
+If b is east and b is willow, then c is ivory.
+If c is ivory, then c is east.
+If b is north and b is teal, then c is teal.
+If c is teal, then c is south.
+If b is south and b is ivory, then c is willow.
+If c is willow, then c is north.
+</premises>
+<proof>
+b is willow.
+a is south.
+c is ivory.
+a is violet.
+b is east.
+</proof>
+<conclusion>
+c is ivory.
+</conclusion>
+</think>
+<answer>
+ivory
+</answer>
+\end{verbatim}
+
+\paragraph{symbol\_padded\_logic.} Formal atoms expanded into predicate-call syntax.
+\begin{verbatim}
+<question>
+1. a is violet.
+2. a is south.
+3. If a is north and a is violet, then b is ivory.
+4. If b is ivory, then b is south.
+5. If a is south and a is violet, then b is willow.
+6. If b is willow, then b is east.
+7. If a is east and a is violet, then b is teal.
+8. If b is teal, then b is north.
+9. If b is east and b is willow, then c is ivory.
+10. If c is ivory, then c is east.
+11. If b is north and b is teal, then c is teal.
+12. If c is teal, then c is south.
+13. If b is south and b is ivory, then c is willow.
+14. If c is willow, then c is north.
+Which state applies to c?
+</question>
+
+<formal>
+<constants>
+ca = a
+cb = b
+cc = c
+</constants>
+<predicates>
+PA(x): x is willow
+PB(x): x is ivory
+PC(x): x is teal
+PD(x): x is violet
+PE(x): x is north
+PF(x): x is south
+PG(x): x is east
+</predicates>
+<premises>
+PD(ca)
+PF(ca)
+PE(ca) & PD(ca) -> PB(cb)
+PB(cb) -> PF(cb)
+PF(ca) & PD(ca) -> PA(cb)
+PA(cb) -> PG(cb)
+PG(ca) & PD(ca) -> PC(cb)
+PC(cb) -> PE(cb)
+PG(cb) & PA(cb) -> PB(cc)
+PB(cc) -> PG(cc)
+PE(cb) & PC(cb) -> PC(cc)
+PC(cc) -> PF(cc)
+PF(cb) & PB(cb) -> PA(cc)
+PA(cc) -> PE(cc)
+</premises>
+<proof>
+PD(ca) ; R
+PF(ca) ; R
+PA(cb) ; ->E
+PG(cb) ; ->E
+PB(cc) ; ->E
+</proof>
+<conclusion>
+PB(cc)
+</conclusion>
+</formal>
+<answer>
+ivory
+</answer>
+\end{verbatim}
+
+\paragraph{wordified\_logic.} Formal atoms expanded with natural-word predicate names.
+\begin{verbatim}
+<question>
+1. a is violet.
+2. a is south.
+3. If a is north and a is violet, then b is ivory.
+4. If b is ivory, then b is south.
+5. If a is south and a is violet, then b is willow.
+6. If b is willow, then b is east.
+7. If a is east and a is violet, then b is teal.
+8. If b is teal, then b is north.
+9. If b is east and b is willow, then c is ivory.
+10. If c is ivory, then c is east.
+11. If b is north and b is teal, then c is teal.
+12. If c is teal, then c is south.
+13. If b is south and b is ivory, then c is willow.
+14. If c is willow, then c is north.
+Which state applies to c?
+</question>
+
+<formal>
+<constants>
+a = a
+b = b
+c = c
+</constants>
+<predicates>
+Willow(x): x is willow
+Ivory(x): x is ivory
+Teal(x): x is teal
+Violet(x): x is violet
+North(x): x is north
+South(x): x is south
+East(x): x is east
+</predicates>
+<premises>
+Violet(a)
+South(a)
+North(a) & Violet(a) -> Ivory(b)
+Ivory(b) -> South(b)
+South(a) & Violet(a) -> Willow(b)
+Willow(b) -> East(b)
+East(a) & Violet(a) -> Teal(b)
+Teal(b) -> North(b)
+East(b) & Willow(b) -> Ivory(c)
+Ivory(c) -> East(c)
+North(b) & Teal(b) -> Teal(c)
+Teal(c) -> South(c)
+South(b) & Ivory(b) -> Willow(c)
+Willow(c) -> North(c)
+</premises>
+<proof>
+Violet(a) ; R
+South(a) ; R
+Willow(b) ; ->E
+East(b) ; ->E
+Ivory(c) ; ->E
+</proof>
+<conclusion>
+Ivory(c)
+</conclusion>
+</formal>
+<answer>
+ivory
+</answer>
+\end{verbatim}
+
 \subsection{Hybrid order}
-The hybrid-order ablation trains a single prompt containing both trace substrates and one answer at the end. \texttt{think\_formal} means NL first, then formal logic; \texttt{formal\_think} means formal logic first, then NL. The full suite is train-1-to-5/10/15/20/25 over three seeds and eval 1-to-50. Current completed rows cover all \texttt{think\_formal} seeds through train-1-to-25; \texttt{formal\_think} is complete through train-1-to-25, with deeper rows still incomplete.
+The hybrid-order ablation trains a single prompt containing both trace substrates and one answer at the end. \texttt{think\_formal} means NL first, then formal logic; \texttt{formal\_think} means formal logic first, then NL. The full suite is train-1-to-5/10/15/20/25 over three seeds and eval 1-to-50. The table includes the normal compact-logic and exact-NL baselines at each train depth. Current completed rows cover all \texttt{think\_formal} seeds through train-1-to-25; \texttt{formal\_think} is complete through train-1-to-25, with deeper rows still incomplete.
 
 \begin{table}[H]
 \centering
@@ -763,16 +1394,26 @@ The hybrid-order ablation trains a single prompt containing both trace substrate
 \toprule
 mode & train max & n & OOD c@16 & OOD formal joint & OOD translated joint & d50 c@16 & d50 formal joint & d50 translated joint \\
 \midrule
+main\_logic & 5 & 3 & 0.293 & 0.052 &  & 0.135 & 0.010 &  \\
 formal\_think & 5 & 3 & 0.538 & 0.120 & 0.347 & 0.323 & 0.010 & 0.000 \\
-formal\_think & 10 & 3 & 0.626 & 0.279 & 0.381 & 0.396 & 0.000 & 0.000 \\
-formal\_think & 15 & 3 & 0.568 & 0.258 & 0.264 & 0.479 & 0.083 & 0.000 \\
-formal\_think & 20 & 3 & 0.675 & 0.170 & 0.495 & 0.427 & 0.021 & 0.167 \\
-formal\_think & 25 & 3 & 0.879 & 0.379 & 0.804 & 0.646 & 0.083 & 0.510 \\
 think\_formal & 5 & 3 & 0.480 & 0.022 & 0.297 & 0.219 & 0.000 & 0.000 \\
+main\_nl\_exact & 5 & 3 & 0.502 &  & 0.318 & 0.292 &  & 0.000 \\
+main\_logic & 10 & 3 & 0.727 & 0.362 &  & 0.479 & 0.010 &  \\
+formal\_think & 10 & 3 & 0.626 & 0.279 & 0.381 & 0.396 & 0.000 & 0.000 \\
 think\_formal & 10 & 3 & 0.490 & 0.249 & 0.296 & 0.354 & 0.000 & 0.000 \\
+main\_nl\_exact & 10 & 3 & 0.482 &  & 0.299 & 0.417 &  & 0.000 \\
+main\_logic & 15 & 3 & 0.634 & 0.293 &  & 0.354 & 0.042 &  \\
+formal\_think & 15 & 3 & 0.568 & 0.258 & 0.264 & 0.479 & 0.083 & 0.000 \\
 think\_formal & 15 & 3 & 0.353 & 0.111 & 0.111 & 0.312 & 0.000 & 0.000 \\
+main\_nl\_exact & 15 & 3 & 0.322 &  & 0.137 & 0.260 &  & 0.000 \\
+main\_logic & 20 & 3 & 0.830 & 0.441 &  & 0.854 & 0.198 &  \\
+formal\_think & 20 & 3 & 0.675 & 0.170 & 0.495 & 0.427 & 0.021 & 0.167 \\
 think\_formal & 20 & 3 & 0.434 & 0.028 & 0.148 & 0.469 & 0.000 & 0.000 \\
+main\_nl\_exact & 20 & 3 & 0.474 &  & 0.219 & 0.406 &  & 0.115 \\
+main\_logic & 25 & 3 & 0.921 & 0.710 &  & 0.833 & 0.417 &  \\
+formal\_think & 25 & 3 & 0.879 & 0.379 & 0.804 & 0.646 & 0.083 & 0.510 \\
 think\_formal & 25 & 3 & 0.573 & 0.204 & 0.419 & 0.344 & 0.000 & 0.135 \\
+main\_nl\_exact & 25 & 3 & 0.794 &  & 0.748 & 0.510 &  & 0.427 \\
 \bottomrule
 \end{tabular}
 \caption{Hybrid-order partial summary. \texttt{think\_formal} train-1-to-25 is now three-seed complete; \texttt{formal\_think} is complete through train-1-to-25, with deeper rows still incomplete.}
@@ -1304,6 +1945,8 @@ The following generated artifacts are part of this report bundle.
 
 \paragraph{CSV result tables.}
 \begin{verbatim}
+ablation_training_sequence_examples.csv
+ablation_training_token_audit_512.csv
 active_experiment_artifact_status.csv
 all_group_summary.csv
 architecture_ablation_summary.csv
@@ -1320,6 +1963,7 @@ cot_bare_ood_generation_examples.csv
 group_summary_all.csv
 hybrid_order_ablation_by_seed.csv
 hybrid_order_ablation_summary.csv
+hybrid_order_with_main_baselines.csv
 logic_length_control_depth_curve_vs_main_train25.csv
 logic_length_control_eval_vs_main.csv
 logic_length_control_token_match.csv
@@ -1365,6 +2009,7 @@ tiny_llama_ood_lmeval_by_seed.csv
 tiny_llama_ood_lmeval_summary.csv
 trace_control_ablation_by_seed.csv
 trace_control_ablation_summary.csv
+trace_control_ablation_with_main_baselines.csv
 \end{verbatim}
 
 \paragraph{PDF figures.}
@@ -1374,6 +2019,7 @@ ablation_conditioned_dual_vs_main_by_train_depth.pdf
 ablation_hybrid_order_partial.pdf
 ablation_logic_length_control_depth_curve_train1to25.pdf
 ablation_same_target_token_budget_vs_main.pdf
+ablation_shortcut_kind_summary.pdf
 ablation_shortcut_rate_vs_main.pdf
 ablation_symbol_padded_depth_curve_train1to25.pdf
 ablation_trace_controls_summary.pdf
