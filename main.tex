@@ -667,6 +667,12 @@ nl\_exact & 25 & 3 & 0.873 & 0.997 & 0.000 & 0.000 & 0.677 & 0.990 & 0.000 \\
 \caption{Corrected semantic iGSM pass@16 summary over three seeds. OOD is the hard-tail band.}
 \end{table}
 
+\begin{figure}[H]\centering
+\includegraphics[width=0.95\linewidth]{figures/paired_igsm_semantic_summary.pdf}
+\caption{Corrected semantic iGSM curves over train-depth range. For logic, valid/parse is internal citation-free proof validity; for NL, valid/parse is NL-to-logic parse coverage after semantic alias canonicalization.}
+\end{figure}
+
+
 \section{Targeted ablations}
 Completed ablation results are shown here; active arrays are tracked in the handoff documents. The current same-token-budget experiment is more precisely a same target-token budget experiment. The logic row in that experiment is a control rerun at 10k steps; the NL row is shortened to 7140 steps so target-token exposure approximately matches 10k logic steps. It does not match total prompt-plus-target tokens; that would require roughly 8600 NL steps and has not been run yet. The symbol-padded logic control is the completed total-sequence-length match to NL at the same optimizer-step budget; the wordified logic length-control is the cleaner equal-length formal follow-up and is now complete. Shortcut rates 0.3, 0.5, and 0.8 are complete. Conditioned dual-modality 10k eval is complete, and the 50k continuation is running.
 
@@ -2159,6 +2165,7 @@ olmo7b_depth_joint16.pdf
 olmo7b_final_by_train_depth.pdf
 paired_full_suite_family_partial.pdf
 paired_full_suite_official_igsm_partial.pdf
+paired_igsm_semantic_summary.pdf
 qwen7b_partial_ood_correct_joint.pdf
 sample_generation_panels.pdf
 tiny_llama_100k_100m_checkpoint_depthbands_correct_k8.pdf
