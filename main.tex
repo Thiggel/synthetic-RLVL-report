@@ -589,14 +589,14 @@ This table is artifact-based at report-generation time: it counts completed SFT 
 experiment & scope & SFT done & SFT expected & eval done & eval expected & status \\
 \midrule
 iGSM & paired-family full suite & 30 & 30 & 30 & 30 & complete \\
-maze & paired-family full suite & 30 & 30 & 6 & 30 & partial eval \\
+maze & paired-family full suite & 30 & 30 & 7 & 30 & partial eval \\
 attribute constraints & paired-family full suite & 30 & 30 & 0 & 30 & eval pending \\
 trace controls & six train-1-to-25 perturbations &  &  & 18 & 18 & complete \\
 shortcut-rate & rates 0.3/0.5/0.8, logic and NL &  &  & 18 & 18 & complete \\
 hybrid order & formal-then-NL and NL-then-formal full train-depth suite &  &  & 30 & 30 & complete \\
 shortcut-kind & position and initial-marker shortcuts &  &  & 24 & 24 & complete \\
 conditioned dual 10k & conditioned formal/NL dual modality &  &  & 30 & 30 & complete \\
-conditioned dual 50k & longer conditioned formal/NL dual modality &  &  & 17 & 30 & partial eval \\
+conditioned dual 50k & longer conditioned formal/NL dual modality &  &  & 18 & 30 & partial eval \\
 \bottomrule
 \end{tabular}
 \caption{Artifact status for paired-family repeats and active ablation families.}
@@ -614,6 +614,7 @@ family & template & train max & n & train c@16 & train joint@16 & OOD c@16 & OOD
 \midrule
 maze\_navigation & logic & 5 & 3 & 1.000 & 1.000 & 0.039 & 0.027 & 0.027 & 0.000 & 0.000 & 0.000 \\
 maze\_navigation & nl\_exact & 5 & 3 & 1.000 & 0.000 & 0.145 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 \\
+maze\_navigation & nl\_exact & 10 & 1 & 1.000 & 0.000 & 0.250 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 \\
 official\_igsm & logic & 5 & 3 & 0.990 & 0.986 & 0.312 & 0.255 & 0.000 & 0.000 & 0.240 & 0.177 \\
 official\_igsm & logic & 10 & 3 & 0.956 & 0.945 & 0.507 & 0.377 & 0.000 & 0.000 & 0.458 & 0.281 \\
 official\_igsm & logic & 15 & 3 & 0.918 & 0.903 & 0.546 & 0.392 & 0.000 & 0.000 & 0.542 & 0.292 \\
@@ -640,6 +641,31 @@ official\_igsm & nl\_exact & 25 & 3 & 0.966 & 0.037 & 0.560 & 0.000 & 0.000 & 0.
 \caption{Partial paired-family readout for completed eval rows. Empty panels mark family/train-depth slices with no completed JSON yet; inline n annotations mark slices that are not yet three-seed complete.}
 \end{figure}
 
+
+\subsection{Semantic iGSM rerun}
+The semantic iGSM rerun is the current iGSM result: it uses bare semantic variables and definition-style NL proof prose rather than the old hidden \texttt{v\_} handles and generic ``official iGSM relation'' wording. The table below uses the corrected NL alias canonicalizer and clean forced NL re-eval. For logic, ``valid/parse'' is internal citation-free proof validity; for NL it is NL-to-logic parse coverage. The corrected result separates answer accuracy from validated reasoning: NL answer accuracy rises strongly with train range, but OOD/depth-50 translated joint validity remains zero because long generated traces drift/truncate and only small prefixes validate. Logic has nonzero internal validity but lower answer accuracy and zero strict grounded joint.
+
+\begin{table}[H]
+\centering
+\scriptsize
+\begin{tabular}{llllllllll}
+\toprule
+template & train max & n & OOD c@16 & OOD valid/parse@16 & OOD joint@16 & OOD grounded joint & d50 c@16 & d50 valid/parse@16 & d50 joint@16 \\
+\midrule
+logic & 5 & 3 & 0.516 & 0.380 & 0.042 & 0.000 & 0.385 & 0.260 & 0.000 \\
+logic & 10 & 3 & 0.522 & 0.332 & 0.059 & 0.000 & 0.417 & 0.260 & 0.010 \\
+logic & 15 & 3 & 0.573 & 0.390 & 0.137 & 0.000 & 0.365 & 0.167 & 0.000 \\
+logic & 20 & 3 & 0.551 & 0.366 & 0.231 & 0.000 & 0.229 & 0.010 & 0.000 \\
+logic & 25 & 3 & 0.612 & 0.439 & 0.272 & 0.000 & 0.281 & 0.062 & 0.000 \\
+nl\_exact & 5 & 3 & 0.483 & 0.995 & 0.000 & 0.000 & 0.500 & 0.990 & 0.000 \\
+nl\_exact & 10 & 3 & 0.661 & 0.997 & 0.000 & 0.000 & 0.552 & 1.000 & 0.000 \\
+nl\_exact & 15 & 3 & 0.744 & 0.999 & 0.000 & 0.000 & 0.510 & 0.990 & 0.000 \\
+nl\_exact & 20 & 3 & 0.819 & 0.999 & 0.000 & 0.000 & 0.646 & 0.990 & 0.000 \\
+nl\_exact & 25 & 3 & 0.873 & 0.997 & 0.000 & 0.000 & 0.677 & 0.990 & 0.000 \\
+\bottomrule
+\end{tabular}
+\caption{Corrected semantic iGSM pass@16 summary over three seeds. OOD is the hard-tail band.}
+\end{table}
 
 \section{Targeted ablations}
 Completed ablation results are shown here; active arrays are tracked in the handoff documents. The current same-token-budget experiment is more precisely a same target-token budget experiment. The logic row in that experiment is a control rerun at 10k steps; the NL row is shortened to 7140 steps so target-token exposure approximately matches 10k logic steps. It does not match total prompt-plus-target tokens; that would require roughly 8600 NL steps and has not been run yet. The symbol-padded logic control is the completed total-sequence-length match to NL at the same optimizer-step budget; the wordified logic length-control is the cleaner equal-length formal follow-up and is now complete. Shortcut rates 0.3, 0.5, and 0.8 are complete. Conditioned dual-modality 10k eval is complete, and the 50k continuation is running.
@@ -1553,6 +1579,7 @@ train max & eval template & n & OOD c@16 & OOD joint@16 & d50 c@16 & d50 joint@1
 5 & conditioned\_logic & 3 & 0.309 & 0.049 & 0.198 & 0.000 \\
 5 & conditioned\_nl & 2 & 0.656 & 0.327 & 0.547 & 0.000 \\
 10 & conditioned\_logic & 3 & 0.626 & 0.315 & 0.312 & 0.000 \\
+10 & conditioned\_nl & 1 & 0.463 & 0.287 & 0.281 & 0.000 \\
 15 & conditioned\_logic & 3 & 0.482 & 0.204 & 0.260 & 0.010 \\
 20 & conditioned\_logic & 3 & 0.502 & 0.075 & 0.354 & 0.021 \\
 25 & conditioned\_logic & 3 & 0.833 & 0.348 & 0.677 & 0.146 \\
@@ -2071,6 +2098,8 @@ olmo32_cot_bare_gsm8k.csv
 ood_gsm8k_strict_recompute_from_samples.csv
 paired_full_suite_partial_by_seed.csv
 paired_full_suite_partial_summary.csv
+paired_igsm_semantic_by_seed.csv
+paired_igsm_semantic_summary.csv
 qwen7b_partial_summary.csv
 same_target_token_budget_by_seed.csv
 same_target_token_budget_summary.csv
