@@ -591,12 +591,16 @@ experiment & scope & SFT done & SFT expected & eval done & eval expected & statu
 iGSM & paired-family full suite & 30 & 30 & 30 & 30 & complete \\
 maze & paired-family full suite & 30 & 30 & 7 & 30 & partial eval \\
 attribute constraints & paired-family full suite & 30 & 30 & 0 & 30 & eval pending \\
+semantic iGSM & semantic bare-symbol paired rerun & 30 & 30 & 30 & 30 & complete \\
+typed maze & typed-symbol paired rerun & 30 & 30 & 0 & 30 & eval running \\
+hard attribute fresh & fresh hard-attribute-only eval & 30 & 30 & 0 & 30 & eval running \\
 trace controls & six train-1-to-25 perturbations &  &  & 18 & 18 & complete \\
 shortcut-rate & rates 0.3/0.5/0.8, logic and NL &  &  & 18 & 18 & complete \\
 hybrid order & formal-then-NL and NL-then-formal full train-depth suite &  &  & 30 & 30 & complete \\
 shortcut-kind & position and initial-marker shortcuts &  &  & 24 & 24 & complete \\
 conditioned dual 10k & conditioned formal/NL dual modality &  &  & 30 & 30 & complete \\
 conditioned dual 50k & longer conditioned formal/NL dual modality &  &  & 18 & 30 & partial eval \\
+batch-size & logic/NL/conditioned dual bsz 2/4/8/16 & 9 & 12 & 0 & 16 & SFT recovery running \\
 \bottomrule
 \end{tabular}
 \caption{Artifact status for paired-family repeats and active ablation families.}
@@ -1498,7 +1502,7 @@ ivory
 \end{verbatim}
 
 \subsection{Hybrid order}
-The hybrid-order ablation trains a single prompt containing both trace substrates and one answer at the end. \texttt{think\_formal} means NL first, then formal logic; \texttt{formal\_think} means formal logic first, then NL. The full suite is train-1-to-5/10/15/20/25 over three seeds and eval 1-to-50. The table includes the normal compact-logic and exact-NL baselines at each train depth. Current completed rows cover all \texttt{think\_formal} seeds through train-1-to-25; \texttt{formal\_think} is complete through train-1-to-25, with deeper rows still incomplete.
+The hybrid-order ablation trains a single prompt containing both trace substrates and one answer at the end. \texttt{think\_formal} means NL first, then formal logic; \texttt{formal\_think} means formal logic first, then NL. The full suite is train-1-to-5/10/15/20/25 over three seeds and eval 1-to-50. The table includes the normal compact-logic and exact-NL baselines at each train depth. Current completed rows cover all \texttt{think\_formal} seeds through train-1-to-25; \texttt{formal\_think} is complete through train-1-to-25, so the full hybrid-order grid is complete.
 
 \begin{table}[H]
 \centering
@@ -1529,14 +1533,16 @@ think\_formal & 25 & 3 & 0.573 & 0.204 & 0.419 & 0.344 & 0.000 & 0.135 \\
 main\_nl\_exact & 25 & 3 & 0.794 &  & 0.748 & 0.510 &  & 0.427 \\
 \bottomrule
 \end{tabular}
-\caption{Hybrid-order partial summary. \texttt{think\_formal} train-1-to-25 is now three-seed complete; \texttt{formal\_think} is complete through train-1-to-25, with deeper rows still incomplete.}
+\caption{Hybrid-order full-grid summary. \texttt{think\_formal} train-1-to-25 is three-seed complete; \texttt{formal\_think} is complete through train-1-to-25, so the full hybrid-order grid is complete.}
 \end{table}
 
 \begin{figure}[H]\centering
 \includegraphics[width=0.95\linewidth]{figures/ablation_hybrid_order_partial.pdf}
-\caption{Hybrid order partial eval with normal logic/NL baseline curves. \texttt{think\_formal} is NL then formal and is complete through train-1-to-25; \texttt{formal\_think} is complete through train-1-to-25, with deeper rows still incomplete.}
+\caption{Hybrid order full eval with normal logic/NL baseline curves. \texttt{think\_formal} is NL then formal and is complete through train-1-to-25; \texttt{formal\_think} is complete through train-1-to-25, so the full hybrid-order grid is complete.}
 \end{figure}
 
+
+Sample inspection of the completed train-1-to-20/25 hybrid rows matches the intended surfaces: \texttt{formal\_think} starts with a \texttt{<formal>} block followed by \texttt{<think>}/\texttt{<answer>}, and \texttt{think\_formal} reverses that order. Shallow and train-band successes often have correct answers and translated NL proofs, but the formal block frequently omits explicit proof citations, so strict grounded formal validity is much lower than citation-free formal validity. At depth 50, both orders often truncate, lose required tags, or drift into long premise copying. The hybrid result should therefore be read as a sequence-format/interference result, not as evidence that combining both substrates gives more robust long-depth reasoning.
 
 Conditioned dual-modality is different from the hybrid-order setup: the SFT data builder duplicates each materialized row into two separate examples, one prompted with \texttt{<reasoning\_mode>formal\_logic</reasoning\_mode>} and one prompted with \texttt{<reasoning\_mode>natural\_language</reasoning\_mode>}. Evaluation uses the same mode prompt. Thus there is no direct train-test mismatch where training has both traces in one target but eval asks for only one. The main caveat is exposure/interference: at fixed optimizer steps, each modality receives roughly half the updates of a single-modality run, and the shared adapter must fit both surfaces.
 
@@ -1591,14 +1597,16 @@ train max & eval template & n & OOD c@16 & OOD joint@16 & d50 c@16 & d50 joint@1
 25 & conditioned\_logic & 3 & 0.833 & 0.348 & 0.677 & 0.146 \\
 \bottomrule
 \end{tabular}
-\caption{Conditioned dual-modality 50k final eval summary. No rows means the 50k continuation/eval chain has not reached final pass@k output yet.}
+\caption{Conditioned dual-modality 50k final eval summary. The 50k final eval is partial at 18/30 rows; the n column marks seed coverage and the missing conditioned-NL rows are in targeted recovery.}
 \end{table}
 
 \begin{figure}[H]\centering
 \includegraphics[width=0.95\linewidth]{figures/ablation_conditioned_dual_50k_convergence_train1to25.pdf}
-\caption{Conditioned dual-modality 50k convergence curves for train-1-to-25. Points are three-seed means for checkpoint evals available at report generation time; the conditioned-logic curve now reaches 50k, while conditioned-NL points will appear if the remaining checkpoint rows write JSONs.}
+\caption{Conditioned dual-modality 50k convergence curves for train-1-to-25. Points are three-seed means for completed checkpoint evals; both conditioned-logic and conditioned-NL checkpoint curves now reach 50k.}
 \end{figure}
 
+
+The completed 50k checkpoint samples preserve the intended conditioned prompts: formal-mode generations use \texttt{<formal>}/\texttt{<answer>}, while NL-mode generations use \texttt{<think>}/\texttt{<answer>}. The checkpoint curves therefore do not indicate a prompt mismatch. Instead, representative hard-depth samples show underexposure/interference symptoms: conditioned logic remains brittle on long proofs despite extra steps, and conditioned NL can produce valid translated train-band traces while depth-50 traces truncate or collapse into unsupported state lists. The pending final recovery rows are needed for the final 50k table, but the completed checkpoint sweep already argues against simple ``just train longer'' as a full explanation.
 
 \section{Qualitative samples}
 The companion PDF \texttt{figures/sample\_generation\_panels.pdf} contains synthetic generated examples with extracted answer, gold answer, correctness, and validity metadata. The following samples are from the completed bare-format OOD rerun for OLMo-7B train-1-to-25 seed 3407.
