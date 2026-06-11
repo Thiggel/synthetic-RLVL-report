@@ -599,7 +599,7 @@ shortcut-rate & rates 0.3/0.5/0.8, logic and NL &  &  & 18 & 18 & complete \\
 hybrid order & formal-then-NL and NL-then-formal full train-depth suite &  &  & 30 & 30 & complete \\
 shortcut-kind & position and initial-marker shortcuts &  &  & 24 & 24 & complete \\
 conditioned dual 10k & conditioned formal/NL dual modality &  &  & 30 & 30 & complete \\
-conditioned dual 50k & longer conditioned formal/NL dual modality &  &  & 20 & 30 & partial eval \\
+conditioned dual 50k & longer conditioned formal/NL dual modality &  &  & 23 & 30 & partial eval \\
 batch-size & logic/NL/conditioned dual bsz 2/4/8/16 & 10 & 12 & 0 & 16 & SFT recovery running \\
 \bottomrule
 \end{tabular}
@@ -1589,15 +1589,16 @@ train max & condition & n & OOD c@16 & OOD joint@16 & d50 c@16 & d50 joint@16 \\
 train max & eval template & n & OOD c@16 & OOD joint@16 & d50 c@16 & d50 joint@16 \\
 \midrule
 5 & conditioned\_logic & 3 & 0.309 & 0.049 & 0.198 & 0.000 \\
-5 & conditioned\_nl & 2 & 0.656 & 0.327 & 0.547 & 0.000 \\
+5 & conditioned\_nl & 3 & 0.647 & 0.328 & 0.615 & 0.000 \\
 10 & conditioned\_logic & 3 & 0.626 & 0.315 & 0.312 & 0.000 \\
 10 & conditioned\_nl & 3 & 0.639 & 0.345 & 0.479 & 0.000 \\
 15 & conditioned\_logic & 3 & 0.482 & 0.204 & 0.260 & 0.010 \\
+15 & conditioned\_nl & 2 & 0.490 & 0.223 & 0.359 & 0.000 \\
 20 & conditioned\_logic & 3 & 0.502 & 0.075 & 0.354 & 0.021 \\
 25 & conditioned\_logic & 3 & 0.833 & 0.348 & 0.677 & 0.146 \\
 \bottomrule
 \end{tabular}
-\caption{Conditioned dual-modality 50k final eval summary. The 50k final eval is partial at 20/30 rows; the n column marks seed coverage and the missing conditioned-NL rows are in targeted recovery.}
+\caption{Conditioned dual-modality 50k final eval summary. The 50k final eval is partial at 23/30 rows; the n column marks seed coverage and the missing conditioned-NL rows are in targeted recovery.}
 \end{table}
 
 \begin{figure}[H]\centering
