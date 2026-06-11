@@ -10,5 +10,5 @@ shortcut-rate,"rates 0.3/0.5/0.8, logic and NL",,,18,18,complete
 hybrid order,formal-then-NL and NL-then-formal full train-depth suite,,,30,30,complete
 shortcut-kind,position and initial-marker shortcuts,,,24,24,complete
 conditioned dual 10k,conditioned formal/NL dual modality,,,30,30,complete
-conditioned dual 50k,longer conditioned formal/NL dual modality,,,18,30,partial eval
-batch-size,logic/NL/conditioned dual bsz 2/4/8/16,9,12,0,16,SFT recovery running
+conditioned dual 50k,longer conditioned formal/NL dual modality,,,20,30,partial eval
+batch-size,logic/NL/conditioned dual bsz 2/4/8/16,10,12,0,16,SFT recovery running
