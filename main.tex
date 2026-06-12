@@ -593,13 +593,13 @@ maze & paired-family full suite & 30 & 30 & 7 & 30 & partial eval \\
 attribute constraints & paired-family full suite & 30 & 30 & 0 & 30 & eval pending \\
 semantic iGSM & semantic bare-symbol paired rerun & 30 & 30 & 30 & 30 & complete \\
 typed maze & typed-symbol paired rerun & 30 & 30 & 0 & 30 & eval running \\
-hard attribute fresh & fresh hard-attribute-only eval & 30 & 30 & 0 & 30 & eval running \\
+hard attribute fresh & fresh hard-attribute-only eval & 30 & 30 & 5 & 30 & partial eval \\
 trace controls & six train-1-to-25 perturbations &  &  & 18 & 18 & complete \\
 shortcut-rate & rates 0.3/0.5/0.8, logic and NL &  &  & 18 & 18 & complete \\
 hybrid order & formal-then-NL and NL-then-formal full train-depth suite &  &  & 30 & 30 & complete \\
 shortcut-kind & position and initial-marker shortcuts &  &  & 24 & 24 & complete \\
 conditioned dual 10k & conditioned formal/NL dual modality &  &  & 30 & 30 & complete \\
-conditioned dual 50k & longer conditioned formal/NL dual modality &  &  & 23 & 30 & partial eval \\
+conditioned dual 50k & longer conditioned formal/NL dual modality &  &  & 30 & 30 & complete \\
 batch-size & logic/NL/conditioned dual bsz 2/4/8/16 & 10 & 12 & 0 & 16 & SFT recovery running \\
 \bottomrule
 \end{tabular}
@@ -607,7 +607,7 @@ batch-size & logic/NL/conditioned dual bsz 2/4/8/16 & 10 & 12 & 0 & 16 & SFT rec
 \end{table}
 
 \section{Paired-family full-suite partial readout}
-The replacement paired-family eval is still partial. At this report generation time, \texttt{official\_igsm} is complete, \texttt{maze\_navigation} has the full train-1-to-5 logic/NL slice, and hard attribute-constraint rows have no completed eval JSONs. The \texttt{joint} columns are template-specific: citation-free internal formal validity for logic and translated NL-to-FOL validity for \texttt{nl\_exact}. Maze train-1-to-5 shows a sharp train/OOD split rather than a bad gold generator: completed logic rows are perfect in-band but near-zero OOD/depth-50, while completed NL rows are also perfect in-band, somewhat higher on OOD answer correctness, and zero at depth 50. Sample inspection shows coherent complete depth-5 traces, occasional depth-10 success, and depth-25/50 failures dominated by long premise copying, malformed/truncated traces, and generation-cap pressure. For iGSM, grounded joint validity is currently zero away from trivial retrieval cases because generated variable names and arithmetic-substitution citations do not reliably align with the canonical grounded checker. The targeted iGSM NL rerun has completed all 15 NL rows and recovers near-complete parser coverage, but generated NL translated-validity is still zero on OOD/depth-50 slices; use correctness and parser coverage as provisional diagnostics until non-iGSM rows complete and grounded/canonical checks are improved.
+The replacement paired-family eval is still partial. At this report generation time, \texttt{official\_igsm} is complete, \texttt{maze\_navigation} has the full train-1-to-5 logic/NL slice in the old paired-family root, and the old combined hard attribute-constraint rows have no completed eval JSONs. A separate fresh hard-attribute-only recovery is underway and has the first completed rows counted in the active-status table. The \texttt{joint} columns are template-specific: citation-free internal formal validity for logic and translated NL-to-FOL validity for \texttt{nl\_exact}. Maze train-1-to-5 shows a sharp train/OOD split rather than a bad gold generator: completed logic rows are perfect in-band but near-zero OOD/depth-50, while completed NL rows are also perfect in-band, somewhat higher on OOD answer correctness, and zero at depth 50. Sample inspection shows coherent complete depth-5 traces, occasional depth-10 success, and depth-25/50 failures dominated by long premise copying, malformed/truncated traces, and generation-cap pressure. For iGSM, grounded joint validity is currently zero away from trivial retrieval cases because generated variable names and arithmetic-substitution citations do not reliably align with the canonical grounded checker. The targeted iGSM NL rerun has completed all 15 NL rows and recovers near-complete parser coverage, but generated NL translated-validity is still zero on OOD/depth-50 slices; use correctness and parser coverage as provisional diagnostics until non-iGSM rows complete and grounded/canonical checks are improved.
 
 \begin{table}[H]
 \centering
@@ -1593,12 +1593,14 @@ train max & eval template & n & OOD c@16 & OOD joint@16 & d50 c@16 & d50 joint@1
 10 & conditioned\_logic & 3 & 0.626 & 0.315 & 0.312 & 0.000 \\
 10 & conditioned\_nl & 3 & 0.639 & 0.345 & 0.479 & 0.000 \\
 15 & conditioned\_logic & 3 & 0.482 & 0.204 & 0.260 & 0.010 \\
-15 & conditioned\_nl & 2 & 0.490 & 0.223 & 0.359 & 0.000 \\
+15 & conditioned\_nl & 3 & 0.421 & 0.206 & 0.323 & 0.021 \\
 20 & conditioned\_logic & 3 & 0.502 & 0.075 & 0.354 & 0.021 \\
+20 & conditioned\_nl & 3 & 0.653 & 0.479 & 0.427 & 0.146 \\
 25 & conditioned\_logic & 3 & 0.833 & 0.348 & 0.677 & 0.146 \\
+25 & conditioned\_nl & 3 & 0.675 & 0.531 & 0.531 & 0.250 \\
 \bottomrule
 \end{tabular}
-\caption{Conditioned dual-modality 50k final eval summary. The 50k final eval is partial at 23/30 rows; the n column marks seed coverage and the missing conditioned-NL rows are in targeted recovery.}
+\caption{Conditioned dual-modality 50k final eval summary. The 50k final eval is complete at 30/30 rows.}
 \end{table}
 
 \begin{figure}[H]\centering
