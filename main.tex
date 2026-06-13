@@ -592,19 +592,70 @@ iGSM & paired-family full suite & 30 & 30 & 30 & 30 & complete \\
 maze & paired-family full suite & 30 & 30 & 7 & 30 & partial eval \\
 attribute constraints & paired-family full suite & 30 & 30 & 0 & 30 & eval pending \\
 semantic iGSM & semantic bare-symbol paired rerun & 30 & 30 & 30 & 30 & complete \\
-typed maze & typed-symbol paired rerun & 30 & 30 & 0 & 30 & eval running \\
-hard attribute fresh & fresh hard-attribute-only eval & 30 & 30 & 8 & 30 & partial eval \\
+typed maze & typed-symbol paired rerun & 30 & 30 & 6 & 30 & partial eval \\
+hard attribute fresh & fresh hard-attribute-only eval & 30 & 30 & 13 & 30 & partial eval \\
 trace controls & six train-1-to-25 perturbations &  &  & 18 & 18 & complete \\
 shortcut-rate & rates 0.3/0.5/0.8, logic and NL &  &  & 18 & 18 & complete \\
 hybrid order & formal-then-NL and NL-then-formal full train-depth suite &  &  & 30 & 30 & complete \\
 shortcut-kind & position and initial-marker shortcuts &  &  & 24 & 24 & complete \\
 conditioned dual 10k & conditioned formal/NL dual modality &  &  & 30 & 30 & complete \\
 conditioned dual 50k & longer conditioned formal/NL dual modality &  &  & 30 & 30 & complete \\
-batch-size & logic/NL/conditioned dual bsz 2/4/8/16 & 10 & 12 & 0 & 16 & SFT recovery running \\
+batch-size & logic/NL/conditioned dual bsz 2/4/8/16 & 12 & 12 & 5 & 16 & partial eval \\
 \bottomrule
 \end{tabular}
 \caption{Artifact status for paired-family repeats and active ablation families.}
 \end{table}
+
+\subsection{Active partial rerun readouts}
+The fresh active reruns have produced partial but already informative outputs. The typed-maze table is from the patched typed-symbol rerun, not the stale old maze root. It uses a formal max-new-token cap of 4096 because the earlier 8192-token formal eval could not finish within the A100 walltime; NL remains capped at 6144. The hard-attribute rows are from the fresh hard-attribute-only eval under \texttt{\$HPCVAULT}. Hard-attribute logic validity is meaningful under citation-free formal checking; hard-attribute NL validity remains unsupported because the generic NL-to-FOL translator does not yet parse this family, so the NL joint and parse columns should not be used as negative evidence about the model. Typed maze train-1-to-5 is extremely poor out of distribution even after the typed-symbol fix: sample checks show valid shallow traces but long OOD/depth-50 outputs mostly copy premises, hit the cap, omit answer tags, or drift before solving the path.
+
+\begin{table}[H]
+\centering
+\scriptsize
+\begin{tabular}{lllllllllll}
+\toprule
+family & template & train max & n & train c@16 & train joint@16 & OOD c@16 & OOD valid/parse@16 & OOD joint@16 & d50 c@16 & d50 joint@16 \\
+\midrule
+hard attribute & logic & 5 & 2 & 1.000 & 1.000 & 0.866 & 0.167 & 0.139 & 0.047 & 0.000 \\
+hard attribute & logic & 10 & 3 & 1.000 & 1.000 & 0.800 & 0.486 & 0.455 & 0.354 & 0.000 \\
+hard attribute & logic & 15 & 2 & 1.000 & 1.000 & 0.880 & 0.550 & 0.540 & 0.234 & 0.000 \\
+hard attribute & nl\_exact & 5 & 3 & 1.000 & 0.000 & 0.420 & 0.000 & 0.000 & 0.000 & 0.000 \\
+hard attribute & nl\_exact & 10 & 3 & 1.000 & 0.000 & 0.801 & 0.000 & 0.000 & 0.260 & 0.000 \\
+typed maze & logic & 5 & 3 & 1.000 & 1.000 & 0.002 & 0.002 & 0.000 & 0.000 & 0.000 \\
+typed maze & nl\_exact & 5 & 3 & 1.000 & 0.000 & 0.030 & 0.000 & 0.000 & 0.000 & 0.000 \\
+\bottomrule
+\end{tabular}
+\caption{Fresh typed-maze and hard-attribute partial results. For logic, valid/joint means citation-free formal validity; for NL, valid/parse is NL-to-FOL parse coverage and joint is translated-valid joint.}
+\end{table}
+
+\begin{figure}[H]\centering
+\includegraphics[width=0.95\linewidth]{figures/active_paired_partial_summary.pdf}
+\caption{Fresh typed-maze and hard-attribute partial curves. Inline n annotations mark incomplete seed coverage.}
+\end{figure}
+
+The batch-size ablation has begun writing eval outputs after the bsz16 recovery finished. The current table is still partial: the rows shown are the completed eval rows at report generation time, while the remaining NL and conditioned-dual rows are still running or pending. The logic-trained/evaluated slice is complete and non-monotonic: effective batch 16 has high OOD answer correctness and the best available logic OOD joint among the completed logic rows, while batch 8 is worse. This is not yet evidence about the conditioned-dual weakness because the conditioned rows have not written JSONs.
+
+\begin{table}[H]
+\centering
+\scriptsize
+\begin{tabular}{lllllllll}
+\toprule
+train & eval & bsz & n & OOD c@16 & OOD valid/parse@16 & OOD joint@16 & d50 c@16 & d50 joint@16 \\
+\midrule
+logic & logic & 2 & 1 & 0.920 & 0.559 & 0.406 & 0.875 & 0.031 \\
+logic & logic & 4 & 1 & 0.899 & 0.799 & 0.562 & 0.656 & 0.188 \\
+logic & logic & 8 & 1 & 0.747 & 0.542 & 0.403 & 0.531 & 0.000 \\
+logic & logic & 16 & 1 & 0.913 & 0.736 & 0.583 & 0.688 & 0.062 \\
+nl\_exact & nl\_exact & 2 & 1 & 0.569 & 0.972 & 0.503 & 0.375 & 0.219 \\
+\bottomrule
+\end{tabular}
+\caption{HFSA batch-size ablation partial results. Batch size 16 is effective batch 16 implemented as microbatch 8 with gradient accumulation 2.}
+\end{table}
+
+\begin{figure}[H]\centering
+\includegraphics[width=0.95\linewidth]{figures/hfsa_batch_size_ablation_partial.pdf}
+\caption{HFSA batch-size ablation partial curves over effective batch size. Missing lines indicate eval conditions that have not written JSONs yet.}
+\end{figure}
 
 \section{Paired-family full-suite partial readout}
 The replacement paired-family eval is still partial. At this report generation time, \texttt{official\_igsm} is complete, \texttt{maze\_navigation} has the full train-1-to-5 logic/NL slice in the old paired-family root, and the old combined hard attribute-constraint rows have no completed eval JSONs. A separate fresh hard-attribute-only recovery is underway and has the first completed rows counted in the active-status table. The \texttt{joint} columns are template-specific: citation-free internal formal validity for logic and translated NL-to-FOL validity for \texttt{nl\_exact}. Maze train-1-to-5 shows a sharp train/OOD split rather than a bad gold generator: completed logic rows are perfect in-band but near-zero OOD/depth-50, while completed NL rows are also perfect in-band, somewhat higher on OOD answer correctness, and zero at depth 50. Sample inspection shows coherent complete depth-5 traces, occasional depth-10 success, and depth-25/50 failures dominated by long premise copying, malformed/truncated traces, and generation-cap pressure. For iGSM, grounded joint validity is currently zero away from trivial retrieval cases because generated variable names and arithmetic-substitution citations do not reliably align with the canonical grounded checker. The targeted iGSM NL rerun has completed all 15 NL rows and recovers near-complete parser coverage, but generated NL translated-validity is still zero on OOD/depth-50 slices; use correctness and parser coverage as provisional diagnostics until non-iGSM rows complete and grounded/canonical checks are improved.
@@ -2075,6 +2126,8 @@ The following generated artifacts are part of this report bundle.
 ablation_training_sequence_examples.csv
 ablation_training_token_audit_512.csv
 active_experiment_artifact_status.csv
+active_paired_partial_by_seed.csv
+active_paired_partial_summary.csv
 all_group_summary.csv
 architecture_ablation_summary.csv
 conditioned_dual_50k_by_seed.csv
@@ -2088,6 +2141,8 @@ conditioned_dual_summary.csv
 conditioned_dual_vs_main_by_train_depth.csv
 cot_bare_ood_generation_examples.csv
 group_summary_all.csv
+hfsa_batch_size_ablation_partial_by_seed.csv
+hfsa_batch_size_ablation_partial_summary.csv
 hybrid_order_ablation_by_seed.csv
 hybrid_order_ablation_summary.csv
 hybrid_order_with_main_baselines.csv
@@ -2155,8 +2210,10 @@ ablation_shortcut_kind_summary.pdf
 ablation_shortcut_rate_vs_main.pdf
 ablation_symbol_padded_depth_curve_train1to25.pdf
 ablation_trace_controls_summary.pdf
+active_paired_partial_summary.pdf
 architecture_depth30_50_correct16_by_train_depth.pdf
 architecture_ood_correct16_by_train_depth.pdf
+hfsa_batch_size_ablation_partial.pdf
 olmo7b_checkpoint_correct_k8_k16.pdf
 olmo7b_checkpoint_joint_k8_k16.pdf
 olmo7b_checkpoint_train1to10_correct16.pdf
