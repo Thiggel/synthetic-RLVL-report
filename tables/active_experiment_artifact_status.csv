@@ -3,12 +3,12 @@ iGSM,paired-family full suite,30,30,30,30,complete
 maze,paired-family full suite,30,30,7,30,partial eval
 attribute constraints,paired-family full suite,30,30,0,30,eval pending
 semantic iGSM,semantic bare-symbol paired rerun,30,30,30,30,complete
-typed maze,typed-symbol paired rerun,30,30,6,30,partial eval
-hard attribute fresh,fresh hard-attribute-only eval,30,30,13,30,partial eval
+typed maze,typed-symbol paired rerun,30,30,9,30,partial eval
+hard attribute fresh,fresh hard-attribute-only eval,30,30,21,30,partial eval
 trace controls,six train-1-to-25 perturbations,,,18,18,complete
 shortcut-rate,"rates 0.3/0.5/0.8, logic and NL",,,18,18,complete
 hybrid order,formal-then-NL and NL-then-formal full train-depth suite,,,30,30,complete
 shortcut-kind,position and initial-marker shortcuts,,,24,24,complete
 conditioned dual 10k,conditioned formal/NL dual modality,,,30,30,complete
 conditioned dual 50k,longer conditioned formal/NL dual modality,,,30,30,complete
-batch-size,logic/NL/conditioned dual bsz 2/4/8/16,12,12,5,16,partial eval
+batch-size,logic/NL/conditioned dual bsz 2/4/8/16,12,12,16,16,complete

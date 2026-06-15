@@ -1,8 +1,11 @@
 family,display_family,template,train_max,n,cap_note,train_correct@16,train_joint@16,ood_correct@16,ood_valid_or_parse@16,ood_joint@16,ood_format@16,depth50_correct@16,depth50_valid_or_parse@16,depth50_joint@16
-hard_attribute_fresh,hard attribute,logic,5,2,formal cap 12288 except targeted row-1 recovery at 8192; NL cap 8192,1.0,1.0,0.8663194444444444,0.16666666666666666,0.1388888888888889,0.9184027777777777,0.046875,0.015625,0.0
+hard_attribute_fresh,hard attribute,logic,5,3,formal cap 12288 except targeted row-1 recovery at 8192; NL cap 8192,1.0,1.0,0.7627314814814815,0.1261574074074074,0.1076388888888889,0.8379629629629629,0.03125,0.010416666666666666,0.0
 hard_attribute_fresh,hard attribute,logic,10,3,formal cap 12288 except targeted row-1 recovery at 8192; NL cap 8192,1.0,1.0,0.7997685185185185,0.4861111111111111,0.4548611111111111,0.7199074074074074,0.3541666666666667,0.0625,0.0
-hard_attribute_fresh,hard attribute,logic,15,2,formal cap 12288 except targeted row-1 recovery at 8192; NL cap 8192,1.0,1.0,0.8802083333333333,0.5503472222222222,0.5399305555555556,0.8298611111111112,0.234375,0.0,0.0
+hard_attribute_fresh,hard attribute,logic,15,3,formal cap 12288 except targeted row-1 recovery at 8192; NL cap 8192,1.0,1.0,0.8206018518518517,0.5069444444444444,0.5,0.7708333333333334,0.17708333333333334,0.0,0.0
+hard_attribute_fresh,hard attribute,logic,20,3,formal cap 12288 except targeted row-1 recovery at 8192; NL cap 8192,1.0,1.0,0.8726851851851851,0.7384259259259259,0.7372685185185185,0.8715277777777778,0.40625,0.0,0.0
 hard_attribute_fresh,hard attribute,nl_exact,5,3,formal cap 12288 except targeted row-1 recovery at 8192; NL cap 8192,1.0,0.0,0.4201388888888889,0.0,0.0,0.5995370370370371,0.0,0.0,0.0
 hard_attribute_fresh,hard attribute,nl_exact,10,3,formal cap 12288 except targeted row-1 recovery at 8192; NL cap 8192,1.0,0.0,0.8009259259259259,0.0,0.0,0.7962962962962963,0.2604166666666667,0.0,0.0
+hard_attribute_fresh,hard attribute,nl_exact,15,3,formal cap 12288 except targeted row-1 recovery at 8192; NL cap 8192,1.0,0.0,0.7673611111111112,0.0,0.0,0.7638888888888888,0.020833333333333332,0.0,0.0
 typed_maze,typed maze,logic,5,3,formal cap 4096; NL cap 6144,1.0,1.0,0.0023148148148148147,0.0023148148148148147,0.0,0.03587962962962963,0.0,0.0,0.0
+typed_maze,typed maze,logic,10,3,formal cap 4096; NL cap 6144,0.75,0.75,0.0,0.0,0.0,0.0,0.0,0.0,0.0
 typed_maze,typed maze,nl_exact,5,3,formal cap 4096; NL cap 6144,1.0,0.0,0.03009259259259259,0.0,0.0,0.011574074074074075,0.0,0.0,0.0
