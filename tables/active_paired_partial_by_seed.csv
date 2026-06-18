@@ -5,12 +5,24 @@ typed_maze,typed maze,logic,10,3409,0.75,0.75,0.0,0.0,0.0,0.0,0.0,0.0,0.0,formal
 typed_maze,typed maze,logic,15,3407,0.5,0.5,0.0,0.0,0.0,0.0,0.0,0.0,0.0,formal cap 4096; NL cap 6144
 typed_maze,typed maze,logic,15,3408,0.5,0.5,0.0,0.0,0.0,0.0,0.0,0.0,0.0,formal cap 4096; NL cap 6144
 typed_maze,typed maze,logic,15,3409,0.5,0.5,0.0,0.0,0.0,0.0,0.0,0.0,0.0,formal cap 4096; NL cap 6144
+typed_maze,typed maze,logic,20,3407,0.375,0.375,0.0,0.0,0.0,0.0,0.0,0.0,0.0,formal cap 4096; NL cap 6144
+typed_maze,typed maze,logic,20,3408,0.375,0.375,0.0,0.0,0.0,0.0,0.0,0.0,0.0,formal cap 4096; NL cap 6144
+typed_maze,typed maze,logic,20,3409,0.375,0.375,0.0,0.0,0.0,0.0,0.0,0.0,0.0,formal cap 4096; NL cap 6144
+typed_maze,typed maze,logic,25,3407,0.3333333333333333,0.3333333333333333,0.0,0.0,0.0,0.0,0.0,0.0,0.0,formal cap 4096; NL cap 6144
+typed_maze,typed maze,logic,25,3408,0.3333333333333333,0.3333333333333333,0.0,0.0,0.0,0.0,0.0,0.0,0.0,formal cap 4096; NL cap 6144
+typed_maze,typed maze,logic,25,3409,0.3333333333333333,0.3333333333333333,0.0,0.0,0.0,0.0,0.0,0.0,0.0,formal cap 4096; NL cap 6144
 typed_maze,typed maze,logic,5,3407,1.0,1.0,0.0,0.006944444444444444,0.0,0.024305555555555556,0.0,0.0,0.0,formal cap 4096; NL cap 6144
 typed_maze,typed maze,logic,5,3408,1.0,1.0,0.006944444444444444,0.0,0.0,0.08333333333333333,0.0,0.0,0.0,formal cap 4096; NL cap 6144
 typed_maze,typed maze,logic,5,3409,1.0,1.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,formal cap 4096; NL cap 6144
 typed_maze,typed maze,nl_exact,10,3407,1.0,0.0,0.1111111111111111,0.0,0.0,0.1076388888888889,0.0,0.0,0.0,formal cap 4096; NL cap 6144
 typed_maze,typed maze,nl_exact,10,3408,1.0,0.0,0.1111111111111111,0.0,0.0,0.1111111111111111,0.0,0.0,0.0,formal cap 4096; NL cap 6144
 typed_maze,typed maze,nl_exact,10,3409,1.0,0.0,0.09722222222222222,0.0,0.0,0.1111111111111111,0.0,0.0,0.0,formal cap 4096; NL cap 6144
+typed_maze,typed maze,nl_exact,15,3407,1.0,0.0,0.1111111111111111,0.0,0.0,0.11458333333333333,0.0,0.0,0.0,formal cap 4096; NL cap 6144
+typed_maze,typed maze,nl_exact,15,3408,1.0,0.0,0.1111111111111111,0.0,0.0,0.1111111111111111,0.0,0.0,0.0,formal cap 4096; NL cap 6144
+typed_maze,typed maze,nl_exact,15,3409,1.0,0.0,0.1111111111111111,0.0,0.0,0.1111111111111111,0.0,0.0,0.0,formal cap 4096; NL cap 6144
+typed_maze,typed maze,nl_exact,20,3407,0.75,0.0,0.1111111111111111,0.0,0.0,0.1111111111111111,0.0,0.0,0.0,formal cap 4096; NL cap 6144
+typed_maze,typed maze,nl_exact,20,3408,0.75,0.0,0.1111111111111111,0.0,0.0,0.1111111111111111,0.0,0.0,0.0,formal cap 4096; NL cap 6144
+typed_maze,typed maze,nl_exact,20,3409,0.75,0.0,0.1111111111111111,0.0,0.0,0.1111111111111111,0.0,0.0,0.0,formal cap 4096; NL cap 6144
 typed_maze,typed maze,nl_exact,5,3407,1.0,0.0,0.052083333333333336,0.0,0.0,0.0,0.0,0.0,0.0,formal cap 4096; NL cap 6144
 typed_maze,typed maze,nl_exact,5,3408,1.0,0.0,0.006944444444444444,0.0,0.0,0.010416666666666666,0.0,0.0,0.0,formal cap 4096; NL cap 6144
 typed_maze,typed maze,nl_exact,5,3409,1.0,0.0,0.03125,0.0,0.0,0.024305555555555556,0.0,0.0,0.0,formal cap 4096; NL cap 6144
@@ -38,6 +50,9 @@ hard_attribute_fresh,hard attribute,nl_exact,15,3409,1.0,0.0,0.7673611111111112,
 hard_attribute_fresh,hard attribute,nl_exact,20,3407,1.0,0.0,0.8159722222222222,0.0,0.0,0.8159722222222222,0.0,0.0,0.0,formal cap 12288 except targeted row-1 recovery at 8192; NL cap 8192
 hard_attribute_fresh,hard attribute,nl_exact,20,3408,1.0,0.0,0.8263888888888888,0.0,0.0,0.8194444444444444,0.15625,0.0,0.0,formal cap 12288 except targeted row-1 recovery at 8192; NL cap 8192
 hard_attribute_fresh,hard attribute,nl_exact,20,3409,1.0,0.0,0.9444444444444444,0.0,0.0,0.7847222222222222,0.78125,0.0,0.0,formal cap 12288 except targeted row-1 recovery at 8192; NL cap 8192
+hard_attribute_fresh,hard attribute,nl_exact,25,3407,1.0,0.0,0.7847222222222222,0.0,0.0,0.7847222222222222,0.0,0.0,0.0,formal cap 12288 except targeted row-1 recovery at 8192; NL cap 8192
+hard_attribute_fresh,hard attribute,nl_exact,25,3408,1.0,0.0,0.7777777777777778,0.0,0.0,0.7777777777777778,0.0,0.0,0.0,formal cap 12288 except targeted row-1 recovery at 8192; NL cap 8192
+hard_attribute_fresh,hard attribute,nl_exact,25,3409,1.0,0.0,0.8888888888888888,0.0,0.0,0.8888888888888888,0.3125,0.0,0.0,formal cap 12288 except targeted row-1 recovery at 8192; NL cap 8192
 hard_attribute_fresh,hard attribute,nl_exact,5,3407,1.0,0.0,0.4583333333333333,0.0,0.0,0.5625,0.0,0.0,0.0,formal cap 12288 except targeted row-1 recovery at 8192; NL cap 8192
 hard_attribute_fresh,hard attribute,nl_exact,5,3408,1.0,0.0,0.4479166666666667,0.0,0.0,0.59375,0.0,0.0,0.0,formal cap 12288 except targeted row-1 recovery at 8192; NL cap 8192
 hard_attribute_fresh,hard attribute,nl_exact,5,3409,1.0,0.0,0.3541666666666667,0.0,0.0,0.6423611111111112,0.0,0.0,0.0,formal cap 12288 except targeted row-1 recovery at 8192; NL cap 8192

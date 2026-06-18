@@ -3,8 +3,8 @@ iGSM,paired-family full suite,30,30,30,30,complete
 maze,paired-family full suite,30,30,7,30,partial eval
 attribute constraints,paired-family full suite,30,30,0,30,eval pending
 semantic iGSM,semantic bare-symbol paired rerun,30,30,30,30,complete
-typed maze,typed-symbol paired rerun,30,30,15,30,partial eval
-hard attribute fresh,fresh hard-attribute-only eval,30,30,27,30,partial eval
+typed maze,typed-symbol paired rerun,30,30,27,30,partial eval
+hard attribute fresh,fresh hard-attribute-only eval,30,30,30,30,complete
 trace controls,six train-1-to-25 perturbations,,,18,18,complete
 shortcut-rate,"rates 0.3/0.5/0.8, logic and NL",,,18,18,complete
 hybrid order,formal-then-NL and NL-then-formal full train-depth suite,,,30,30,complete
