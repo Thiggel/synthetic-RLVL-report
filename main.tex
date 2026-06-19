@@ -592,7 +592,7 @@ iGSM & paired-family full suite & 30 & 30 & 30 & 30 & complete \\
 maze & paired-family full suite & 30 & 30 & 7 & 30 & partial eval \\
 attribute constraints & paired-family full suite & 30 & 30 & 0 & 30 & eval pending \\
 semantic iGSM & semantic bare-symbol paired rerun & 30 & 30 & 30 & 30 & complete \\
-typed maze & typed-symbol paired rerun & 30 & 30 & 27 & 30 & partial eval \\
+typed maze & typed-symbol paired rerun & 30 & 30 & 30 & 30 & complete \\
 hard attribute fresh & fresh hard-attribute-only eval & 30 & 30 & 30 & 30 & complete \\
 trace controls & six train-1-to-25 perturbations &  &  & 18 & 18 & complete \\
 shortcut-rate & rates 0.3/0.5/0.8, logic and NL &  &  & 18 & 18 & complete \\
@@ -606,8 +606,8 @@ batch-size & logic/NL/conditioned dual bsz 2/4/8/16 & 12 & 12 & 16 & 16 & comple
 \caption{Artifact status for paired-family repeats and active ablation families.}
 \end{table}
 
-\subsection{Active partial rerun readouts}
-The fresh active reruns have produced partial but already informative outputs. The typed-maze table is from the patched typed-symbol rerun, not the stale old maze root. It uses a formal max-new-token cap of 4096 because the earlier 8192-token formal eval could not finish within the A100 walltime; NL remains capped at 6144. The hard-attribute rows are from the fresh hard-attribute-only eval under \texttt{\$HPCVAULT}. Hard-attribute logic validity is meaningful under citation-free formal checking; hard-attribute NL validity remains unsupported because the generic NL-to-FOL translator does not yet parse this family, so the NL joint and parse columns should not be used as negative evidence about the model. Typed maze train-1-to-5 is extremely poor out of distribution even after the typed-symbol fix: sample checks show valid shallow traces but long OOD/depth-50 outputs mostly copy premises, hit the cap, omit answer tags, or drift before solving the path.
+\subsection{Fresh paired rerun readouts}
+The fresh paired reruns are now complete for semantic iGSM, typed maze, and hard attribute. The typed-maze table is from the patched typed-symbol rerun, not the stale old maze root. It uses a formal max-new-token cap of 4096 because the earlier 8192-token formal eval could not finish within the A100 walltime; NL remains capped at 6144. The hard-attribute rows are from the fresh hard-attribute-only eval under \texttt{\$HPCVAULT}. Hard-attribute logic validity is meaningful under citation-free formal checking; hard-attribute NL validity remains unsupported because the generic NL-to-FOL translator does not yet parse this family, so the NL joint and parse columns should not be used as negative evidence about the model. Typed maze is a clear negative result after the typed-symbol fix: shallow train-band traces are valid, but OOD and depth-50 remain essentially unsolved. Representative train-1-to-25 samples show the main failure mode is not answer extraction on otherwise complete traces: formal depth-25/50 generations spend the budget on constants, premises, and partial derivations and often never emit \texttt{<answer>}, while NL depth-25/50 generations copy natural-language premise chains through roughly move 18--20 and also omit the answer tag.
 
 \begin{table}[H]
 \centering
@@ -635,14 +635,15 @@ typed maze & nl\_exact & 5 & 3 & 1.000 & 0.000 & 0.030 & 0.000 & 0.000 & 0.000 &
 typed maze & nl\_exact & 10 & 3 & 1.000 & 0.000 & 0.106 & 0.000 & 0.000 & 0.000 & 0.000 \\
 typed maze & nl\_exact & 15 & 3 & 1.000 & 0.000 & 0.111 & 0.000 & 0.000 & 0.000 & 0.000 \\
 typed maze & nl\_exact & 20 & 3 & 0.750 & 0.000 & 0.111 & 0.000 & 0.000 & 0.000 & 0.000 \\
+typed maze & nl\_exact & 25 & 3 & 0.667 & 0.000 & 0.111 & 0.000 & 0.000 & 0.000 & 0.000 \\
 \bottomrule
 \end{tabular}
-\caption{Fresh typed-maze and hard-attribute partial results. For logic, valid/joint means citation-free formal validity; for NL, valid/parse is NL-to-FOL parse coverage and joint is translated-valid joint.}
+\caption{Fresh typed-maze and hard-attribute results. For logic, valid/joint means citation-free formal validity; for NL, valid/parse is NL-to-FOL parse coverage and joint is translated-valid joint.}
 \end{table}
 
 \begin{figure}[H]\centering
 \includegraphics[width=0.95\linewidth]{figures/active_paired_partial_summary.pdf}
-\caption{Fresh typed-maze and hard-attribute partial curves. Inline n annotations mark incomplete seed coverage.}
+\caption{Fresh typed-maze and hard-attribute curves. Inline n annotations show seed coverage.}
 \end{figure}
 
 The batch-size ablation is complete for the planned seed-3407 diagnostic grid: single-modality logic, single-modality NL, and 50--50 conditioned-dual training at effective batch sizes 2, 4, 8, and 16. Batch size 16 should be read as effective batch 16, implemented by microbatch 8 and gradient accumulation 2 after true physical bsz16 OOMed on A100-80GB. The result is non-monotonic and does not support the simple hypothesis that larger stratified batches rescue conditioned dual. Conditioned-NL is strongest at bsz2 and worsens at larger batches on OOD joint; conditioned-logic recovers at bsz16 but is still not a clean monotone batch-size effect. Because this is one seed, it is a diagnostic ablation rather than final causal evidence.
@@ -703,8 +704,8 @@ nl\_exact & nl\_exact & 8.000 & 0.771 & 8.000 & 0.312 & 0.292 & 0.312 & -- & -- 
 
 Representative sample inspection is consistent with the aggregate story. The conditioned prompts are correct: formal-mode rows use \texttt{<reasoning\_mode>formal\_logic</reasoning\_mode>} and \texttt{<formal>}, while NL-mode rows use natural-language traces. The failures are not a train--test prompt mismatch. Instead, high-depth formal samples often emit long constant/predicate/premise blocks and then lose strict cited/grounded validity; citation-free validity can still be high when the formulas are recoverable without citations. High-depth NL samples preserve the \texttt{<think>} surface but copy long premise lists, drift, or truncate before a translated proof/answer is complete. The bsz2 conditioned rows sometimes beat the matched single-modality row, but the effect is not stable across batch sizes or depth-50, so the safest conclusion is that batch composition alone does not explain the conditioned-dual gap.
 
-\section{Paired-family full-suite partial readout}
-The replacement paired-family eval is still partial. At this report generation time, \texttt{official\_igsm} is complete, \texttt{maze\_navigation} has the full train-1-to-5 logic/NL slice in the old paired-family root, and the old combined hard attribute-constraint rows have no completed eval JSONs. A separate fresh hard-attribute-only recovery is underway and has the first completed rows counted in the active-status table. The \texttt{joint} columns are template-specific: citation-free internal formal validity for logic and translated NL-to-FOL validity for \texttt{nl\_exact}. Maze train-1-to-5 shows a sharp train/OOD split rather than a bad gold generator: completed logic rows are perfect in-band but near-zero OOD/depth-50, while completed NL rows are also perfect in-band, somewhat higher on OOD answer correctness, and zero at depth 50. Sample inspection shows coherent complete depth-5 traces, occasional depth-10 success, and depth-25/50 failures dominated by long premise copying, malformed/truncated traces, and generation-cap pressure. For iGSM, grounded joint validity is currently zero away from trivial retrieval cases because generated variable names and arithmetic-substitution citations do not reliably align with the canonical grounded checker. The targeted iGSM NL rerun has completed all 15 NL rows and recovers near-complete parser coverage, but generated NL translated-validity is still zero on OOD/depth-50 slices; use correctness and parser coverage as provisional diagnostics until non-iGSM rows complete and grounded/canonical checks are improved.
+\section{Old paired-family full-suite diagnostics}
+The old combined paired-family eval remains partial and scientifically stale for iGSM semantic grounding and maze typed-symbol claims. Use the fresh semantic iGSM, typed-maze, and hard-attribute rows above for current conclusions. The old root is still useful as a historical diagnostic: \texttt{official\_igsm} completed, \texttt{maze\_navigation} has only early rows, and the old combined hard attribute-constraint rows have no completed eval JSONs. The \texttt{joint} columns are template-specific: citation-free internal formal validity for logic and translated NL-to-FOL validity for \texttt{nl\_exact}. Old maze train-1-to-5 already showed a sharp train/OOD split rather than a bad gold generator; the fresh typed-maze completion confirms the same qualitative failure after fixing the room/key namespace. For iGSM, grounded joint validity is currently zero away from trivial retrieval cases because generated variable names and arithmetic-substitution citations do not reliably align with the canonical grounded checker. The targeted iGSM NL rerun recovered near-complete parser coverage, but generated NL translated-validity is still zero on OOD/depth-50 slices; use correctness and parser coverage as diagnostics unless grounded/canonical checks are improved.
 
 \begin{table}[H]
 \centering
