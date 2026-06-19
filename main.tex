@@ -1,2336 +1,424 @@
-\documentclass[10pt]{article}
-\usepackage[margin=0.7in]{geometry}
-\usepackage{booktabs}
-\usepackage{graphicx}
-\usepackage{float}
-\usepackage{hyperref}
-\title{Formal Logic CoT Synthetic Results Update}
-\date{2026-05-30}
+% !TeX root = main.tex
+% Official preprint draft. The informal generated report lives in informal_report/main.tex.
+\documentclass[11pt]{article}
+\usepackage{official_preprint/styles/seed}
+
+\title{Formal Logic as a Reasoning Substrate for Small Language Models}
+
+\author{
+  Patrick Haller\textsuperscript{*}
+}
+
+\affiliations{Humboldt-Universität zu Berlin}
+
+\authornotes{%
+  \textsuperscript{*}Corresponding author%
+}
+
+\preprintlogo{official_preprint/assets/hu-logo.png}
+\abstractfilledfalse
+\preprintdate{June 19, 2026}
+\correspondence{patrick.haller@hu-berlin.de}
+
+\newcommand{\branchproof}{\textsc{BranchProof}}
+\newcommand{\attrcon}{\textsc{AttrCon}}
+\newcommand{\logic}{\textsc{Logic}}
+\newcommand{\nl}{\textsc{NL}}
+\newcommand{\correct}{\mathrm{Correct}}
+\newcommand{\valid}{\mathrm{Valid}}
+
 \begin{document}
+
 \maketitle
 
-\section{Executive insights}
-\begin{itemize}
-\item The main OLMo-7B HFSA grid is complete over three seeds. Logic is more sample- and depth-efficient at intermediate train ranges; NL exact catches up at train-1-to-25 on strict joint validity. At train-1-to-25, depth-50 joint@16 is logic 0.417 versus NL 0.427.
-\item The downstream OOD picture is split. NL transfers much better to GSM8K numeric EM, while logic transfers much better to context-provided HotpotQA, 2WikiMultiHopQA, and MuSiQue EM/F1. Treat the QA result as context-QA robustness, not proof-chain evidence.
-\item Token length is a real confound: NL targets are longer than logic targets at every train range. Both equal-length logic controls underperform compact logic; symbol padding disrupts atom tokenization, and the cleaner wordified logic control is also weaker than compact logic and NL at train-1-to-25.
-\item Tiny random-init Llama pretraining is a mechanism smoke test. Logic is stronger than matched NL on answer-only synthetic OOD pass@8, but strict depth-50 joint validity is essentially absent.
-\item Architecture ablations show that the phenomenon is not OLMo-only: Qwen and Gemma runs also show strong formal-trace transfer, with model-specific variation in joint validity.
-\item Shortcut-rich training hurts NL more clearly than logic in the completed 0.3/0.5/0.8 shortcut-rate runs, supporting the hypothesis that NL relies more on brittle shortcut associations. The shortcut-kind eval is complete at 24/24 JSONs.
-\item Conditioned dual-modality at 10k underperforms the best single-modality baselines, especially for conditioned logic at larger train ranges. The implementation trains separate mode-conditioned examples, not both modalities inside one datapoint; likely confounds are per-modality underexposure at fixed optimizer steps, mode-conditioning overhead, and cross-modality interference. The 50k continuation is running to test whether this is undertraining.
-\item Trace controls are complete at 18/18 rows. The repaired \texttt{rule\_annotated\_nl} rows now show nonzero translated validity, \texttt{invalid\_logic} keeps high answer accuracy but zero grounded validity, and shuffled NL parses while losing translated joint validity. The token audit shows current \texttt{terse\_nl} is not actually shorter than \texttt{nl\_exact} on HFSA because the default NL proof text is already terse.
-\end{itemize}
+\begin{abstract}
+Chain-of-thought supervision is usually written in natural language, even when
+the latent reasoning problem is symbolic. We ask whether the same models learn
+more correct reasoning when the chain of thought is written in a compact formal
+logic instead. We introduce two controlled synthetic reasoning suites,
+\branchproof{} and \attrcon{}, where each example has paired formal-logic and
+natural-language derivations generated from the same latent proof. This lets us
+change the reasoning substrate while holding the underlying problem fixed.
+Across depth extrapolation, shortcut-rich training, syntax controls, hybrid
+formal--natural traces, and architecture ablations, compact formal traces
+consistently improve answer correctness. On \branchproof{} with OLMo-7B,
+logic-trained models reach 92.1\% held-out correctness and 83.3\% depth-50
+correctness, compared with 79.4\% and 51.0\% for natural-language traces. On
+\attrcon{}, the gap is largest at depth 50: 45.8\% versus 10.4\%. The effect is
+not explained by simply making traces longer, more explicit, or more
+``code-like'': wordified logic, symbol-padded logic, pseudocode, rule-annotated
+natural language, and dual-modality training all underperform compact logic. At
+the same time, validity controls show that answer correctness and proof validity
+are distinct: invalid formal-looking traces can preserve high correctness while
+collapsing mechanical proof validity. Our evidence supports a narrower and more
+actionable claim: for small supervised models on controlled compositional tasks,
+the syntax and locality of compact formal reasoning can make the correct
+computation easier to learn than natural-language chain of thought.
+\end{abstract}
+
+\section{Introduction}
+
+Language models can solve harder problems when they externalize intermediate
+reasoning steps~\citep{wei2022chain,kojima2022large,zelikman2022star,zhou2023least}.
+Most work treats these steps as natural-language explanations. That choice is
+convenient for humans, but it is not obviously optimal for the model: natural
+language is verbose, ambiguous, and entangles semantic content with discourse
+style. Formal logic has the opposite bias. It is compact, typed by construction,
+and makes rule application explicit, but it is less like the text distribution
+seen during pretraining.
+
+This paper studies the substrate question directly:
+\emph{holding the latent proof fixed, should a small language model be trained
+to reason in natural language or in formal logic?} We focus on supervised
+fine-tuning rather than inference-time prompting so that the answer reflects
+what the model can learn from a substrate, not what a frontier model already
+knows how to imitate. The main comparison is therefore not ``symbolic solvers
+versus language models'', but \emph{two target languages for the same generated
+reasoning process}.
+
+We build paired synthetic datasets where every instance is generated from a
+deterministic latent proof and rendered in two ways: a compact formal derivation
+and a matched natural-language derivation. The primary suite,
+\branchproof{}, contains branching Horn-style proof chains with controlled
+depth and optional shortcut distractors. The secondary suite, \attrcon{},
+contains attribute-constraint derivations over object slots and values. These
+tasks are intentionally narrow: they isolate compositional rule following,
+state tracking, distractor rejection, length extrapolation, and final-answer
+selection while giving us exact labels and mechanical proof diagnostics.
+
+Our results support four claims.
+First, compact formal logic improves answer correctness under depth
+generalization. On the main \branchproof{} OLMo-7B sweep, logic is especially
+strong when evaluation depth exceeds training depth, reaching 83.3\% depth-50
+correctness after training up to depth 25 versus 51.0\% for natural-language
+traces.
+Second, the effect is not just ``more structure is better''. Pseudocode,
+rule-annotated natural language, longer token-matched logic, wordified logic,
+and symbol-padded logic do not recover compact logic performance.
+Third, combining formal and natural-language reasoning in the same training
+target or in separate mode-conditioned examples does not beat compact formal
+reasoning alone. Formal-first hybrids are better than natural-language-first
+hybrids, but still trail the single-substrate logic baseline.
+Fourth, validity remains a separate axis. Invalid or shuffled formal traces
+can retain nontrivial answer accuracy, so we do not claim that the model has
+learned a fully faithful theorem prover. The robust conclusion is about
+\emph{correctness}: compact formal traces make the supervised computation
+easier for these models.
+
+\section{Related Work}
+
+\paragraph{Natural-language chain of thought.}
+Chain-of-thought prompting shows that writing intermediate rationales can
+substantially improve large-model reasoning~\citep{wei2022chain}. Follow-up
+work studies zero-shot chain of thought~\citep{kojima2022large}, rationale
+bootstrapping~\citep{zelikman2022star}, decomposition into easier
+subproblems~\citep{zhou2023least}, and search over alternative reasoning
+states~\citep{yao2023tree}. These methods mostly preserve natural language as
+the reasoning medium. We instead ask whether a model trained on the same
+underlying problem learns more reliably when the intermediate reasoning is
+rendered in a formal symbolic language.
+
+\paragraph{Programs and executable substrates.}
+Program-aided and program-of-thought methods use code as an external reasoning
+substrate, often delegating arithmetic or symbolic manipulation to an
+interpreter~\citep{gao2023pal,chen2023program}. This line demonstrates that
+alternative substrates can improve reasoning, but usually changes both the
+trace language and the execution mechanism. Our experiments keep inference as
+plain next-token generation and vary only the supervised trace surface, so the
+comparison isolates what the model learns to emit.
+
+\paragraph{Logic translation and symbolic solvers.}
+Several systems translate language into a formal representation and call an
+external solver, verifier, or theorem prover~\citep{pan2023logiclm,ling2023deductive}.
+This can improve faithfulness and correctness, but the solver performs part of
+the reasoning. Our setting is complementary: the model must generate both the
+intermediate derivation and the final answer, while validators are used only
+for evaluation.
+
+\paragraph{Formal mathematics and theorem proving.}
+Lean- and Isabelle-based LLM systems train or guide models to produce formal
+proofs, often for mathematical theorem proving~\citep{polu2020generative,
+jiang2022draft,leandojo2023,leanCopilot2024}. These works show the value of
+machine-checkable reasoning languages, but the task domain is specialized and
+the goal is often proof search. We use much smaller synthetic tasks to ask a
+more basic representational question: when the same proof can be written as
+logic or natural language, which substrate better supports learned correctness?
+
+\paragraph{Shortcut learning and controlled generalization.}
+Shortcut learning describes the tendency of models to exploit superficial
+regularities that work in training but fail under distribution
+shift~\citep{geirhos2020shortcut}. Synthetic generators let us control those
+regularities exactly. Our shortcut ablations train on shortcut-rich data but
+evaluate on shortcut-neutral data, testing whether a reasoning substrate makes
+the intended rule-following computation easier to recover.
+
+\section{Controlled Reasoning Suites}
+\label{sec:datasets}
+
+Each dataset instance has a latent derivation graph, a prompt, a target trace,
+and a final answer. The formal and natural-language traces are paired:
+they refer to the same facts, rules, intermediate states, and answer. This is
+crucial because the experiment is about the substrate, not about different
+examples or different reasoning depths.
+
+\paragraph{\branchproof{}: branching Horn proofs.}
+\branchproof{} generates a small symbolic world with unary predicates over
+entities, Horn-style rules, and a target state that is reachable through a
+multi-step branch. Distractor branches are locally coherent but do not support
+the target conclusion. The generator controls the maximum proof depth during
+training and evaluates on held-out depths, including a depth-50 split far beyond
+the training range. The compact logic target is a sequence of cited derivation
+lines such as applying a rule to a previous fact to derive a new atom. The
+natural-language target states the same derivation in short sentences and ends
+with the same answer tag.
+
+\paragraph{\attrcon{}: attribute constraints.}
+\attrcon{} uses object attributes rather than abstract predicates. Rules link
+named objects, slots, and values; the answer depends on propagating constraints
+through a chain of attribute updates. This suite checks whether the logic
+advantage survives a more semantic surface where symbols are closer to words
+and the model must preserve slot/value bindings. We use \attrcon{} as a
+secondary confirmation dataset: it shares the paired rendering principle but
+differs in ontology and rule vocabulary.
+
+\paragraph{Why these tasks.}
+The suites are not intended to be broad benchmarks. They cover the reasoning
+capabilities needed for the paper's causal comparison: compositional rule
+application, maintaining intermediate state, rejecting coherent distractors,
+extrapolating beyond training depth, and producing a final answer from a trace.
+Because the generator is deterministic and paired, we can run fine-grained
+ablations that would be ambiguous on natural datasets.
+
+\paragraph{Evaluation.}
+We report pass@16 answer correctness unless otherwise noted. For formal traces,
+we also compute mechanical validity and joint correctness-plus-validity. For
+natural-language traces, translated validity is available only where the
+family-specific translator supports the surface; the main scientific claim is
+therefore answer correctness, with validity used as a diagnostic rather than as
+a universal metric.
+
+\section{Experiments}
+
+\paragraph{Setup.}
+The main experiments fine-tune OLMo-7B models on paired \branchproof{} data at
+maximum training depths 5, 10, 15, 20, and 25 over three seeds. Evaluation uses
+held-out examples from the same family and a sparse depth-50 extrapolation
+split. We repeat the main comparison on \attrcon{}, run shortcut-rate controls,
+syntax-level ablations, same-datapoint hybrids, mode-conditioned dual training,
+and architecture checks on Qwen and Gemma models. All plotted uncertainty bands
+or error bars are standard deviations over seeds.
+
+\subsection{Compact Logic Improves Correctness}
+
+\begin{figure}[t]
+  \centering
+  \includegraphics[width=0.92\linewidth]{official_preprint/figures/main_correctness.pdf}
+  \caption{\textbf{Formal logic improves correctness on \branchproof{}.}
+  OLMo-7B models are trained up to the depth on the x-axis and evaluated on
+  held-out depths or depth 50. Lines show three-seed means; bands show standard
+  deviation.}
+  \label{fig:main-correctness}
+\end{figure}
+
+Figure~\ref{fig:main-correctness} shows the central result. Natural-language
+traces eventually reach strong held-out performance at train depth 25, but
+logic is consistently better at the harder extrapolation point. At train depth
+25, the logic model reaches 92.1\% held-out correctness and 83.3\% depth-50
+correctness. The natural-language model reaches 79.4\% and 51.0\%. The effect
+is not monotonic in training depth, especially at low depths, but the best
+logic-trained models are both more accurate and more depth-robust.
+
+\begin{figure}[t]
+  \centering
+  \includegraphics[width=0.92\linewidth]{official_preprint/figures/attribute_correctness.pdf}
+  \caption{\textbf{The correctness advantage transfers to \attrcon{}.}
+  \attrcon{} changes the ontology from abstract proof atoms to object
+  attributes and slot/value constraints. Logic remains stronger at the hardest
+  depth-50 split.}
+  \label{fig:attribute-correctness}
+\end{figure}
+
+\attrcon{} gives a second, semantically different check
+(Figure~\ref{fig:attribute-correctness}). At train depth 25, logic reaches
+89.6\% held-out correctness and 45.8\% depth-50 correctness, while natural
+language reaches 81.7\% and 10.4\%. The depth-50 validity metric for \attrcon{}
+logic remains harsh, so we treat this as correctness evidence, not as proof
+that long formal derivations are fully valid.
+
+\begin{figure}[t]
+  \centering
+  \includegraphics[width=0.58\linewidth]{official_preprint/figures/shortcut_robustness.pdf}
+  \caption{\textbf{Logic is more robust to shortcut-rich training.}
+  Training examples contain shortcut markers at the shown rate, but evaluation
+  is shortcut-neutral. Depth-50 correctness remains high for formal logic while
+  natural-language traces degrade as shortcut rate increases.}
+  \label{fig:shortcut}
+\end{figure}
+
+The shortcut-rate ablation trains on data where a superficial marker is often
+predictive of the correct branch, then evaluates after removing that shortcut.
+Figure~\ref{fig:shortcut} shows that formal logic is much less sensitive to
+this distributional trap. Across shortcut rates 0.3, 0.5, and 0.8, logic
+depth-50 correctness stays near 82--84\%, while natural language falls from
+45.8\% to 28.1\%. This supports the interpretation that the compact formal
+surface makes the rule-following path easier to learn than the marker heuristic.
+
+\subsection{What Part of Logic Matters?}
+
+\begin{figure}[t]
+  \centering
+  \includegraphics[width=0.86\linewidth]{official_preprint/figures/syntax_controls.pdf}
+  \caption{\textbf{The gain is not recovered by generic verbosity or structure.}
+  All controls are train-depth-25 \branchproof{} runs. Wordifying predicates,
+  padding symbols, adding rule annotations to NL, using pseudocode, or using the
+  current terse-NL control all underperform compact logic on held-out
+  correctness. Error bars show seed standard deviation.}
+  \label{fig:syntax}
+\end{figure}
+
+Figure~\ref{fig:syntax} tests whether the logic advantage is merely a proxy for
+trace length, explicit rule labels, or code-like formatting. It is not.
+Wordified logic replaces compact predicate symbols with natural attribute-like
+names while keeping formal proof rules; held-out correctness drops to 50.8\%.
+Symbol-padded logic lengthens atoms mechanically and reaches 67.5\%.
+Pseudocode and rule-annotated natural language remain below the compact logic
+baseline. The current terse-NL control is a weak negative control because the
+default natural-language traces are already short; it should not be read as a
+clean shorter-NL result. The broad pattern is nevertheless clear: compact
+formal syntax is doing more than adding tokens or visible rule names.
+
+\begin{figure}[t]
+  \centering
+  \includegraphics[width=0.62\linewidth]{official_preprint/figures/trace_integrity.pdf}
+  \caption{\textbf{Correctness and formal validity separate.}
+  Invalid and shuffled logic traces can preserve answer correctness while
+  mechanical joint correctness-plus-validity collapses. The paper therefore
+  claims improved correctness from formal traces, not guaranteed faithful proof
+  generation.}
+  \label{fig:integrity}
+\end{figure}
+
+Trace-integrity controls sharpen the claim
+(Figure~\ref{fig:integrity}). Invalid logic retains high held-out correctness
+but has zero formal joint validity. Shuffled logic also keeps nontrivial
+correctness while destroying validity. This is not a failure of the central
+correctness result; it is a boundary on its interpretation. Compact formal
+traces can make the answer computation easier without forcing the model to emit
+a fully checkable proof at every depth.
+
+\subsection{Do Hybrids Help?}
+
+\begin{figure}[t]
+  \centering
+  \includegraphics[width=0.92\linewidth]{official_preprint/figures/hybrid_order.pdf}
+  \caption{\textbf{Same-datapoint hybrids do not beat compact logic.}
+  Dashed lines are single-substrate baselines; solid square-marker lines train
+  on both substrates in the same target. Formal-first hybrids are much better
+  than natural-language-first hybrids, but compact logic alone remains the best
+  depth-generalizing format.}
+  \label{fig:hybrid}
+\end{figure}
+
+Hybrid traces contain both a formal block and a natural-language block before
+the answer. The order matters. Formal-first hybrids are much stronger than
+natural-language-first hybrids, reaching 87.9\% held-out correctness and
+64.6\% depth-50 correctness at train depth 25. But this still trails compact
+logic alone, which reaches 92.1\% and 83.3\%. Qualitative inspection shows a
+plausible failure mode: the model can learn the intended surface, but the
+longer target spends context and probability mass on translating or repeating
+the same derivation, making long-depth completion more fragile.
+
+\begin{figure}[t]
+  \centering
+  \includegraphics[width=0.68\linewidth]{official_preprint/figures/conditioned_dual.pdf}
+  \caption{\textbf{Mode-conditioned dual training does not recover both
+  single-substrate models.} A dual model sees separate formal and
+  natural-language examples with a mode token. At train depth 25 it remains
+  below the corresponding single-substrate baselines, especially for logic.}
+  \label{fig:conditioned}
+\end{figure}
+
+Conditioned dual training removes the same-datapoint length issue: the model
+sees separate examples with a mode token requesting formal logic or natural
+language. It still does not catch up
+(Figure~\ref{fig:conditioned}). At train depth 25, conditioned logic reaches
+83.3\% held-out and 67.7\% depth-50 correctness, below the single logic
+baseline. Conditioned natural language reaches 67.5\% and 53.1\%, below the
+single natural-language held-out baseline and only slightly above its depth-50
+result. This suggests interference and reduced per-substrate exposure, rather
+than a simple train-test mismatch.
+
+\subsection{Architecture Check}
+
+\begin{figure}[t]
+  \centering
+  \includegraphics[width=0.82\linewidth]{official_preprint/figures/architecture_depth50.pdf}
+  \caption{\textbf{The depth-50 correctness gap is not OLMo-specific.}
+  At train depth 25, formal logic is stronger than natural language across the
+  completed OLMo, Qwen, and Gemma architecture checks.}
+  \label{fig:architecture}
+\end{figure}
+
+The architecture ablation is not as exhaustive as the OLMo sweep, but it is an
+important robustness check. Figure~\ref{fig:architecture} compares depth-50
+correctness at train depth 25 across completed model families. Logic is above
+natural language for OLMo-7B, Qwen-2.5-1.5B, Qwen-2.5-7B, and Gemma-3-4B,
+suggesting that the effect is not tied to one tokenizer or one base model.
+
+\section{Discussion}
+
+\paragraph{A coherent interpretation.}
+The strongest reading of these experiments is not that formal logic is
+universally superior to natural language. It is that, when a task's latent
+structure is symbolic and compositional, compact formal traces can align better
+with the computation a small model must learn. They shorten local dependencies,
+reduce discourse variation, and make rule application syntactically regular.
+This helps answer correctness, especially when evaluation depth exceeds the
+training range or when training contains shortcut distractors.
+
+\paragraph{What the ablations rule out.}
+The syntax controls argue against several easy explanations. Logic does not win
+because it is longer: token-budget matched and padded variants are worse. It
+does not win simply because it has explicit rules: rule-annotated natural
+language and pseudocode do not catch up. It does not win because any mixture of
+formal and natural language is better: both hybrid orders and conditioned dual
+training trail compact logic. The most consistent hypothesis is that the
+compact symbolic alphabet and citation-like local proof structure jointly make
+the supervised mapping easier.
+
+\paragraph{What remains unresolved.}
+The validity controls are the main caveat. A model can exploit formal-looking
+regularities to get the answer right while emitting an invalid proof. Therefore
+formal traces are not automatically faithful explanations. Future work should
+separate three objectives: answer correctness, trace validity, and causal
+faithfulness of the trace to the answer. Our experiments establish the first
+objective most strongly.
+
+\section{Limitations}
+
+The tasks are synthetic and intentionally narrow. They isolate the substrate
+comparison but do not prove transfer to open-domain reasoning. The models are
+small-to-medium supervised models, not frontier prompting systems. Some
+validity metrics are family-specific: natural-language translated validity is
+only meaningful where the translator supports the dataset, and \attrcon{}
+depth-50 formal validity remains much harsher than correctness. Finally, the
+current terse-NL ablation is not a clean independent compression control
+because the default natural-language trace is already terse.
+
+\section{Conclusion}
+
+Formal logic can be a better chain-of-thought substrate than natural language
+for small supervised models on controlled symbolic reasoning tasks. The key
+evidence is correctness: compact logic improves held-out and depth-extrapolated
+answers, transfers to an attribute-constraint suite, resists shortcut-rich
+training, and remains stronger across architecture checks. The ablations refine
+the story: the benefit is not generic verbosity, code-likeness, or hybridization
+with natural language. It appears to come from the compact, regular local
+structure of the formal trace. That makes formal logic a promising substrate for
+training reasoning behavior, while leaving proof validity and faithfulness as
+separate targets for future work.
+
+\bibliographystyle{plainnat}
+\bibliography{official_preprint/references}
 
-\section{Metric note for OOD benchmarks}
-EM means exact match: after extracting explicit answer content from an \texttt{<answer>} tag or answer marker, the evaluator normalizes the prediction and gold answer and assigns 1 only when they exactly match, then averages over examples. GSM8K is numeric EM and is effectively an accuracy over single numeric answers, but the report does not fall back to arbitrary numbers elsewhere in a generated trace. For HotpotQA, 2WikiMultiHopQA, and MuSiQue the answers are free-form strings with aliases and partial-overlap possibilities, so the standard report is EM plus token-level F1 rather than calling the result plain accuracy. F1 gives partial credit for overlapping answer tokens; EM is the stricter all-or-nothing string match.
-
-\section{Training sequence token lengths}
-This audit uses the OLMo tokenizer over the actual SFT training mixtures. NL targets are longer than logic targets at every train range; total sequence lengths include the prompt plus target.
-
-\begin{table}[H]
-\centering
-\small
-\begin{tabular}{lllll}
-\toprule
-train range & logic target & NL target & logic total & NL total \\
-\midrule
-1..5 & 322 & 382 & 697 & 757 \\
-1..10 & 500 & 653 & 1166 & 1319 \\
-1..15 & 681 & 925 & 1637 & 1881 \\
-1..20 & 863 & 1196 & 2109 & 2442 \\
-1..25 & 1049 & 1469 & 2587 & 3008 \\
-\bottomrule
-\end{tabular}
-\caption{Mean token lengths for main OLMo-7B SFT sequences by train-depth range.}
-\end{table}
-
-\begin{table}[H]
-\centering
-\small
-\begin{tabular}{lllllllll}
-\toprule
-condition & n & target mean & target p95 & total mean & total p95 & target/NL & total/NL & trunc. \\
-\midrule
-main logic & 512 & 1038.016 & 1862 & 2559.776 & 4680.500 & 0.714 & 0.860 & 0.000 \\
-symbol-padded logic & 512 & 1443.164 & 2603 & 2965.385 & 5424 & 0.993 & 0.997 & 0.000 \\
-wordified logic & 512 & 1469.700 & 2610 & 2990.900 & 5429 & 1.011 & 1.005 & 0.000 \\
-main NL exact & 512 & 1453.990 & 2668 & 2975.701 & 5490.500 & 1.000 & 1.000 & 0.000 \\
-\bottomrule
-\end{tabular}
-\caption{Token-length match for logic length-control ablations on the same 512 train-1-to-25 examples. Symbol-padded lengthens formal atoms mechanically; wordified logic uses natural attribute predicate names while preserving formal proof rules.}
-\end{table}
-
-\begin{table}[H]
-\centering
-\scriptsize
-\begin{tabular}{llllllllllll}
-\toprule
-condition & n & prompt & target & target p95 & total & total p95 & proof/body & syntax occ. & syntax tok. & tok/syntax & syntax share \\
-\midrule
-main\_logic & 512 & 1201.779 & 921.080 & 1678 & 2123.859 & 3866 & 156.248 & 215.459 & 251.459 & 1.167 & 0.273 \\
-main\_nl\_exact & 512 & 1201.779 & 1183.354 & 2118 & 2386.133 & 4303 & 117.164 & 10 & 35 & 3.500 & 0.030 \\
-terse\_nl & 512 & 1201.779 & 1183.354 & 2118 & 2386.133 & 4303 & 117.164 & 10 & 35 & 3.500 & 0.030 \\
-rule\_annotated\_nl & 512 & 1201.779 & 1349.119 & 2422 & 2551.898 & 4607 & 282.930 & 93.883 & 174.805 & 1.862 & 0.130 \\
-pseudocode & 512 & 1201.779 & 1460.963 & 2626 & 2663.742 & 4811 & 394.773 & 121.844 & 174.805 & 1.435 & 0.120 \\
-shuffled\_logic & 512 & 1201.779 & 921.080 & 1678 & 2123.859 & 3866 & 156.248 & 215.459 & 251.459 & 1.167 & 0.273 \\
-invalid\_logic & 512 & 1201.779 & 895.119 & 1631 & 2097.898 & 3817 & 130.287 & 215.459 & 251.459 & 1.167 & 0.281 \\
-shuffled\_nl & 512 & 1201.779 & 1183.354 & 2118 & 2386.133 & 4303 & 117.164 & 10 & 35 & 3.500 & 0.030 \\
-symbol\_padded\_logic & 512 & 1201.779 & 1245.162 & 2257 & 2447.941 & 4443 & 203.133 & 700.920 & 736.920 & 1.051 & 0.592 \\
-wordified\_logic & 512 & 1201.779 & 1272.768 & 2259 & 2475.547 & 4445 & 211.252 & 698.936 & 734.936 & 1.052 & 0.577 \\
-\bottomrule
-\end{tabular}
-\caption{Ablation token audit on 512 deterministic train-1-to-25 examples with the OLMo tokenizer. The syntax/operator columns count occurrences and tokenized length of a fixed audit lexeme set: proof tags, formal operators, rule labels, pseudocode markers, and common derivation words. They are diagnostics, not a model-internal category. In this generator, \texttt{terse\_nl} currently matches \texttt{nl\_exact} token-for-token because default HFSA NL proof lines are already short.}
-\end{table}
-
-\section{Main OLMo-7B downstream OOD}
-The broad OOD run has completed the 30-row main OLMo grid. This is downstream transfer under the strict answer extractor, not a synthetic validity score. The headline pattern is split: NL is much better on GSM8K numeric EM, while logic is much better on the context-provided multi-hop QA F1/EM tasks. Bold values mark the best value in each metric column.
-
-\begin{table}[H]
-\centering
-\scriptsize
-\begin{tabular}{lllllll}
-\toprule
-template & train max & n & GSM8K EM & Hotpot EM & 2Wiki EM & MuSiQue EM \\
-\midrule
-logic & 5 & 3 & 0.051 & 0.348 & 0.360 & 0.232 \\
-logic & 10 & 3 & 0.072 & 0.360 & 0.338 & 0.228 \\
-logic & 15 & 3 & 0.070 & 0.343 & 0.343 & 0.223 \\
-logic & 20 & 3 & 0.079 & \textbf{0.383} & 0.348 & \textbf{0.247} \\
-logic & 25 & 3 & 0.049 & 0.372 & \textbf{0.362} & 0.232 \\
-nl\_exact & 5 & 3 & \textbf{0.491} & 0.147 & 0.172 & 0.083 \\
-nl\_exact & 10 & 3 & 0.478 & 0.160 & 0.157 & 0.087 \\
-nl\_exact & 15 & 3 & 0.322 & 0.193 & 0.183 & 0.115 \\
-nl\_exact & 20 & 3 & 0.409 & 0.175 & 0.165 & 0.098 \\
-nl\_exact & 25 & 3 & 0.256 & 0.127 & 0.132 & 0.078 \\
-\bottomrule
-\end{tabular}
-\caption{OOD exact-match means over seeds for the main OLMo-7B checkpoints.}
-\end{table}
-
-\begin{table}[H]
-\centering
-\scriptsize
-\begin{tabular}{llllll}
-\toprule
-template & train max & n & Hotpot F1 & 2Wiki F1 & MuSiQue F1 \\
-\midrule
-logic & 5 & 3 & 0.469 & 0.418 & 0.296 \\
-logic & 10 & 3 & 0.478 & 0.401 & 0.295 \\
-logic & 15 & 3 & 0.459 & 0.407 & 0.282 \\
-logic & 20 & 3 & \textbf{0.504} & 0.409 & \textbf{0.312} \\
-logic & 25 & 3 & 0.489 & \textbf{0.422} & 0.301 \\
-nl\_exact & 5 & 3 & 0.198 & 0.202 & 0.113 \\
-nl\_exact & 10 & 3 & 0.216 & 0.193 & 0.127 \\
-nl\_exact & 15 & 3 & 0.251 & 0.229 & 0.161 \\
-nl\_exact & 20 & 3 & 0.233 & 0.189 & 0.133 \\
-nl\_exact & 25 & 3 & 0.175 & 0.163 & 0.099 \\
-\bottomrule
-\end{tabular}
-\caption{OOD F1 means over seeds for the main OLMo-7B checkpoints. GSM8K is omitted because the task is scored by numeric exact match rather than answer-token F1.}
-\end{table}
-
-\subsection{Bare-format OOD rerun}
-The format-matched bare rerun wraps the task content in \texttt{<question>...</question>} and lets the checkpoint emit its learned answer format. The 30-row main OLMo-7B slice is complete. Compared with the answer-only OOD run, NL remains much stronger on GSM8K, while logic remains stronger on context-provided QA.
-
-\begin{table}[H]
-\centering
-\scriptsize
-\begin{tabular}{lllllll}
-\toprule
-template & train max & n & GSM8K EM & Hotpot EM & 2Wiki EM & MuSiQue EM \\
-\midrule
-logic & 5 & 3 & 0.046 & 0.368 & 0.362 & 0.225 \\
-logic & 10 & 3 & 0.043 & 0.373 & \textbf{0.363} & 0.238 \\
-logic & 15 & 3 & 0.064 & \textbf{0.382} & 0.358 & 0.230 \\
-logic & 20 & 3 & 0.066 & \textbf{0.382} & 0.362 & \textbf{0.245} \\
-logic & 25 & 3 & 0.025 & 0.378 & 0.343 & 0.238 \\
-nl\_exact & 5 & 3 & \textbf{0.369} & 0.223 & 0.237 & 0.130 \\
-nl\_exact & 10 & 3 & 0.341 & 0.258 & 0.205 & 0.128 \\
-nl\_exact & 15 & 3 & 0.287 & 0.210 & 0.195 & 0.117 \\
-nl\_exact & 20 & 3 & 0.277 & 0.240 & 0.202 & 0.152 \\
-nl\_exact & 25 & 3 & 0.242 & 0.113 & 0.093 & 0.063 \\
-\bottomrule
-\end{tabular}
-\caption{Bare-format OOD exact-match means for the completed main OLMo-7B slice.}
-\end{table}
-
-\begin{table}[H]
-\centering
-\scriptsize
-\begin{tabular}{llllll}
-\toprule
-template & train max & n & Hotpot F1 & 2Wiki F1 & MuSiQue F1 \\
-\midrule
-logic & 5 & 3 & 0.496 & 0.421 & 0.296 \\
-logic & 10 & 3 & 0.501 & 0.424 & 0.309 \\
-logic & 15 & 3 & 0.508 & 0.422 & 0.302 \\
-logic & 20 & 3 & \textbf{0.509} & \textbf{0.426} & \textbf{0.316} \\
-logic & 25 & 3 & 0.501 & 0.404 & 0.316 \\
-nl\_exact & 5 & 3 & 0.305 & 0.281 & 0.177 \\
-nl\_exact & 10 & 3 & 0.345 & 0.257 & 0.181 \\
-nl\_exact & 15 & 3 & 0.288 & 0.249 & 0.169 \\
-nl\_exact & 20 & 3 & 0.331 & 0.245 & 0.214 \\
-nl\_exact & 25 & 3 & 0.147 & 0.112 & 0.082 \\
-\bottomrule
-\end{tabular}
-\caption{Bare-format OOD F1 means for the completed main OLMo-7B slice.}
-\end{table}
-
-\begin{table}[H]
-\centering
-\small
-\begin{tabular}{lllll}
-\toprule
-template & train max & seed & GSM8K EM & GSM8K tag \\
-\midrule
-logic & 20 & 3407 & 0.234 & 0.976 \\
-nl\_exact & 20 & 3407 & \textbf{0.676} & \textbf{0.997} \\
-\bottomrule
-\end{tabular}
-\caption{OLMo-2-32B bare-format GSM8K rerun. Full LongBench is intentionally skipped for this model because its configured context limit is 4096.}
-\end{table}
-
-\section{Main OLMo-7B HFSA result}
-\begin{table}[H]
-\centering
-\small
-\begin{tabular}{lllllllll}
-\toprule
-template & train max & n & OOD c@16 & OOD joint@16 & hard c@16 & hard joint@16 & d50 c@16 & d50 joint@16 \\
-\midrule
-logic & 5 & 3 & 0.293 & 0.052 & 0.207 & 0.013 & 0.135 & 0.010 \\
-logic & 10 & 3 & 0.727 & 0.362 & 0.697 & 0.292 & 0.479 & 0.010 \\
-logic & 15 & 3 & 0.634 & 0.293 & 0.675 & 0.372 & 0.354 & 0.042 \\
-logic & 20 & 3 & 0.830 & 0.441 & 0.887 & 0.627 & 0.854 & 0.198 \\
-logic & 25 & 3 & 0.921 & 0.710 & 0.956 & 0.839 & 0.833 & 0.417 \\
-nl\_exact & 5 & 3 & 0.502 & 0.318 & 0.391 & 0.167 & 0.292 & 0.000 \\
-nl\_exact & 10 & 3 & 0.482 & 0.299 & 0.425 & 0.221 & 0.417 & 0.000 \\
-nl\_exact & 15 & 3 & 0.322 & 0.137 & 0.397 & 0.233 & 0.260 & 0.000 \\
-nl\_exact & 20 & 3 & 0.474 & 0.219 & 0.649 & 0.479 & 0.406 & 0.115 \\
-nl\_exact & 25 & 3 & 0.794 & 0.748 & 0.885 & 0.860 & 0.510 & 0.427 \\
-\bottomrule
-\end{tabular}
-\caption{Final sparse-protocol means over seeds. Logic joint uses citation-free formal validity; NL joint uses translated NL-to-FOL validity.}
-\end{table}
-
-\begin{figure}[H]\centering
-\includegraphics[width=\linewidth]{figures/olmo7b_final_by_train_depth.pdf}
-\caption{Final OOD and hard-tail correct/joint performance as train depth increases.}
-\end{figure}
-\begin{figure}[H]\centering
-\includegraphics[width=\linewidth]{figures/olmo7b_depth_correct16.pdf}
-\caption{Depth curves for final correct@16, averaged over seeds. Vertical dotted line marks the max train depth.}
-\end{figure}
-\begin{figure}[H]\centering
-\includegraphics[width=\linewidth]{figures/olmo7b_depth_joint16.pdf}
-\caption{Depth curves for final joint correct+valid@16, averaged over seeds.}
-\end{figure}
-The checkpoint figures below compare each matched logic/NL train-depth pair separately and report only @16.
-Main OLMo checkpoint pass@k files available: 100. Full 1k-grid rows now available: logic train1to10 seed3407, logic train1to15 seed3407, logic train1to20 seed3407, logic train1to25 seed3407, logic train1to5 seed3407, NL exact train1to10 seed3407, NL exact train1to15 seed3407, NL exact train1to20 seed3407, NL exact train1to25 seed3407, NL exact train1to5 seed3407.
-\begin{figure}[H]\centering
-\includegraphics[width=\linewidth]{figures/olmo7b_checkpoint_train1to5_correct16.pdf}
-\caption{Seed-3407 train-1-to-5 checkpoint curves for correct@16.}
-\end{figure}
-\begin{figure}[H]\centering
-\includegraphics[width=\linewidth]{figures/olmo7b_checkpoint_train1to5_joint16.pdf}
-\caption{Seed-3407 train-1-to-5 checkpoint curves for joint correct+valid@16.}
-\end{figure}
-\begin{figure}[H]\centering
-\includegraphics[width=\linewidth]{figures/olmo7b_checkpoint_train1to10_correct16.pdf}
-\caption{Seed-3407 train-1-to-10 checkpoint curves for correct@16.}
-\end{figure}
-\begin{figure}[H]\centering
-\includegraphics[width=\linewidth]{figures/olmo7b_checkpoint_train1to10_joint16.pdf}
-\caption{Seed-3407 train-1-to-10 checkpoint curves for joint correct+valid@16.}
-\end{figure}
-\begin{figure}[H]\centering
-\includegraphics[width=\linewidth]{figures/olmo7b_checkpoint_train1to15_correct16.pdf}
-\caption{Seed-3407 train-1-to-15 checkpoint curves for correct@16.}
-\end{figure}
-\begin{figure}[H]\centering
-\includegraphics[width=\linewidth]{figures/olmo7b_checkpoint_train1to15_joint16.pdf}
-\caption{Seed-3407 train-1-to-15 checkpoint curves for joint correct+valid@16.}
-\end{figure}
-\begin{figure}[H]\centering
-\includegraphics[width=\linewidth]{figures/olmo7b_checkpoint_train1to20_correct16.pdf}
-\caption{Seed-3407 train-1-to-20 checkpoint curves for correct@16.}
-\end{figure}
-\begin{figure}[H]\centering
-\includegraphics[width=\linewidth]{figures/olmo7b_checkpoint_train1to20_joint16.pdf}
-\caption{Seed-3407 train-1-to-20 checkpoint curves for joint correct+valid@16.}
-\end{figure}
-\begin{figure}[H]\centering
-\includegraphics[width=\linewidth]{figures/olmo7b_checkpoint_train1to25_correct16.pdf}
-\caption{Seed-3407 train-1-to-25 checkpoint curves for correct@16.}
-\end{figure}
-\begin{figure}[H]\centering
-\includegraphics[width=\linewidth]{figures/olmo7b_checkpoint_train1to25_joint16.pdf}
-\caption{Seed-3407 train-1-to-25 checkpoint curves for joint correct+valid@16.}
-\end{figure}
-The next two figures slice the train-1-to-25 checkpoint curve by eval-depth bands. The intermediate protocol contains depths 30, 40, and 50, but not depths 35 or 45, so exact 30--35 or 36--40 curves would require an additional focused checkpoint eval.
-\begin{figure}[H]\centering
-\includegraphics[width=\linewidth]{figures/olmo7b_checkpoint_train1to25_depthbands_correct16.pdf}
-\caption{Seed-3407 train-1-to-25 optimizer-step curves for correct@16 over available eval-depth bands.}
-\end{figure}
-\begin{figure}[H]\centering
-\includegraphics[width=\linewidth]{figures/olmo7b_checkpoint_train1to25_depthbands_joint16.pdf}
-\caption{Seed-3407 train-1-to-25 optimizer-step curves for joint correct+valid@16 over available eval-depth bands.}
-\end{figure}
-
-\section{Tiny Llama scratch-pretraining result}
-These small random-init models were not expected to solve depth-50 extrapolation. The useful signal is that logic is consistently stronger than matched NL on answer-only OOD pass@8, especially at 200M, while strict joint validity remains zero.
-
-\begin{table}[H]
-\centering
-\small
-\begin{tabular}{lllllll}
-\toprule
-size & template & train c@8 & OOD c@8 & hard c@8 & d50 c@8 & OOD joint@8 \\
-\midrule
-50m & logic & 0.766 & 0.141 & 0.110 & 0.000 & 0.000 \\
-50m & nl\_exact & 0.672 & 0.036 & 0.009 & 0.000 & 0.000 \\
-100m & logic & 0.807 & 0.201 & 0.134 & 0.000 & 0.000 \\
-100m & nl\_exact & 0.729 & 0.034 & 0.000 & 0.000 & 0.000 \\
-200m & logic & 0.854 & 0.240 & 0.146 & 0.000 & 0.000 \\
-200m & nl\_exact & 0.719 & 0.047 & 0.018 & 0.000 & 0.000 \\
-\bottomrule
-\end{tabular}
-\caption{Tiny Llama final sparse pass@8 metrics.}
-\end{table}
-
-\subsection{Tiny Llama 100k-step rerun}
-The 100k-step rerun is complete for all three seeds, sizes, and templates. It does not solve strict depth-50 extrapolation; the notable change is that the 100M NL model improves answer-only OOD correct@8 relative to its 20k run, while joint validity remains zero.
-
-\begin{table}[H]
-\centering
-\small
-\begin{tabular}{llllllll}
-\toprule
-size & template & train c@8 & OOD c@8 & hard c@8 & d50 c@8 & OOD joint@8 & d50 joint@8 \\
-\midrule
-50m & logic & 0.807 & 0.112 & 0.074 & 0.000 & 0.000 & 0.000 \\
-50m & nl\_exact & 0.630 & 0.068 & 0.060 & 0.000 & 0.000 & 0.000 \\
-100m & logic & 0.849 & 0.133 & 0.077 & 0.000 & 0.000 & 0.000 \\
-100m & nl\_exact & 0.672 & 0.258 & 0.199 & 0.021 & 0.000 & 0.000 \\
-200m & logic & 0.625 & 0.201 & 0.134 & 0.000 & 0.008 & 0.000 \\
-200m & nl\_exact & 0.583 & 0.055 & 0.033 & 0.000 & 0.000 & 0.000 \\
-\bottomrule
-\end{tabular}
-\caption{Tiny Llama 100k-step final sparse pass@8 metrics.}
-\end{table}
-
-Tiny 100k checkpoint pass@k rows available at report generation time: 90; the completed grid contains checkpoints 20k, 40k, 60k, 80k, and 100k for every size/template/seed.
-\begin{figure}[H]\centering
-\includegraphics[width=\linewidth]{figures/tiny_llama_100k_50m_checkpoint_depthbands_correct_k8.pdf}
-\caption{Tiny Llama 100k 50m optimizer-step curves for correct@8 over eval-depth bands.}
-\end{figure}
-\begin{figure}[H]\centering
-\includegraphics[width=\linewidth]{figures/tiny_llama_100k_50m_checkpoint_depthbands_joint_k8.pdf}
-\caption{Tiny Llama 100k 50m optimizer-step curves for joint correct+valid@8 over eval-depth bands.}
-\end{figure}
-\begin{figure}[H]\centering
-\includegraphics[width=\linewidth]{figures/tiny_llama_100k_100m_checkpoint_depthbands_correct_k8.pdf}
-\caption{Tiny Llama 100k 100m optimizer-step curves for correct@8 over eval-depth bands.}
-\end{figure}
-\begin{figure}[H]\centering
-\includegraphics[width=\linewidth]{figures/tiny_llama_100k_100m_checkpoint_depthbands_joint_k8.pdf}
-\caption{Tiny Llama 100k 100m optimizer-step curves for joint correct+valid@8 over eval-depth bands.}
-\end{figure}
-\begin{figure}[H]\centering
-\includegraphics[width=\linewidth]{figures/tiny_llama_100k_200m_checkpoint_depthbands_correct_k8.pdf}
-\caption{Tiny Llama 100k 200m optimizer-step curves for correct@8 over eval-depth bands.}
-\end{figure}
-\begin{figure}[H]\centering
-\includegraphics[width=\linewidth]{figures/tiny_llama_100k_200m_checkpoint_depthbands_joint_k8.pdf}
-\caption{Tiny Llama 100k 200m optimizer-step curves for joint correct+valid@8 over eval-depth bands.}
-\end{figure}
-
-The tiny plots separate model sizes and separate answer correctness from joint correct+valid.
-\begin{figure}[H]\centering
-\includegraphics[width=0.72\linewidth]{figures/tiny_llama_50m_bands_correct_k8.pdf}
-\caption{Tiny Llama 50m train/OOD/hard-tail/depth-50 correct@8 by template.}
-\end{figure}
-\begin{figure}[H]\centering
-\includegraphics[width=0.72\linewidth]{figures/tiny_llama_50m_bands_joint_k8.pdf}
-\caption{Tiny Llama 50m train/OOD/hard-tail/depth-50 joint correct+valid@8 by template.}
-\end{figure}
-\begin{figure}[H]\centering
-\includegraphics[width=0.72\linewidth]{figures/tiny_llama_100m_bands_correct_k8.pdf}
-\caption{Tiny Llama 100m train/OOD/hard-tail/depth-50 correct@8 by template.}
-\end{figure}
-\begin{figure}[H]\centering
-\includegraphics[width=0.72\linewidth]{figures/tiny_llama_100m_bands_joint_k8.pdf}
-\caption{Tiny Llama 100m train/OOD/hard-tail/depth-50 joint correct+valid@8 by template.}
-\end{figure}
-\begin{figure}[H]\centering
-\includegraphics[width=0.72\linewidth]{figures/tiny_llama_200m_bands_correct_k8.pdf}
-\caption{Tiny Llama 200m train/OOD/hard-tail/depth-50 correct@8 by template.}
-\end{figure}
-\begin{figure}[H]\centering
-\includegraphics[width=0.72\linewidth]{figures/tiny_llama_200m_bands_joint_k8.pdf}
-\caption{Tiny Llama 200m train/OOD/hard-tail/depth-50 joint correct+valid@8 by template.}
-\end{figure}
-\begin{figure}[H]\centering
-\includegraphics[width=0.72\linewidth]{figures/tiny_llama_50m_depth_correct_k8.pdf}
-\caption{Tiny Llama 50m seed-mean depth curve for correct@8. The dotted line marks train max depth 10.}
-\end{figure}
-\begin{figure}[H]\centering
-\includegraphics[width=0.72\linewidth]{figures/tiny_llama_50m_depth_joint_k8.pdf}
-\caption{Tiny Llama 50m seed-mean depth curve for joint correct+valid@8. The dotted line marks train max depth 10.}
-\end{figure}
-\begin{figure}[H]\centering
-\includegraphics[width=0.72\linewidth]{figures/tiny_llama_100m_depth_correct_k8.pdf}
-\caption{Tiny Llama 100m seed-mean depth curve for correct@8. The dotted line marks train max depth 10.}
-\end{figure}
-\begin{figure}[H]\centering
-\includegraphics[width=0.72\linewidth]{figures/tiny_llama_100m_depth_joint_k8.pdf}
-\caption{Tiny Llama 100m seed-mean depth curve for joint correct+valid@8. The dotted line marks train max depth 10.}
-\end{figure}
-\begin{figure}[H]\centering
-\includegraphics[width=0.72\linewidth]{figures/tiny_llama_200m_depth_correct_k8.pdf}
-\caption{Tiny Llama 200m seed-mean depth curve for correct@8. The dotted line marks train max depth 10.}
-\end{figure}
-\begin{figure}[H]\centering
-\includegraphics[width=0.72\linewidth]{figures/tiny_llama_200m_depth_joint_k8.pdf}
-\caption{Tiny Llama 200m seed-mean depth curve for joint correct+valid@8. The dotted line marks train max depth 10.}
-\end{figure}
-
-Tiny checkpoint pass@k rows available at report generation time: 36. The curves below include all available intermediate checkpoint rows plus the final 20k checkpoint.
-
-\begin{figure}[H]\centering
-\includegraphics[width=\linewidth]{figures/tiny_llama_50m_checkpoint_correct_k8.pdf}
-\caption{Tiny Llama 50m seed-mean checkpoint curves for correct@8.}
-\end{figure}
-\begin{figure}[H]\centering
-\includegraphics[width=\linewidth]{figures/tiny_llama_50m_checkpoint_joint_k8.pdf}
-\caption{Tiny Llama 50m seed-mean checkpoint curves for joint correct+valid@8.}
-\end{figure}
-\begin{figure}[H]\centering
-\includegraphics[width=\linewidth]{figures/tiny_llama_100m_checkpoint_correct_k8.pdf}
-\caption{Tiny Llama 100m seed-mean checkpoint curves for correct@8.}
-\end{figure}
-\begin{figure}[H]\centering
-\includegraphics[width=\linewidth]{figures/tiny_llama_100m_checkpoint_joint_k8.pdf}
-\caption{Tiny Llama 100m seed-mean checkpoint curves for joint correct+valid@8.}
-\end{figure}
-\begin{figure}[H]\centering
-\includegraphics[width=\linewidth]{figures/tiny_llama_200m_checkpoint_correct_k8.pdf}
-\caption{Tiny Llama 200m seed-mean checkpoint curves for correct@8.}
-\end{figure}
-\begin{figure}[H]\centering
-\includegraphics[width=\linewidth]{figures/tiny_llama_200m_checkpoint_joint_k8.pdf}
-\caption{Tiny Llama 200m seed-mean checkpoint curves for joint correct+valid@8.}
-\end{figure}
-
-\begin{figure}[H]\centering
-\includegraphics[width=\linewidth]{figures/tiny_llama_50m_checkpoint_depthbands_correct_k8.pdf}
-\caption{Tiny Llama 50m optimizer-step curves for correct@8 over eval-depth bands.}
-\end{figure}
-\begin{figure}[H]\centering
-\includegraphics[width=\linewidth]{figures/tiny_llama_50m_checkpoint_depthbands_joint_k8.pdf}
-\caption{Tiny Llama 50m optimizer-step curves for joint correct+valid@8 over eval-depth bands.}
-\end{figure}
-\begin{figure}[H]\centering
-\includegraphics[width=\linewidth]{figures/tiny_llama_100m_checkpoint_depthbands_correct_k8.pdf}
-\caption{Tiny Llama 100m optimizer-step curves for correct@8 over eval-depth bands.}
-\end{figure}
-\begin{figure}[H]\centering
-\includegraphics[width=\linewidth]{figures/tiny_llama_100m_checkpoint_depthbands_joint_k8.pdf}
-\caption{Tiny Llama 100m optimizer-step curves for joint correct+valid@8 over eval-depth bands.}
-\end{figure}
-\begin{figure}[H]\centering
-\includegraphics[width=\linewidth]{figures/tiny_llama_200m_checkpoint_depthbands_correct_k8.pdf}
-\caption{Tiny Llama 200m optimizer-step curves for correct@8 over eval-depth bands.}
-\end{figure}
-\begin{figure}[H]\centering
-\includegraphics[width=\linewidth]{figures/tiny_llama_200m_checkpoint_depthbands_joint_k8.pdf}
-\caption{Tiny Llama 200m optimizer-step curves for joint correct+valid@8 over eval-depth bands.}
-\end{figure}
-
-\subsection{Tiny Llama downstream OOD eval}
-The tiny downstream OOD evals completed with the 8192-context fallback. LongBench contexts are truncated for these tiny models, so these tables are smoke/result-sanity readouts rather than fair long-context QA claims.
-
-\begin{table}[H]
-\centering
-\small
-\begin{tabular}{llllllll}
-\toprule
-size & template & n & GSM8K EM & GSM8K tag & Hotpot EM & 2Wiki EM & MuSiQue EM \\
-\midrule
-50m & logic & 3 & 0.000 & 0.004 & 0.000 & 0.000 & 0.000 \\
-50m & nl\_exact & 3 & 0.000 & 0.029 & 0.000 & 0.000 & 0.000 \\
-100m & logic & 3 & 0.000 & 0.010 & 0.000 & 0.000 & 0.000 \\
-100m & nl\_exact & 3 & 0.000 & 0.055 & 0.000 & 0.000 & 0.000 \\
-200m & logic & 3 & 0.000 & 0.215 & 0.000 & 0.000 & 0.000 \\
-200m & nl\_exact & 3 & 0.000 & \textbf{0.403} & 0.000 & 0.000 & 0.000 \\
-\bottomrule
-\end{tabular}
-\caption{Tiny Llama OOD exact-match metrics after strict answer extraction.}
-\end{table}
-
-\begin{table}[H]
-\centering
-\small
-\begin{tabular}{llllll}
-\toprule
-size & template & n & Hotpot F1 & 2Wiki F1 & MuSiQue F1 \\
-\midrule
-50m & logic & 3 & 0.000 & 0.000 & 0.000 \\
-50m & nl\_exact & 3 & 0.000 & 0.000 & 0.000 \\
-100m & logic & 3 & 0.000 & 0.000 & 0.000 \\
-100m & nl\_exact & 3 & 0.000 & 0.000 & 0.000 \\
-200m & logic & 3 & 0.000 & 0.000 & 0.000 \\
-200m & nl\_exact & 3 & 0.000 & 0.000 & 0.000 \\
-\bottomrule
-\end{tabular}
-\caption{Tiny Llama OOD F1 metrics after strict answer extraction. GSM8K is omitted because it is scored by numeric exact match.}
-\end{table}
-
-\subsection{Tiny Llama bare-format OOD reruns}
-Both the 20k and 100k tiny bare-format OOD arrays completed. All strict EM/F1 values remain zero on GSM8K and LongBench; the only movement is answer-tag adherence, mostly in the 200M checkpoints.
-
-\begin{table}[H]
-\centering
-\small
-\begin{tabular}{llllllll}
-\toprule
-size & template & n & GSM8K EM & GSM8K tag & Hotpot EM & 2Wiki EM & MuSiQue EM \\
-\midrule
-50m & logic & 3 & 0.000 & 0.026 & 0.000 & 0.000 & 0.000 \\
-50m & nl\_exact & 3 & 0.000 & 0.174 & 0.000 & 0.000 & 0.000 \\
-100m & logic & 3 & 0.000 & 0.084 & 0.000 & 0.000 & 0.000 \\
-100m & nl\_exact & 3 & 0.000 & 0.102 & 0.000 & 0.000 & 0.000 \\
-200m & logic & 3 & 0.000 & \textbf{0.822} & 0.000 & 0.000 & 0.000 \\
-200m & nl\_exact & 3 & 0.000 & 0.461 & 0.000 & 0.000 & 0.000 \\
-\bottomrule
-\end{tabular}
-\caption{Tiny Llama 20k bare-format OOD exact-match metrics.}
-\end{table}
-
-\begin{table}[H]
-\centering
-\small
-\begin{tabular}{llllllll}
-\toprule
-size & template & n & GSM8K EM & GSM8K tag & Hotpot EM & 2Wiki EM & MuSiQue EM \\
-\midrule
-50m & logic & 3 & 0.000 & 0.017 & 0.000 & 0.000 & 0.000 \\
-50m & nl\_exact & 3 & 0.000 & 0.100 & 0.000 & 0.000 & 0.000 \\
-100m & logic & 3 & 0.000 & 0.069 & 0.000 & 0.000 & 0.000 \\
-100m & nl\_exact & 3 & 0.000 & 0.046 & 0.000 & 0.000 & 0.000 \\
-200m & logic & 3 & 0.000 & \textbf{0.675} & 0.000 & 0.000 & 0.000 \\
-200m & nl\_exact & 3 & 0.000 & 0.357 & 0.000 & 0.000 & 0.000 \\
-\bottomrule
-\end{tabular}
-\caption{Tiny Llama 100k bare-format OOD exact-match metrics.}
-\end{table}
-
-\section{Architecture ablations}
-The architecture comparison now includes completed Qwen-2.5-1.5B, Qwen-2.5-7B, and Gemma-3-4B sparse evals, plus the main OLMo-7B baseline for the overlapping train ranges. OLMo-2-32B is shown only as a short-context slice because its real context limit prevents the depth-50 protocol.
-
-\begin{table}[H]
-\centering
-\scriptsize
-\begin{tabular}{llllllllllll}
-\toprule
-model & template & train max & n & OOD c@16 & OOD joint@16 & d30--50 c@16 & d30--50 joint@16 & d50 c@16 & d50 joint@16 & short c@16 & short joint@16 \\
-\midrule
-OLMo-7B & logic & 5 & 3 & 0.293 & 0.052 & 0.160 & 0.004 & 0.135 & 0.010 & 0.795 & 0.583 \\
-OLMo-7B & logic & 10 & 3 & 0.727 & 0.362 & 0.537 & 0.062 & 0.479 & 0.010 & 1.000 & 0.967 \\
-OLMo-7B & logic & 15 & 3 & 0.634 & 0.293 & 0.477 & 0.042 & 0.354 & 0.042 & 1.000 & 1.000 \\
-OLMo-7B & logic & 20 & 3 & 0.830 & 0.441 & 0.810 & 0.346 & 0.854 & 0.198 & 1.000 & 1.000 \\
-OLMo-7B & logic & 25 & 3 & 0.921 & 0.710 & 0.921 & 0.710 & 0.833 & 0.417 & 1.000 & 1.000 \\
-OLMo-7B & nl\_exact & 5 & 3 & 0.502 & 0.318 & 0.304 & 0.000 & 0.292 & 0.000 & 0.967 & 0.965 \\
-OLMo-7B & nl\_exact & 10 & 3 & 0.482 & 0.299 & 0.329 & 0.000 & 0.417 & 0.000 & 1.000 & 1.000 \\
-OLMo-7B & nl\_exact & 15 & 3 & 0.322 & 0.137 & 0.271 & 0.002 & 0.260 & 0.000 & 1.000 & 1.000 \\
-OLMo-7B & nl\_exact & 20 & 3 & 0.474 & 0.219 & 0.423 & 0.121 & 0.406 & 0.115 & 1.000 & 1.000 \\
-OLMo-7B & nl\_exact & 25 & 3 & 0.794 & 0.748 & 0.794 & 0.748 & 0.510 & 0.427 & 1.000 & 1.000 \\
-Qwen-2.5-1.5B & logic & 10 & 3 & 0.691 & 0.231 & 0.650 & 0.062 & 0.552 & 0.010 & 0.988 & 0.953 \\
-Qwen-2.5-1.5B & logic & 20 & 3 & 0.694 & 0.208 & 0.669 & 0.154 & 0.698 & 0.042 & 1.000 & 1.000 \\
-Qwen-2.5-1.5B & logic & 25 & 3 & 0.771 & 0.425 & 0.771 & 0.425 & 0.708 & 0.260 & 1.000 & 1.000 \\
-Qwen-2.5-1.5B & nl\_exact & 10 & 3 & 0.561 & 0.278 & 0.435 & 0.000 & 0.521 & 0.000 & 1.000 & 1.000 \\
-Qwen-2.5-1.5B & nl\_exact & 20 & 3 & 0.354 & 0.075 & 0.331 & 0.000 & 0.406 & 0.000 & 1.000 & 1.000 \\
-Qwen-2.5-1.5B & nl\_exact & 25 & 3 & 0.542 & 0.292 & 0.542 & 0.292 & 0.438 & 0.010 & 1.000 & 1.000 \\
-Qwen-2.5-7B & logic & 10 & 3 & 0.618 & 0.320 & 0.415 & 0.044 & 0.292 & 0.031 & 1.000 & 0.981 \\
-Qwen-2.5-7B & logic & 20 & 3 & 0.753 & 0.165 & 0.733 & 0.069 & 0.656 & 0.021 & 1.000 & 1.000 \\
-Qwen-2.5-7B & logic & 25 & 3 & 0.906 & 0.431 & 0.906 & 0.431 & 0.854 & 0.156 & 1.000 & 1.000 \\
-Qwen-2.5-7B & nl\_exact & 10 & 3 & 0.461 & 0.279 & 0.275 & 0.000 & 0.427 & 0.000 & 1.000 & 1.000 \\
-Qwen-2.5-7B & nl\_exact & 20 & 3 & 0.438 & 0.339 & 0.427 & 0.315 & 0.333 & 0.135 & 1.000 & 1.000 \\
-Qwen-2.5-7B & nl\_exact & 25 & 3 & 0.569 & 0.565 & 0.569 & 0.565 & 0.250 & 0.229 & 1.000 & 1.000 \\
-Gemma-3-4B & logic & 10 & 3 & 0.691 & 0.522 & 0.517 & 0.265 & 0.417 & 0.135 & 1.000 & 1.000 \\
-Gemma-3-4B & logic & 20 & 3 & 0.769 & 0.288 & 0.746 & 0.244 & 0.677 & 0.146 & 1.000 & 1.000 \\
-Gemma-3-4B & logic & 25 & 3 & 0.696 & 0.254 & 0.696 & 0.254 & 0.562 & 0.177 & 1.000 & 1.000 \\
-Gemma-3-4B & nl\_exact & 10 & 3 & 0.458 & 0.261 & 0.279 & 0.000 & 0.167 & 0.000 & 0.964 & 0.941 \\
-Gemma-3-4B & nl\_exact & 20 & 3 & 0.215 & 0.188 & 0.115 & 0.081 & 0.104 & 0.052 & 1.000 & 1.000 \\
-Gemma-3-4B & nl\_exact & 25 & 3 & 0.394 & 0.394 & 0.394 & 0.394 & 0.302 & 0.302 & 1.000 & 1.000 \\
-OLMo-2-32B shortctx & logic & 20 & 1 & -- & -- & -- & -- & -- & -- & 1.000 & 1.000 \\
-OLMo-2-32B shortctx & nl\_exact & 20 & 1 & -- & -- & -- & -- & -- & -- & 1.000 & 1.000 \\
-\bottomrule
-\end{tabular}
-\caption{Architecture sparse eval comparison. Depth 30--50 averages depths 30, 35, 40, 45, and 50 when available; short-context averages depths 1, 2, 5, 10, 12, and 15 and is the only valid OLMo-2-32B synthetic slice.}
-\end{table}
-\begin{figure}[H]\centering
-\includegraphics[width=0.95\linewidth]{figures/architecture_ood_correct16_by_train_depth.pdf}
-\caption{Architecture comparison for OOD correct@16.}
-\end{figure}
-\begin{figure}[H]\centering
-\includegraphics[width=0.95\linewidth]{figures/architecture_depth30_50_correct16_by_train_depth.pdf}
-\caption{Architecture comparison for eval-depth 30--50 correct@16.}
-\end{figure}
-
-\section{Active experiment status}
-This table is artifact-based at report-generation time: it counts completed SFT final adapters where applicable and completed sparse pass@k JSONs. Live Slurm state is maintained in \texttt{docs/running\_experiments.md}.
-
-\begin{table}[H]
-\centering
-\scriptsize
-\begin{tabular}{lllllll}
-\toprule
-experiment & scope & SFT done & SFT expected & eval done & eval expected & status \\
-\midrule
-iGSM & paired-family full suite & 30 & 30 & 30 & 30 & complete \\
-maze & paired-family full suite & 30 & 30 & 7 & 30 & partial eval \\
-attribute constraints & paired-family full suite & 30 & 30 & 0 & 30 & eval pending \\
-semantic iGSM & semantic bare-symbol paired rerun & 30 & 30 & 30 & 30 & complete \\
-typed maze & typed-symbol paired rerun & 30 & 30 & 30 & 30 & complete \\
-hard attribute fresh & fresh hard-attribute-only eval & 30 & 30 & 30 & 30 & complete \\
-trace controls & six train-1-to-25 perturbations &  &  & 18 & 18 & complete \\
-shortcut-rate & rates 0.3/0.5/0.8, logic and NL &  &  & 18 & 18 & complete \\
-hybrid order & formal-then-NL and NL-then-formal full train-depth suite &  &  & 30 & 30 & complete \\
-shortcut-kind & position and initial-marker shortcuts &  &  & 24 & 24 & complete \\
-conditioned dual 10k & conditioned formal/NL dual modality &  &  & 30 & 30 & complete \\
-conditioned dual 50k & longer conditioned formal/NL dual modality &  &  & 30 & 30 & complete \\
-batch-size & logic/NL/conditioned dual bsz 2/4/8/16 & 12 & 12 & 16 & 16 & complete \\
-\bottomrule
-\end{tabular}
-\caption{Artifact status for paired-family repeats and active ablation families.}
-\end{table}
-
-\subsection{Fresh paired rerun readouts}
-The fresh paired reruns are now complete for semantic iGSM, typed maze, and hard attribute. The typed-maze table is from the patched typed-symbol rerun, not the stale old maze root. It uses a formal max-new-token cap of 4096 because the earlier 8192-token formal eval could not finish within the A100 walltime; NL remains capped at 6144. The hard-attribute rows are from the fresh hard-attribute-only eval under \texttt{\$HPCVAULT}. Hard-attribute logic validity is meaningful under citation-free formal checking; hard-attribute NL validity remains unsupported because the generic NL-to-FOL translator does not yet parse this family, so the NL joint and parse columns should not be used as negative evidence about the model. Typed maze is a clear negative result after the typed-symbol fix: shallow train-band traces are valid, but OOD and depth-50 remain essentially unsolved. Representative train-1-to-25 samples show the main failure mode is not answer extraction on otherwise complete traces: formal depth-25/50 generations spend the budget on constants, premises, and partial derivations and often never emit \texttt{<answer>}, while NL depth-25/50 generations copy natural-language premise chains through roughly move 18--20 and also omit the answer tag.
-
-\begin{table}[H]
-\centering
-\scriptsize
-\begin{tabular}{lllllllllll}
-\toprule
-family & template & train max & n & train c@16 & train joint@16 & OOD c@16 & OOD valid/parse@16 & OOD joint@16 & d50 c@16 & d50 joint@16 \\
-\midrule
-hard attribute & logic & 5 & 3 & 1.000 & 1.000 & 0.763 & 0.126 & 0.108 & 0.031 & 0.000 \\
-hard attribute & logic & 10 & 3 & 1.000 & 1.000 & 0.800 & 0.486 & 0.455 & 0.354 & 0.000 \\
-hard attribute & logic & 15 & 3 & 1.000 & 1.000 & 0.821 & 0.507 & 0.500 & 0.177 & 0.000 \\
-hard attribute & logic & 20 & 3 & 1.000 & 1.000 & 0.873 & 0.738 & 0.737 & 0.406 & 0.000 \\
-hard attribute & logic & 25 & 3 & 1.000 & 1.000 & 0.896 & 0.743 & 0.736 & 0.458 & 0.000 \\
-hard attribute & nl\_exact & 5 & 3 & 1.000 & 0.000 & 0.420 & 0.000 & 0.000 & 0.000 & 0.000 \\
-hard attribute & nl\_exact & 10 & 3 & 1.000 & 0.000 & 0.801 & 0.000 & 0.000 & 0.260 & 0.000 \\
-hard attribute & nl\_exact & 15 & 3 & 1.000 & 0.000 & 0.767 & 0.000 & 0.000 & 0.021 & 0.000 \\
-hard attribute & nl\_exact & 20 & 3 & 1.000 & 0.000 & 0.862 & 0.000 & 0.000 & 0.312 & 0.000 \\
-hard attribute & nl\_exact & 25 & 3 & 1.000 & 0.000 & 0.817 & 0.000 & 0.000 & 0.104 & 0.000 \\
-typed maze & logic & 5 & 3 & 1.000 & 1.000 & 0.002 & 0.002 & 0.000 & 0.000 & 0.000 \\
-typed maze & logic & 10 & 3 & 0.750 & 0.750 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 \\
-typed maze & logic & 15 & 3 & 0.500 & 0.500 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 \\
-typed maze & logic & 20 & 3 & 0.375 & 0.375 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 \\
-typed maze & logic & 25 & 3 & 0.333 & 0.333 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 \\
-typed maze & nl\_exact & 5 & 3 & 1.000 & 0.000 & 0.030 & 0.000 & 0.000 & 0.000 & 0.000 \\
-typed maze & nl\_exact & 10 & 3 & 1.000 & 0.000 & 0.106 & 0.000 & 0.000 & 0.000 & 0.000 \\
-typed maze & nl\_exact & 15 & 3 & 1.000 & 0.000 & 0.111 & 0.000 & 0.000 & 0.000 & 0.000 \\
-typed maze & nl\_exact & 20 & 3 & 0.750 & 0.000 & 0.111 & 0.000 & 0.000 & 0.000 & 0.000 \\
-typed maze & nl\_exact & 25 & 3 & 0.667 & 0.000 & 0.111 & 0.000 & 0.000 & 0.000 & 0.000 \\
-\bottomrule
-\end{tabular}
-\caption{Fresh typed-maze and hard-attribute results. For logic, valid/joint means citation-free formal validity; for NL, valid/parse is NL-to-FOL parse coverage and joint is translated-valid joint.}
-\end{table}
-
-\begin{figure}[H]\centering
-\includegraphics[width=0.95\linewidth]{figures/active_paired_partial_summary.pdf}
-\caption{Fresh typed-maze and hard-attribute curves. Inline n annotations show seed coverage.}
-\end{figure}
-
-The batch-size ablation is complete for the planned seed-3407 diagnostic grid: single-modality logic, single-modality NL, and 50--50 conditioned-dual training at effective batch sizes 2, 4, 8, and 16. Batch size 16 should be read as effective batch 16, implemented by microbatch 8 and gradient accumulation 2 after true physical bsz16 OOMed on A100-80GB. The result is non-monotonic and does not support the simple hypothesis that larger stratified batches rescue conditioned dual. Conditioned-NL is strongest at bsz2 and worsens at larger batches on OOD joint; conditioned-logic recovers at bsz16 but is still not a clean monotone batch-size effect. Because this is one seed, it is a diagnostic ablation rather than final causal evidence.
-
-\begin{table}[H]
-\centering
-\scriptsize
-\begin{tabular}{lllllllll}
-\toprule
-train & eval & bsz & n & OOD c@16 & OOD valid/parse@16 & OOD joint@16 & d50 c@16 & d50 joint@16 \\
-\midrule
-conditioned\_dual & conditioned\_logic & 2 & 1 & 0.910 & 0.826 & 0.618 & 0.750 & 0.031 \\
-conditioned\_dual & conditioned\_logic & 4 & 1 & 0.823 & 0.483 & 0.385 & 0.594 & 0.031 \\
-conditioned\_dual & conditioned\_logic & 8 & 1 & 0.701 & 0.510 & 0.378 & 0.344 & 0.000 \\
-conditioned\_dual & conditioned\_logic & 16 & 1 & 0.934 & 0.851 & 0.587 & 0.812 & 0.125 \\
-conditioned\_dual & conditioned\_nl & 2 & 1 & 0.826 & 0.983 & 0.781 & 0.375 & 0.344 \\
-conditioned\_dual & conditioned\_nl & 4 & 1 & 0.670 & 1.000 & 0.444 & 0.375 & 0.000 \\
-conditioned\_dual & conditioned\_nl & 8 & 1 & 0.785 & 0.684 & 0.500 & 0.688 & 0.000 \\
-conditioned\_dual & conditioned\_nl & 16 & 1 & 0.576 & 0.997 & 0.444 & 0.344 & 0.062 \\
-logic & logic & 2 & 1 & 0.920 & 0.559 & 0.406 & 0.875 & 0.031 \\
-logic & logic & 4 & 1 & 0.899 & 0.799 & 0.562 & 0.656 & 0.188 \\
-logic & logic & 8 & 1 & 0.747 & 0.542 & 0.403 & 0.531 & 0.000 \\
-logic & logic & 16 & 1 & 0.913 & 0.736 & 0.583 & 0.688 & 0.062 \\
-nl\_exact & nl\_exact & 2 & 1 & 0.569 & 0.972 & 0.503 & 0.375 & 0.219 \\
-nl\_exact & nl\_exact & 4 & 1 & 0.566 & 0.865 & 0.479 & 0.188 & 0.000 \\
-nl\_exact & nl\_exact & 8 & 1 & 0.802 & 0.990 & 0.771 & 0.438 & 0.312 \\
-nl\_exact & nl\_exact & 16 & 1 & 0.726 & 0.955 & 0.628 & 0.344 & 0.188 \\
-\bottomrule
-\end{tabular}
-\caption{HFSA batch-size ablation results. Batch size 16 is effective batch 16 implemented as microbatch 8 with gradient accumulation 2.}
-\end{table}
-
-\begin{table}[H]
-\centering
-\scriptsize
-\begin{tabular}{llllllllll}
-\toprule
-train & eval & best OOD bsz & best OOD joint@16 & best d50 bsz & best d50 joint@16 & OOD joint range & d50 joint range & mean OOD delta vs single & best OOD delta vs single \\
-\midrule
-conditioned\_dual & conditioned\_logic & 2.000 & 0.618 & 16.000 & 0.125 & 0.240 & 0.125 & 0.003 & 0.212 \\
-conditioned\_dual & conditioned\_nl & 2.000 & 0.781 & 2.000 & 0.344 & 0.337 & 0.344 & -0.053 & 0.278 \\
-logic & logic & 16.000 & 0.583 & 4.000 & 0.188 & 0.181 & 0.188 & -- & -- \\
-nl\_exact & nl\_exact & 8.000 & 0.771 & 8.000 & 0.312 & 0.292 & 0.312 & -- & -- \\
-\bottomrule
-\end{tabular}
-\caption{Distilled batch-size diagnostics. Delta columns compare conditioned-dual rows to the matched single-modality row at the same effective batch size; blank deltas denote the single-modality baselines themselves.}
-\end{table}
-
-\begin{figure}[H]\centering
-\includegraphics[width=0.95\linewidth]{figures/hfsa_batch_size_ablation_partial.pdf}
-\caption{HFSA batch-size ablation curves over effective batch size. Solid lines are single-modality runs; dashed lines are conditioned-dual eval modes.}
-\end{figure}
-
-\begin{figure}[H]\centering
-\includegraphics[width=0.85\linewidth]{figures/hfsa_batch_size_conditioned_delta.pdf}
-\caption{Conditioned-dual joint-validity deltas relative to matched single-modality runs at the same effective batch size. Positive means conditioned dual is better; negative means it is worse.}
-\end{figure}
-
-Representative sample inspection is consistent with the aggregate story. The conditioned prompts are correct: formal-mode rows use \texttt{<reasoning\_mode>formal\_logic</reasoning\_mode>} and \texttt{<formal>}, while NL-mode rows use natural-language traces. The failures are not a train--test prompt mismatch. Instead, high-depth formal samples often emit long constant/predicate/premise blocks and then lose strict cited/grounded validity; citation-free validity can still be high when the formulas are recoverable without citations. High-depth NL samples preserve the \texttt{<think>} surface but copy long premise lists, drift, or truncate before a translated proof/answer is complete. The bsz2 conditioned rows sometimes beat the matched single-modality row, but the effect is not stable across batch sizes or depth-50, so the safest conclusion is that batch composition alone does not explain the conditioned-dual gap.
-
-\section{Old paired-family full-suite diagnostics}
-The old combined paired-family eval remains partial and scientifically stale for iGSM semantic grounding and maze typed-symbol claims. Use the fresh semantic iGSM, typed-maze, and hard-attribute rows above for current conclusions. The old root is still useful as a historical diagnostic: \texttt{official\_igsm} completed, \texttt{maze\_navigation} has only early rows, and the old combined hard attribute-constraint rows have no completed eval JSONs. The \texttt{joint} columns are template-specific: citation-free internal formal validity for logic and translated NL-to-FOL validity for \texttt{nl\_exact}. Old maze train-1-to-5 already showed a sharp train/OOD split rather than a bad gold generator; the fresh typed-maze completion confirms the same qualitative failure after fixing the room/key namespace. For iGSM, grounded joint validity is currently zero away from trivial retrieval cases because generated variable names and arithmetic-substitution citations do not reliably align with the canonical grounded checker. The targeted iGSM NL rerun recovered near-complete parser coverage, but generated NL translated-validity is still zero on OOD/depth-50 slices; use correctness and parser coverage as diagnostics unless grounded/canonical checks are improved.
-
-\begin{table}[H]
-\centering
-\scriptsize
-\begin{tabular}{llllllllllll}
-\toprule
-family & template & train max & n & train c@16 & train joint@16 & OOD c@16 & OOD joint@16 & OOD grounded joint & OOD NL parse & d50 c@16 & d50 joint@16 \\
-\midrule
-maze\_navigation & logic & 5 & 3 & 1.000 & 1.000 & 0.039 & 0.027 & 0.027 & 0.000 & 0.000 & 0.000 \\
-maze\_navigation & nl\_exact & 5 & 3 & 1.000 & 0.000 & 0.145 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 \\
-maze\_navigation & nl\_exact & 10 & 1 & 1.000 & 0.000 & 0.250 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 \\
-official\_igsm & logic & 5 & 3 & 0.990 & 0.986 & 0.312 & 0.255 & 0.000 & 0.000 & 0.240 & 0.177 \\
-official\_igsm & logic & 10 & 3 & 0.956 & 0.945 & 0.507 & 0.377 & 0.000 & 0.000 & 0.458 & 0.281 \\
-official\_igsm & logic & 15 & 3 & 0.918 & 0.903 & 0.546 & 0.392 & 0.000 & 0.000 & 0.542 & 0.292 \\
-official\_igsm & logic & 20 & 3 & 0.867 & 0.796 & 0.536 & 0.245 & 0.000 & 0.000 & 0.510 & 0.219 \\
-official\_igsm & logic & 25 & 3 & 0.866 & 0.744 & 0.487 & 0.106 & 0.000 & 0.000 & 0.490 & 0.031 \\
-official\_igsm & nl\_exact & 5 & 3 & 0.997 & 0.111 & 0.359 & 0.000 & 0.000 & 1.000 & 0.260 & 0.000 \\
-official\_igsm & nl\_exact & 10 & 3 & 0.987 & 0.094 & 0.569 & 0.000 & 0.000 & 1.000 & 0.385 & 0.000 \\
-official\_igsm & nl\_exact & 15 & 3 & 0.990 & 0.059 & 0.603 & 0.000 & 0.000 & 0.997 & 0.479 & 0.000 \\
-official\_igsm & nl\_exact & 20 & 3 & 0.977 & 0.038 & 0.592 & 0.000 & 0.000 & 1.000 & 0.583 & 0.000 \\
-official\_igsm & nl\_exact & 25 & 3 & 0.966 & 0.037 & 0.560 & 0.000 & 0.000 & 0.994 & 0.469 & 0.000 \\
-\bottomrule
-\end{tabular}
-\caption{Partial paired full-suite summary for completed eval JSONs.}
-\end{table}
-
-\begin{figure}[H]\centering
-\includegraphics[width=0.95\linewidth]{figures/paired_full_suite_official_igsm_partial.pdf}
-\caption{Partial official-iGSM full-suite readout from currently completed paired eval rows. Inline n annotations mark any train-depth slices that are not yet three-seed complete.}
-\end{figure}
-
-
-\begin{figure}[H]\centering
-\includegraphics[width=0.95\linewidth]{figures/paired_full_suite_family_partial.pdf}
-\caption{Partial paired-family readout for completed eval rows. Empty panels mark family/train-depth slices with no completed JSON yet; inline n annotations mark slices that are not yet three-seed complete.}
-\end{figure}
-
-
-\subsection{Semantic iGSM rerun}
-The semantic iGSM rerun is the current iGSM result: it uses bare semantic variables and definition-style NL proof prose rather than the old hidden \texttt{v\_} handles and generic ``official iGSM relation'' wording. The table below uses the corrected NL alias canonicalizer and clean forced NL re-eval. For logic, ``valid/parse'' is internal citation-free proof validity; for NL it is NL-to-logic parse coverage. The corrected result separates answer accuracy from validated reasoning: NL answer accuracy rises strongly with train range, but OOD/depth-50 translated joint validity remains zero because long generated traces drift/truncate and only small prefixes validate. Logic has nonzero internal validity but lower answer accuracy and zero strict grounded joint.
-
-\begin{table}[H]
-\centering
-\scriptsize
-\begin{tabular}{llllllllll}
-\toprule
-template & train max & n & OOD c@16 & OOD valid/parse@16 & OOD joint@16 & OOD grounded joint & d50 c@16 & d50 valid/parse@16 & d50 joint@16 \\
-\midrule
-logic & 5 & 3 & 0.516 & 0.380 & 0.042 & 0.000 & 0.385 & 0.260 & 0.000 \\
-logic & 10 & 3 & 0.522 & 0.332 & 0.059 & 0.000 & 0.417 & 0.260 & 0.010 \\
-logic & 15 & 3 & 0.573 & 0.390 & 0.137 & 0.000 & 0.365 & 0.167 & 0.000 \\
-logic & 20 & 3 & 0.551 & 0.366 & 0.231 & 0.000 & 0.229 & 0.010 & 0.000 \\
-logic & 25 & 3 & 0.612 & 0.439 & 0.272 & 0.000 & 0.281 & 0.062 & 0.000 \\
-nl\_exact & 5 & 3 & 0.483 & 0.995 & 0.000 & 0.000 & 0.500 & 0.990 & 0.000 \\
-nl\_exact & 10 & 3 & 0.661 & 0.997 & 0.000 & 0.000 & 0.552 & 1.000 & 0.000 \\
-nl\_exact & 15 & 3 & 0.744 & 0.999 & 0.000 & 0.000 & 0.510 & 0.990 & 0.000 \\
-nl\_exact & 20 & 3 & 0.819 & 0.999 & 0.000 & 0.000 & 0.646 & 0.990 & 0.000 \\
-nl\_exact & 25 & 3 & 0.873 & 0.997 & 0.000 & 0.000 & 0.677 & 0.990 & 0.000 \\
-\bottomrule
-\end{tabular}
-\caption{Corrected semantic iGSM pass@16 summary over three seeds. OOD is the hard-tail band.}
-\end{table}
-
-\begin{figure}[H]\centering
-\includegraphics[width=0.95\linewidth]{figures/paired_igsm_semantic_summary.pdf}
-\caption{Corrected semantic iGSM curves over train-depth range. For logic, valid/parse is internal citation-free proof validity; for NL, valid/parse is NL-to-logic parse coverage after semantic alias canonicalization.}
-\end{figure}
-
-
-\section{Targeted ablations}
-Completed ablation results are shown here; active arrays are tracked in the handoff documents. The current same-token-budget experiment is more precisely a same target-token budget experiment. The logic row in that experiment is a control rerun at 10k steps; the NL row is shortened to 7140 steps so target-token exposure approximately matches 10k logic steps. It does not match total prompt-plus-target tokens; that would require roughly 8600 NL steps and has not been run yet. The symbol-padded logic control is the completed total-sequence-length match to NL at the same optimizer-step budget; the wordified logic length-control is the cleaner equal-length formal follow-up and is now complete. Shortcut rates 0.3, 0.5, and 0.8 are complete. Conditioned dual-modality 10k eval is complete, and the 50k continuation is running.
-
-The shortcut-rate ablation changes only the training distribution. With probability equal to the shortcut rate, a training example uses the \texttt{hard\_fsa\_schema} shortcut generator: the gold path obeys a shared marker-conditioned transition schema and carries redundant marker facts that make a family-level transition heuristic predictive. Non-gold branches remain coherent but do not follow that schema. Evaluation always resets \texttt{shortcut\_rate=0.0}, so these rows test whether training on shortcut-rich traces hurts or helps transfer back to shortcut-neutral depth extrapolation.
-
-\begin{table}[H]
-\centering
-\small
-\begin{tabular}{lllllll}
-\toprule
-condition & status & steps & target tok/ex & target exposure & total tok/ex & total exposure \\
-\midrule
-main logic baseline & result exists & 10000 & 1038 & 1.000 & 2587 & 1.000 \\
-main NL baseline & result exists & 10000 & 1454 & 1.401 & 3008 & 1.163 \\
-same-target logic control & result exists & 10000 & 1038 & 1.000 & 2587 & 1.000 \\
-same-target NL & result exists & 7140 & 1454 & 1.000 & 3008 & 0.830 \\
-total-token NL match & not run & 8600 & 1454 & 1.205 & 3008 & 1.000 \\
-\bottomrule
-\end{tabular}
-\caption{Token-budget accounting for train-1-to-25. Target-token ratios use the 512-example audit that set the submitted step count; total-token ratios use the report token-length audit. Exposure columns are relative to 10k logic steps.}
-\end{table}
-
-\begin{table}[H]
-\centering
-\small
-\begin{tabular}{llllll}
-\toprule
-condition & n & OOD c@16 & OOD joint@16 & d50 c@16 & d50 joint@16 \\
-\midrule
-main compact logic & 3 & 0.921 & 0.710 & 0.833 & 0.417 \\
-main NL exact & 3 & 0.794 & 0.748 & 0.510 & 0.427 \\
-symbol-padded logic & 3 & 0.675 & 0.206 & 0.562 & 0.094 \\
-wordified logic & 3 & 0.508 & 0.323 & 0.344 & 0.094 \\
-\bottomrule
-\end{tabular}
-\caption{Logic length-control ablations compared with the main train-1-to-25 runs.}
-\end{table}
-
-The length-control formal variants are not broken gold targets: focused tests and generated examples validate the symbol-padded and wordified training traces. They are worse because the representation changes the model-facing problem. Symbol padding turns compact atoms such as \texttt{Fa} into predicate-call forms such as \texttt{PF(ca)}, adding punctuation and multi-token syntax pieces. Wordified logic keeps formal rules but expands predicate symbols into natural attribute names such as \texttt{North(a)} and \texttt{Teal(a)}, so the model loses the compact symbolic alphabet while still needing formal proof discipline.
-
-\subsection{Length-control surface examples}
-The examples below show the same depth-2 training item under the three formal surfaces. They are all valid gold targets; the difference is surface representation and tokenizer burden, not a different underlying task.
-
-\paragraph{compact\_logic.} Compact baseline formal symbols.
-\begin{verbatim}
-predicates:
-Ax: x is willow
-Bx: x is ivory
-Cx: x is teal
-Dx: x is violet
-Ex: x is north
-
-premises:
-Da
-Fa
-Ea & Da -> Bb
-Bb -> Fb
-
-proof:
-Da ; R
-Fa ; R
-Ab ; ->E
-Gb ; ->E
-Bc ; ->E
-\end{verbatim}
-
-\paragraph{symbol\_padded\_logic.} Predicate-call symbols with padded constants.
-\begin{verbatim}
-predicates:
-PA(x): x is willow
-PB(x): x is ivory
-PC(x): x is teal
-PD(x): x is violet
-PE(x): x is north
-
-premises:
-PD(ca)
-PF(ca)
-PE(ca) & PD(ca) -> PB(cb)
-PB(cb) -> PF(cb)
-
-proof:
-PD(ca) ; R
-PF(ca) ; R
-PA(cb) ; ->E
-PG(cb) ; ->E
-PB(cc) ; ->E
-\end{verbatim}
-
-\paragraph{wordified\_logic.} Predicate-call symbols using semantic attribute words.
-\begin{verbatim}
-predicates:
-Willow(x): x is willow
-Ivory(x): x is ivory
-Teal(x): x is teal
-Violet(x): x is violet
-North(x): x is north
-
-premises:
-Violet(a)
-South(a)
-North(a) & Violet(a) -> Ivory(b)
-Ivory(b) -> South(b)
-
-proof:
-Violet(a) ; R
-South(a) ; R
-Willow(b) ; ->E
-East(b) ; ->E
-Ivory(c) ; ->E
-\end{verbatim}
-
-\begin{figure}[H]
-\centering
-\includegraphics[width=\linewidth]{figures/ablation_logic_length_control_depth_curve_train1to25.pdf}
-\caption{Train-1-to-25 depth curve comparing compact logic, length-control logic variants, and main NL exact. Curves are seed means over the sparse final eval depths; the dotted line marks the maximum training depth.}
-\end{figure}
-
-\begin{table}[H]
-\centering
-\small
-\begin{tabular}{lllllllllll}
-\toprule
-condition & steps & n & OOD c@16 & $\Delta$ vs logic & OOD joint@16 & $\Delta$ vs logic & d50 c@16 & $\Delta$ vs logic & d50 joint@16 & $\Delta$ vs logic \\
-\midrule
-main logic & 10000 & 3 & 0.921 & 0.000 & 0.710 & 0.000 & 0.833 & 0.000 & 0.417 & 0.000 \\
-main nl\_exact & 10000 & 3 & 0.794 & -0.127 & 0.748 & 0.037 & 0.510 & -0.323 & 0.427 & 0.010 \\
-same-token logic & 10000 & 3 & 0.898 & -0.023 & 0.335 & -0.375 & 0.792 & -0.042 & 0.125 & -0.292 \\
-same-token nl\_exact & 7140 & 3 & 0.554 & -0.367 & 0.473 & -0.238 & 0.344 & -0.490 & 0.219 & -0.198 \\
-\bottomrule
-\end{tabular}
-\caption{Same target-token budget control compared directly to the main train-1-to-25 logic baseline. Delta columns subtract the main logic row.}
-\end{table}
-
-\begin{table}[H]
-\centering
-\small
-\begin{tabular}{lllllll}
-\toprule
-template & shortcut rate & n & OOD c@16 & OOD joint@16 & d50 c@16 & d50 joint@16 \\
-\midrule
-logic & 0.000 & 3 & 0.921 & 0.710 & 0.833 & 0.417 \\
-logic & 0.300 & 3 & 0.892 & 0.598 & 0.844 & 0.375 \\
-logic & 0.500 & 3 & 0.906 & 0.677 & 0.833 & 0.375 \\
-logic & 0.800 & 3 & 0.940 & 0.794 & 0.823 & 0.417 \\
-nl\_exact & 0.000 & 3 & 0.794 & 0.748 & 0.510 & 0.427 \\
-nl\_exact & 0.300 & 3 & 0.588 & 0.571 & 0.458 & 0.438 \\
-nl\_exact & 0.500 & 3 & 0.642 & 0.585 & 0.385 & 0.312 \\
-nl\_exact & 0.800 & 3 & 0.638 & 0.565 & 0.281 & 0.146 \\
-\bottomrule
-\end{tabular}
-\caption{Shortcut-rate ablation, including the shortcut-neutral main train-1-to-25 baseline as rate 0.0. Eval remains shortcut-neutral for all rows.}
-\end{table}
-\begin{figure}[H]\centering
-\includegraphics[width=0.9\linewidth]{figures/ablation_shortcut_rate_vs_main.pdf}
-\caption{Shortcut-rate ablation compared with shortcut-neutral main train-1-to-25 baselines.}
-\end{figure}
-
-\subsection{Other shortcut types}
-The shortcut-kind controls test two concrete shortcut mechanisms: a \texttt{position} shortcut, where the target path is statistically associated with position-like structure, and an \texttt{initial\_marker} shortcut, where an early marker fact is predictive of the target transition family. Both are trained at rates 0.5 and 0.8 for logic and NL over three seeds, with shortcut-neutral eval. At this report generation time, SFT and shortcut-kind eval are complete; all eval artifacts are summarized below.
-
-\begin{table}[H]
-\centering
-\small
-\begin{tabular}{llllllll}
-\toprule
-shortcut kind & template & rate & n & OOD c@16 & OOD joint@16 & d50 c@16 & d50 joint@16 \\
-\midrule
-initial\_marker & logic & 0p5 & 3 & 0.883 & 0.625 & 0.854 & 0.344 \\
-initial\_marker & logic & 0p8 & 3 & 0.885 & 0.610 & 0.865 & 0.344 \\
-initial\_marker & nl\_exact & 0p5 & 3 & 0.469 & 0.421 & 0.115 & 0.094 \\
-initial\_marker & nl\_exact & 0p8 & 3 & 0.771 & 0.702 & 0.667 & 0.500 \\
-position & logic & 0p5 & 3 & 0.900 & 0.619 & 0.844 & 0.312 \\
-position & logic & 0p8 & 3 & 0.879 & 0.650 & 0.760 & 0.323 \\
-position & nl\_exact & 0p5 & 3 & 0.540 & 0.431 & 0.396 & 0.260 \\
-position & nl\_exact & 0p8 & 3 & 0.513 & 0.487 & 0.396 & 0.354 \\
-\bottomrule
-\end{tabular}
-\caption{Shortcut-kind eval summary. No rows means the eval dependency has not started or has not written JSON yet.}
-\end{table}
-\begin{figure}[H]\centering
-\includegraphics[width=0.95\linewidth]{figures/ablation_shortcut_kind_summary.pdf}
-\caption{Shortcut-kind ablation for position and initial-marker shortcuts. Eval prompts are shortcut-neutral; bars show three-seed means for completed rows.}
-\end{figure}
-
-\begin{figure}[H]\centering
-\includegraphics[width=0.95\linewidth]{figures/ablation_shortcut_kind_rate_lines_vs_main.pdf}
-\caption{Shortcut-kind ablation as rate curves with the normal train-1-to-25 shortcut-neutral baselines at rate 0. Evaluation is shortcut-neutral for all rows.}
-\end{figure}
-
-Sample metadata checks over the shortcut-kind sample JSONLs found \texttt{active\_branch\_first=None} for completed eval rows, confirming that these evals are shortcut-neutral. The \texttt{initial\_marker} NL improvement at rate 0.8 is therefore not explained by leaving the shortcut active at eval time. It remains a surprising regularization/distribution result rather than clean evidence that increasing shortcut rate generally helps NL; the original schema shortcut-rate ablation still shows NL degradation as shortcut rate increases.
-
-\subsection{Trace controls}
-The trace-control ablation trains train-1-to-25 models with six altered trace styles, always over three seeds and evaluated on the same 1-to-50 sparse protocol. The six controls are: \texttt{terse\_nl} (intended shorter natural-language reasoning; currently token-identical to \texttt{nl\_exact} on HFSA), \texttt{rule\_annotated\_nl} (NL with explicit rule names), \texttt{pseudocode} (algorithm-like trace), \texttt{shuffled\_logic} (formal lines shuffled as a negative control), \texttt{invalid\_logic} (formally invalid proof trace negative control), and \texttt{shuffled\_nl} (NL trace order shuffled). The table includes the normal train-1-to-25 compact-logic and exact-NL baselines for direct comparison. Manual inspection found that the early \texttt{rule\_annotated\_nl} translated-validity metrics were an evaluator artifact: lines such as \texttt{a is teal. [rule: R]} were not stripped before controlled NL-to-FOL parsing. The translator now unwraps rule annotations and pseudocode \texttt{derive "..."}, and the completed repair rows are included in the table. All trace-control eval rows are now complete.
-
-\begin{table}[H]
-\centering
-\scriptsize
-\begin{tabular}{llllllll}
-\toprule
-trace control & n & OOD c@16 & OOD formal joint & OOD translated joint & d50 c@16 & d50 formal joint & d50 translated joint \\
-\midrule
-main\_logic & 3 & 0.921 & 0.710 &  & 0.833 & 0.417 &  \\
-main\_nl\_exact & 3 & 0.794 &  & 0.748 & 0.510 &  & 0.427 \\
-invalid\_logic & 3 & 0.892 & 0.000 & 0.000 & 0.750 & 0.000 & 0.000 \\
-pseudocode & 3 & 0.544 & 0.000 & 0.479 & 0.208 & 0.000 & 0.104 \\
-rule\_annotated\_nl & 3 & 0.575 & 0.000 & 0.485 & 0.344 & 0.000 & 0.146 \\
-shuffled\_logic & 3 & 0.690 & 0.000 & 0.000 & 0.510 & 0.000 & 0.000 \\
-shuffled\_nl & 3 & 0.490 & 0.000 & 0.000 & 0.344 & 0.000 & 0.000 \\
-terse\_nl & 3 & 0.348 & 0.000 & 0.277 & 0.094 & 0.000 & 0.010 \\
-\bottomrule
-\end{tabular}
-\caption{Trace-control summary. Both formal and translated joint are shown because the controls intentionally move between formal, NL, and hybrid-like trace surfaces.}
-\end{table}
-
-\begin{figure}[H]\centering
-\includegraphics[width=0.95\linewidth]{figures/ablation_trace_controls_summary.pdf}
-\caption{Trace-control ablation summary for completed rows, including normal train-1-to-25 logic/NL baselines. Formal joint is citation-free formal validity; translated joint is NL-to-FOL translated validity.}
-\end{figure}
-
-
-\subsection{Ablation training-sequence examples}
-Each block below is a complete depth-2 SFT training sequence: prompt followed by target. The examples are generated deterministically from the same underlying HFSA item where possible, so differences are due to the trace template rather than a different task instance.
-
-\paragraph{main\_logic.} Normal compact formal-logic baseline.
-\begin{verbatim}
-<question>
-1. a is violet.
-2. a is south.
-3. If a is north and a is violet, then b is ivory.
-4. If b is ivory, then b is south.
-5. If a is south and a is violet, then b is willow.
-6. If b is willow, then b is east.
-7. If a is east and a is violet, then b is teal.
-8. If b is teal, then b is north.
-9. If b is east and b is willow, then c is ivory.
-10. If c is ivory, then c is east.
-11. If b is north and b is teal, then c is teal.
-12. If c is teal, then c is south.
-13. If b is south and b is ivory, then c is willow.
-14. If c is willow, then c is north.
-Which state applies to c?
-</question>
-
-<formal>
-<constants>
-a = a
-b = b
-c = c
-</constants>
-<predicates>
-Ax: x is willow
-Bx: x is ivory
-Cx: x is teal
-Dx: x is violet
-Ex: x is north
-Fx: x is south
-Gx: x is east
-</predicates>
-<premises>
-Da
-Fa
-Ea & Da -> Bb
-Bb -> Fb
-Fa & Da -> Ab
-Ab -> Gb
-Ga & Da -> Cb
-Cb -> Eb
-Gb & Ab -> Bc
-Bc -> Gc
-Eb & Cb -> Cc
-Cc -> Fc
-Fb & Bb -> Ac
-Ac -> Ec
-</premises>
-<proof>
-Da ; R
-Fa ; R
-Ab ; ->E
-Gb ; ->E
-Bc ; ->E
-</proof>
-<conclusion>
-Bc
-</conclusion>
-</formal>
-<answer>
-ivory
-</answer>
-\end{verbatim}
-
-\paragraph{main\_nl\_exact.} Normal exact natural-language baseline.
-\begin{verbatim}
-<question>
-1. a is violet.
-2. a is south.
-3. If a is north and a is violet, then b is ivory.
-4. If b is ivory, then b is south.
-5. If a is south and a is violet, then b is willow.
-6. If b is willow, then b is east.
-7. If a is east and a is violet, then b is teal.
-8. If b is teal, then b is north.
-9. If b is east and b is willow, then c is ivory.
-10. If c is ivory, then c is east.
-11. If b is north and b is teal, then c is teal.
-12. If c is teal, then c is south.
-13. If b is south and b is ivory, then c is willow.
-14. If c is willow, then c is north.
-Which state applies to c?
-</question>
-
-<think>
-<premises>
-a is violet.
-a is south.
-If a is north and a is violet, then b is ivory.
-If b is ivory, then b is south.
-If a is south and a is violet, then b is willow.
-If b is willow, then b is east.
-If a is east and a is violet, then b is teal.
-If b is teal, then b is north.
-If b is east and b is willow, then c is ivory.
-If c is ivory, then c is east.
-If b is north and b is teal, then c is teal.
-If c is teal, then c is south.
-If b is south and b is ivory, then c is willow.
-If c is willow, then c is north.
-</premises>
-<proof>
-a is violet.
-a is south.
-b is willow.
-b is east.
-c is ivory.
-</proof>
-<conclusion>
-c is ivory.
-</conclusion>
-</think>
-<answer>
-ivory
-</answer>
-\end{verbatim}
-
-\paragraph{terse\_nl.} Natural-language trace with shorter proof wording.
-\begin{verbatim}
-<question>
-1. a is violet.
-2. a is south.
-3. If a is north and a is violet, then b is ivory.
-4. If b is ivory, then b is south.
-5. If a is south and a is violet, then b is willow.
-6. If b is willow, then b is east.
-7. If a is east and a is violet, then b is teal.
-8. If b is teal, then b is north.
-9. If b is east and b is willow, then c is ivory.
-10. If c is ivory, then c is east.
-11. If b is north and b is teal, then c is teal.
-12. If c is teal, then c is south.
-13. If b is south and b is ivory, then c is willow.
-14. If c is willow, then c is north.
-Which state applies to c?
-</question>
-
-<think>
-<premises>
-a is violet.
-a is south.
-If a is north and a is violet, then b is ivory.
-If b is ivory, then b is south.
-If a is south and a is violet, then b is willow.
-If b is willow, then b is east.
-If a is east and a is violet, then b is teal.
-If b is teal, then b is north.
-If b is east and b is willow, then c is ivory.
-If c is ivory, then c is east.
-If b is north and b is teal, then c is teal.
-If c is teal, then c is south.
-If b is south and b is ivory, then c is willow.
-If c is willow, then c is north.
-</premises>
-<proof>
-a is violet.
-a is south.
-b is willow.
-b is east.
-c is ivory.
-</proof>
-<conclusion>
-c is ivory.
-</conclusion>
-</think>
-<answer>
-ivory
-</answer>
-\end{verbatim}
-
-\paragraph{rule\_annotated\_nl.} Natural-language trace with explicit rule labels.
-\begin{verbatim}
-<question>
-1. a is violet.
-2. a is south.
-3. If a is north and a is violet, then b is ivory.
-4. If b is ivory, then b is south.
-5. If a is south and a is violet, then b is willow.
-6. If b is willow, then b is east.
-7. If a is east and a is violet, then b is teal.
-8. If b is teal, then b is north.
-9. If b is east and b is willow, then c is ivory.
-10. If c is ivory, then c is east.
-11. If b is north and b is teal, then c is teal.
-12. If c is teal, then c is south.
-13. If b is south and b is ivory, then c is willow.
-14. If c is willow, then c is north.
-Which state applies to c?
-</question>
-
-<think>
-<premises>
-a is violet.
-a is south.
-If a is north and a is violet, then b is ivory.
-If b is ivory, then b is south.
-If a is south and a is violet, then b is willow.
-If b is willow, then b is east.
-If a is east and a is violet, then b is teal.
-If b is teal, then b is north.
-If b is east and b is willow, then c is ivory.
-If c is ivory, then c is east.
-If b is north and b is teal, then c is teal.
-If c is teal, then c is south.
-If b is south and b is ivory, then c is willow.
-If c is willow, then c is north.
-</premises>
-<proof>
-a is violet. [rule: R]
-a is south. [rule: R]
-b is willow. [rule: ->E]
-b is east. [rule: ->E]
-c is ivory. [rule: ->E]
-</proof>
-<conclusion>
-c is ivory.
-</conclusion>
-</think>
-<answer>
-ivory
-</answer>
-\end{verbatim}
-
-\paragraph{pseudocode.} Algorithm-like natural-language derivation trace.
-\begin{verbatim}
-<question>
-1. a is violet.
-2. a is south.
-3. If a is north and a is violet, then b is ivory.
-4. If b is ivory, then b is south.
-5. If a is south and a is violet, then b is willow.
-6. If b is willow, then b is east.
-7. If a is east and a is violet, then b is teal.
-8. If b is teal, then b is north.
-9. If b is east and b is willow, then c is ivory.
-10. If c is ivory, then c is east.
-11. If b is north and b is teal, then c is teal.
-12. If c is teal, then c is south.
-13. If b is south and b is ivory, then c is willow.
-14. If c is willow, then c is north.
-Which state applies to c?
-</question>
-
-<think>
-<premises>
-a is violet.
-a is south.
-If a is north and a is violet, then b is ivory.
-If b is ivory, then b is south.
-If a is south and a is violet, then b is willow.
-If b is willow, then b is east.
-If a is east and a is violet, then b is teal.
-If b is teal, then b is north.
-If b is east and b is willow, then c is ivory.
-If c is ivory, then c is east.
-If b is north and b is teal, then c is teal.
-If c is teal, then c is south.
-If b is south and b is ivory, then c is willow.
-If c is willow, then c is north.
-</premises>
-<proof>
-step_1: derive "a is violet" using R.
-step_2: derive "a is south" using R.
-step_3: derive "b is willow" using ->E.
-step_4: derive "b is east" using ->E.
-step_5: derive "c is ivory" using ->E.
-</proof>
-<conclusion>
-c is ivory.
-</conclusion>
-</think>
-<answer>
-ivory
-</answer>
-\end{verbatim}
-
-\paragraph{shuffled\_logic.} Formal proof lines shuffled as an order negative control.
-\begin{verbatim}
-<question>
-1. a is violet.
-2. a is south.
-3. If a is north and a is violet, then b is ivory.
-4. If b is ivory, then b is south.
-5. If a is south and a is violet, then b is willow.
-6. If b is willow, then b is east.
-7. If a is east and a is violet, then b is teal.
-8. If b is teal, then b is north.
-9. If b is east and b is willow, then c is ivory.
-10. If c is ivory, then c is east.
-11. If b is north and b is teal, then c is teal.
-12. If c is teal, then c is south.
-13. If b is south and b is ivory, then c is willow.
-14. If c is willow, then c is north.
-Which state applies to c?
-</question>
-
-<formal>
-<constants>
-a = a
-b = b
-c = c
-</constants>
-<predicates>
-Ax: x is willow
-Bx: x is ivory
-Cx: x is teal
-Dx: x is violet
-Ex: x is north
-Fx: x is south
-Gx: x is east
-</predicates>
-<premises>
-Da
-Fa
-Ea & Da -> Bb
-Bb -> Fb
-Fa & Da -> Ab
-Ab -> Gb
-Ga & Da -> Cb
-Cb -> Eb
-Gb & Ab -> Bc
-Bc -> Gc
-Eb & Cb -> Cc
-Cc -> Fc
-Fb & Bb -> Ac
-Ac -> Ec
-</premises>
-<proof>
-Bc ; ->E
-Fa ; R
-Da ; R
-Ab ; ->E
-Gb ; ->E
-</proof>
-<conclusion>
-Bc
-</conclusion>
-</formal>
-<answer>
-ivory
-</answer>
-\end{verbatim}
-
-\paragraph{invalid\_logic.} Formal-looking trace with invalid rule citations.
-\begin{verbatim}
-<question>
-1. a is violet.
-2. a is south.
-3. If a is north and a is violet, then b is ivory.
-4. If b is ivory, then b is south.
-5. If a is south and a is violet, then b is willow.
-6. If b is willow, then b is east.
-7. If a is east and a is violet, then b is teal.
-8. If b is teal, then b is north.
-9. If b is east and b is willow, then c is ivory.
-10. If c is ivory, then c is east.
-11. If b is north and b is teal, then c is teal.
-12. If c is teal, then c is south.
-13. If b is south and b is ivory, then c is willow.
-14. If c is willow, then c is north.
-Which state applies to c?
-</question>
-
-<formal>
-<constants>
-a = a
-b = b
-c = c
-</constants>
-<predicates>
-Ax: x is willow
-Bx: x is ivory
-Cx: x is teal
-Dx: x is violet
-Ex: x is north
-Fx: x is south
-Gx: x is east
-</predicates>
-<premises>
-Da
-Fa
-Ea & Da -> Bb
-Bb -> Fb
-Fa & Da -> Ab
-Ab -> Gb
-Ga & Da -> Cb
-Cb -> Eb
-Gb & Ab -> Bc
-Bc -> Gc
-Eb & Cb -> Cc
-Cc -> Fc
-Fb & Bb -> Ac
-Ac -> Ec
-</premises>
-<proof>
-Da ; R
-Fa ; R
-Ab ; R
-Gb ; R
-Bc ; R
-</proof>
-<conclusion>
-Bc
-</conclusion>
-</formal>
-<answer>
-ivory
-</answer>
-\end{verbatim}
-
-\paragraph{shuffled\_nl.} Natural-language proof lines shuffled as an order negative control.
-\begin{verbatim}
-<question>
-1. a is violet.
-2. a is south.
-3. If a is north and a is violet, then b is ivory.
-4. If b is ivory, then b is south.
-5. If a is south and a is violet, then b is willow.
-6. If b is willow, then b is east.
-7. If a is east and a is violet, then b is teal.
-8. If b is teal, then b is north.
-9. If b is east and b is willow, then c is ivory.
-10. If c is ivory, then c is east.
-11. If b is north and b is teal, then c is teal.
-12. If c is teal, then c is south.
-13. If b is south and b is ivory, then c is willow.
-14. If c is willow, then c is north.
-Which state applies to c?
-</question>
-
-<think>
-<premises>
-a is violet.
-a is south.
-If a is north and a is violet, then b is ivory.
-If b is ivory, then b is south.
-If a is south and a is violet, then b is willow.
-If b is willow, then b is east.
-If a is east and a is violet, then b is teal.
-If b is teal, then b is north.
-If b is east and b is willow, then c is ivory.
-If c is ivory, then c is east.
-If b is north and b is teal, then c is teal.
-If c is teal, then c is south.
-If b is south and b is ivory, then c is willow.
-If c is willow, then c is north.
-</premises>
-<proof>
-b is willow.
-a is south.
-c is ivory.
-a is violet.
-b is east.
-</proof>
-<conclusion>
-c is ivory.
-</conclusion>
-</think>
-<answer>
-ivory
-</answer>
-\end{verbatim}
-
-\paragraph{symbol\_padded\_logic.} Formal atoms expanded into predicate-call syntax.
-\begin{verbatim}
-<question>
-1. a is violet.
-2. a is south.
-3. If a is north and a is violet, then b is ivory.
-4. If b is ivory, then b is south.
-5. If a is south and a is violet, then b is willow.
-6. If b is willow, then b is east.
-7. If a is east and a is violet, then b is teal.
-8. If b is teal, then b is north.
-9. If b is east and b is willow, then c is ivory.
-10. If c is ivory, then c is east.
-11. If b is north and b is teal, then c is teal.
-12. If c is teal, then c is south.
-13. If b is south and b is ivory, then c is willow.
-14. If c is willow, then c is north.
-Which state applies to c?
-</question>
-
-<formal>
-<constants>
-ca = a
-cb = b
-cc = c
-</constants>
-<predicates>
-PA(x): x is willow
-PB(x): x is ivory
-PC(x): x is teal
-PD(x): x is violet
-PE(x): x is north
-PF(x): x is south
-PG(x): x is east
-</predicates>
-<premises>
-PD(ca)
-PF(ca)
-PE(ca) & PD(ca) -> PB(cb)
-PB(cb) -> PF(cb)
-PF(ca) & PD(ca) -> PA(cb)
-PA(cb) -> PG(cb)
-PG(ca) & PD(ca) -> PC(cb)
-PC(cb) -> PE(cb)
-PG(cb) & PA(cb) -> PB(cc)
-PB(cc) -> PG(cc)
-PE(cb) & PC(cb) -> PC(cc)
-PC(cc) -> PF(cc)
-PF(cb) & PB(cb) -> PA(cc)
-PA(cc) -> PE(cc)
-</premises>
-<proof>
-PD(ca) ; R
-PF(ca) ; R
-PA(cb) ; ->E
-PG(cb) ; ->E
-PB(cc) ; ->E
-</proof>
-<conclusion>
-PB(cc)
-</conclusion>
-</formal>
-<answer>
-ivory
-</answer>
-\end{verbatim}
-
-\paragraph{wordified\_logic.} Formal atoms expanded with natural-word predicate names.
-\begin{verbatim}
-<question>
-1. a is violet.
-2. a is south.
-3. If a is north and a is violet, then b is ivory.
-4. If b is ivory, then b is south.
-5. If a is south and a is violet, then b is willow.
-6. If b is willow, then b is east.
-7. If a is east and a is violet, then b is teal.
-8. If b is teal, then b is north.
-9. If b is east and b is willow, then c is ivory.
-10. If c is ivory, then c is east.
-11. If b is north and b is teal, then c is teal.
-12. If c is teal, then c is south.
-13. If b is south and b is ivory, then c is willow.
-14. If c is willow, then c is north.
-Which state applies to c?
-</question>
-
-<formal>
-<constants>
-a = a
-b = b
-c = c
-</constants>
-<predicates>
-Willow(x): x is willow
-Ivory(x): x is ivory
-Teal(x): x is teal
-Violet(x): x is violet
-North(x): x is north
-South(x): x is south
-East(x): x is east
-</predicates>
-<premises>
-Violet(a)
-South(a)
-North(a) & Violet(a) -> Ivory(b)
-Ivory(b) -> South(b)
-South(a) & Violet(a) -> Willow(b)
-Willow(b) -> East(b)
-East(a) & Violet(a) -> Teal(b)
-Teal(b) -> North(b)
-East(b) & Willow(b) -> Ivory(c)
-Ivory(c) -> East(c)
-North(b) & Teal(b) -> Teal(c)
-Teal(c) -> South(c)
-South(b) & Ivory(b) -> Willow(c)
-Willow(c) -> North(c)
-</premises>
-<proof>
-Violet(a) ; R
-South(a) ; R
-Willow(b) ; ->E
-East(b) ; ->E
-Ivory(c) ; ->E
-</proof>
-<conclusion>
-Ivory(c)
-</conclusion>
-</formal>
-<answer>
-ivory
-</answer>
-\end{verbatim}
-
-\subsection{Hybrid order}
-The hybrid-order ablation trains a single prompt containing both trace substrates and one answer at the end. \texttt{think\_formal} means NL first, then formal logic; \texttt{formal\_think} means formal logic first, then NL. The full suite is train-1-to-5/10/15/20/25 over three seeds and eval 1-to-50. The table includes the normal compact-logic and exact-NL baselines at each train depth. Current completed rows cover all \texttt{think\_formal} seeds through train-1-to-25; \texttt{formal\_think} is complete through train-1-to-25, so the full hybrid-order grid is complete.
-
-\begin{table}[H]
-\centering
-\scriptsize
-\begin{tabular}{lllllllll}
-\toprule
-mode & train max & n & OOD c@16 & OOD formal joint & OOD translated joint & d50 c@16 & d50 formal joint & d50 translated joint \\
-\midrule
-main\_logic & 5 & 3 & 0.293 & 0.052 &  & 0.135 & 0.010 &  \\
-formal\_think & 5 & 3 & 0.538 & 0.120 & 0.347 & 0.323 & 0.010 & 0.000 \\
-think\_formal & 5 & 3 & 0.480 & 0.022 & 0.297 & 0.219 & 0.000 & 0.000 \\
-main\_nl\_exact & 5 & 3 & 0.502 &  & 0.318 & 0.292 &  & 0.000 \\
-main\_logic & 10 & 3 & 0.727 & 0.362 &  & 0.479 & 0.010 &  \\
-formal\_think & 10 & 3 & 0.626 & 0.279 & 0.381 & 0.396 & 0.000 & 0.000 \\
-think\_formal & 10 & 3 & 0.490 & 0.249 & 0.296 & 0.354 & 0.000 & 0.000 \\
-main\_nl\_exact & 10 & 3 & 0.482 &  & 0.299 & 0.417 &  & 0.000 \\
-main\_logic & 15 & 3 & 0.634 & 0.293 &  & 0.354 & 0.042 &  \\
-formal\_think & 15 & 3 & 0.568 & 0.258 & 0.264 & 0.479 & 0.083 & 0.000 \\
-think\_formal & 15 & 3 & 0.353 & 0.111 & 0.111 & 0.312 & 0.000 & 0.000 \\
-main\_nl\_exact & 15 & 3 & 0.322 &  & 0.137 & 0.260 &  & 0.000 \\
-main\_logic & 20 & 3 & 0.830 & 0.441 &  & 0.854 & 0.198 &  \\
-formal\_think & 20 & 3 & 0.675 & 0.170 & 0.495 & 0.427 & 0.021 & 0.167 \\
-think\_formal & 20 & 3 & 0.434 & 0.028 & 0.148 & 0.469 & 0.000 & 0.000 \\
-main\_nl\_exact & 20 & 3 & 0.474 &  & 0.219 & 0.406 &  & 0.115 \\
-main\_logic & 25 & 3 & 0.921 & 0.710 &  & 0.833 & 0.417 &  \\
-formal\_think & 25 & 3 & 0.879 & 0.379 & 0.804 & 0.646 & 0.083 & 0.510 \\
-think\_formal & 25 & 3 & 0.573 & 0.204 & 0.419 & 0.344 & 0.000 & 0.135 \\
-main\_nl\_exact & 25 & 3 & 0.794 &  & 0.748 & 0.510 &  & 0.427 \\
-\bottomrule
-\end{tabular}
-\caption{Hybrid-order full-grid summary. \texttt{think\_formal} train-1-to-25 is three-seed complete; \texttt{formal\_think} is complete through train-1-to-25, so the full hybrid-order grid is complete.}
-\end{table}
-
-\begin{figure}[H]\centering
-\includegraphics[width=0.95\linewidth]{figures/ablation_hybrid_order_partial.pdf}
-\caption{Hybrid order full eval with normal logic/NL baseline curves. \texttt{think\_formal} is NL then formal and is complete through train-1-to-25; \texttt{formal\_think} is complete through train-1-to-25, so the full hybrid-order grid is complete.}
-\end{figure}
-
-
-Sample inspection of the completed train-1-to-20/25 hybrid rows matches the intended surfaces: \texttt{formal\_think} starts with a \texttt{<formal>} block followed by \texttt{<think>}/\texttt{<answer>}, and \texttt{think\_formal} reverses that order. Shallow and train-band successes often have correct answers and translated NL proofs, but the formal block frequently omits explicit proof citations, so strict grounded formal validity is much lower than citation-free formal validity. At depth 50, both orders often truncate, lose required tags, or drift into long premise copying. The hybrid result should therefore be read as a sequence-format/interference result, not as evidence that combining both substrates gives more robust long-depth reasoning.
-
-Conditioned dual-modality is different from the hybrid-order setup: the SFT data builder duplicates each materialized row into two separate examples, one prompted with \texttt{<reasoning\_mode>formal\_logic</reasoning\_mode>} and one prompted with \texttt{<reasoning\_mode>natural\_language</reasoning\_mode>}. Evaluation uses the same mode prompt. Thus there is no direct train-test mismatch where training has both traces in one target but eval asks for only one. The main caveat is exposure/interference: at fixed optimizer steps, each modality receives roughly half the updates of a single-modality run, and the shared adapter must fit both surfaces.
-
-\begin{table}[H]
-\centering
-\scriptsize
-\begin{tabular}{lllllll}
-\toprule
-train max & condition & n & OOD c@16 & OOD joint@16 & d50 c@16 & d50 joint@16 \\
-\midrule
-5 & main logic & 3 & 0.293 & 0.052 & 0.135 & 0.010 \\
-5 & conditioned logic & 3 & 0.360 & 0.058 & 0.167 & 0.000 \\
-5 & main NL exact & 3 & 0.502 & 0.318 & 0.292 & 0.000 \\
-5 & conditioned NL & 3 & 0.697 & 0.332 & 0.646 & 0.000 \\
-10 & main logic & 3 & 0.727 & 0.362 & 0.479 & 0.010 \\
-10 & conditioned logic & 3 & 0.695 & 0.256 & 0.521 & 0.000 \\
-10 & main NL exact & 3 & 0.482 & 0.299 & 0.417 & 0.000 \\
-10 & conditioned NL & 3 & 0.638 & 0.339 & 0.604 & 0.000 \\
-15 & main logic & 3 & 0.634 & 0.293 & 0.354 & 0.042 \\
-15 & conditioned logic & 3 & 0.572 & 0.258 & 0.344 & 0.031 \\
-15 & main NL exact & 3 & 0.322 & 0.137 & 0.260 & 0.000 \\
-15 & conditioned NL & 3 & 0.363 & 0.155 & 0.281 & 0.000 \\
-20 & main logic & 3 & 0.830 & 0.441 & 0.854 & 0.198 \\
-20 & conditioned logic & 3 & 0.701 & 0.116 & 0.500 & 0.021 \\
-20 & main NL exact & 3 & 0.474 & 0.219 & 0.406 & 0.115 \\
-20 & conditioned NL & 3 & 0.630 & 0.290 & 0.510 & 0.042 \\
-25 & main logic & 3 & 0.921 & 0.710 & 0.833 & 0.417 \\
-25 & conditioned logic & 3 & 0.677 & 0.202 & 0.521 & 0.031 \\
-25 & main NL exact & 3 & 0.794 & 0.748 & 0.510 & 0.427 \\
-25 & conditioned NL & 3 & 0.581 & 0.490 & 0.510 & 0.333 \\
-\bottomrule
-\end{tabular}
-\caption{Conditioned dual-modality ablation compared with the main single-modality baselines at each train-depth range.}
-\end{table}
-\begin{figure}[H]\centering
-\includegraphics[width=0.95\linewidth]{figures/ablation_conditioned_dual_vs_main_by_train_depth.pdf}
-\caption{Conditioned dual-modality ablation compared with main logic and main NL across train-depth ranges. Dashed lines are conditioned runs; solid lines are single-modality baselines.}
-\end{figure}
-\begin{table}[H]
-\centering
-\scriptsize
-\begin{tabular}{lllllll}
-\toprule
-train max & eval template & n & OOD c@16 & OOD joint@16 & d50 c@16 & d50 joint@16 \\
-\midrule
-5 & conditioned\_logic & 3 & 0.309 & 0.049 & 0.198 & 0.000 \\
-5 & conditioned\_nl & 3 & 0.647 & 0.328 & 0.615 & 0.000 \\
-10 & conditioned\_logic & 3 & 0.626 & 0.315 & 0.312 & 0.000 \\
-10 & conditioned\_nl & 3 & 0.639 & 0.345 & 0.479 & 0.000 \\
-15 & conditioned\_logic & 3 & 0.482 & 0.204 & 0.260 & 0.010 \\
-15 & conditioned\_nl & 3 & 0.421 & 0.206 & 0.323 & 0.021 \\
-20 & conditioned\_logic & 3 & 0.502 & 0.075 & 0.354 & 0.021 \\
-20 & conditioned\_nl & 3 & 0.653 & 0.479 & 0.427 & 0.146 \\
-25 & conditioned\_logic & 3 & 0.833 & 0.348 & 0.677 & 0.146 \\
-25 & conditioned\_nl & 3 & 0.675 & 0.531 & 0.531 & 0.250 \\
-\bottomrule
-\end{tabular}
-\caption{Conditioned dual-modality 50k final eval summary. The 50k final eval is complete at 30/30 rows.}
-\end{table}
-
-\begin{figure}[H]\centering
-\includegraphics[width=0.95\linewidth]{figures/ablation_conditioned_dual_50k_convergence_train1to25.pdf}
-\caption{Conditioned dual-modality 50k convergence curves for train-1-to-25. Points are three-seed means for completed checkpoint evals; both conditioned-logic and conditioned-NL checkpoint curves now reach 50k.}
-\end{figure}
-
-
-The completed 50k checkpoint samples preserve the intended conditioned prompts: formal-mode generations use \texttt{<formal>}/\texttt{<answer>}, while NL-mode generations use \texttt{<think>}/\texttt{<answer>}. The checkpoint curves therefore do not indicate a prompt mismatch. Instead, representative hard-depth samples show underexposure/interference symptoms: conditioned logic remains brittle on long proofs despite extra steps, and conditioned NL can produce valid translated train-band traces while depth-50 traces truncate or collapse into unsupported state lists. The pending final recovery rows are needed for the final 50k table, but the completed checkpoint sweep already argues against simple ``just train longer'' as a full explanation.
-
-\section{Qualitative samples}
-The companion PDF \texttt{figures/sample\_generation\_panels.pdf} contains synthetic generated examples with extracted answer, gold answer, correctness, and validity metadata. The following samples are from the completed bare-format OOD rerun for OLMo-7B train-1-to-25 seed 3407.
-
-\subsection*{gsm8k doc 3}
-\textbf{Question.} James decides to run 3 sprints 3 times a week. He runs 60 meters each sprint. How many total meters does he run a week?
-
-\textbf{Gold.} 540
-
-\textbf{Logic extracted:}  (EM=0.000)
-\begin{verbatim}
-<formal>
-<constants>
-a = 3
-b = 60
-</constants>
-<predicates>
-Ax: x is a sprint
-Bx: x is a week
-Cx: x is a meter
-Dx: x is a run
-Ex: x is a time
-Fx: x is a distance
-Gx: x is a number
-Hx: x is a total
-Ix: x is a run time
-Jx: x is a sprint time
-Kx: x is a sprint
-Lx: x is a week time
-Mx: x is a distance run
-Nx: x is a sprint distance
-Ox: x is a run distance
-Px: x is a sprint distance run
-Qx: x is a run distance run
-Rx: x is a sprint distance run
-Sx: x
-...[truncated]...
-La
-Ma
-Ja
-Ka
-La
-Ma
-Ja
-Ka
-La
-Ma
-Ja
-Ka
-La
-Ma
-Ja
-Ka
-La
-Ma
-Ja
-Ka
-La
-Ma
-Ja
-Ka
-La
-Ma
-Ja
-Ka
-La
-Ma
-Ja
-Ka
-La
-Ma
-Ja
-Ka
-La
-Ma
-Ja
-Ka
-La
-Ma
-Ja
-Ka
-La
-Ma
-Ja
-Ka
-La
-Ma
-Ja
-Ka
-La
-Ma
-Ja
-Ka
-La
-Ma
-Ja
-Ka
-La
-Ma
-Ja
-Ka
-La
-Ma
-Ja
-Ka
-La
-Ma
-Ja
-Ka
-La
-Ma
-Ja
-Ka
-La
-Ma
-Ja
-Ka
-La
-Ma
-Ja
-Ka
-La
-Ma
-Ja
-Ka
-La
-Ma
-Ja
-Ka
-La
-Ma
-Ja
-Ka
-La
-Ma
-Ja
-Ka
-La
-Ma
-Ja
-Ka
-La
-Ma
-Ja
-Ka
-La
-Ma
-Ja
-Ka
-La
-Ma
-Ja
-Ka
-La
-Ma
-Ja
-Ka
-La
-Ma
-Ja
-Ka
-La
-Ma
-Ja
-Ka
-La
-Ma
-Ja
-Ka
-La
-Ma
-Ja
-Ka
-La
-Ma
-Ja
-Ka
-La
-Ma
-Ja
-Ka
-La
-Ma
-Ja
-Ka
-La
-Ma
-\end{verbatim}
-\textbf{NL extracted:} 540 (EM=1.000)
-\begin{verbatim}
-<think>
-<premises>
-a = 3
-b = 3
-c = 60
-</premises>
-<proof>
-a = 3
-b = 3
-c = 60
-total = a * b * c
-total = 3 * 3 * 60
-total = 540
-</proof>
-<conclusion>
-James runs 540 meters a week.
-</conclusion>
-</think>
-<answer>
-540
-\end{verbatim}
-
-\subsection*{hotpotqa doc 0}
-\textbf{Question.} Question: Which case was brought to court first Miller v. California or Gates v. Collier ?
-
-\textbf{Gold.} Miller v. California
-
-\textbf{Logic extracted:} Gates v. Collier (F1=0.333)
-\begin{verbatim}
-<answer>
-Gates v. Collier
-\end{verbatim}
-\textbf{NL extracted:}  (F1=0.000)
-\begin{verbatim}
-<think>
-<premises>
-austrian supplier Gasser and Italian distributor MISAT entered into a contract together for the supply of children's clothes. In the contract, they included a choice-of-court agreement, stipulating that an Austrian court have jurisdiction in case of conflict. However, when a dispute arose between the two parties, MISAT seised an Italian court to declare that the contract had been terminated, contrary to the choice-of-court clau
-...[truncated]...
-ending the choice-of-court agreement experience substantive disadvantages in the other Member State, as the court situated there might declare the agreement invalid, the party may also be exposed to procedural disadvantages, caused by judicial system which is not chosen.: 573  This in turn can make the jurisdiction agreement ineffective altogether, going against the principle of party autonomy. Taking a formalistic and literal approach, the Court
-\end{verbatim}
-
-\subsection*{2wikimqa doc 0}
-\textbf{Question.} Question: Where was the wife of Francis I Rákóczi born?
-
-\textbf{Gold.} Ozalj
-
-\textbf{Logic extracted:} Ozalj (F1=1.000)
-\begin{verbatim}
-<answer>
-Ozalj
-\end{verbatim}
-\textbf{NL extracted:} Ozalj (F1=1.000)
-\begin{verbatim}
-<answer>
-Ozalj
-\end{verbatim}
-
-\subsection*{musique doc 0}
-\textbf{Question.} Question: Who plays the wife of the producer of Here Comes the Boom in Grown Ups?
-
-\textbf{Gold.} Maria Bello
-
-\textbf{Logic extracted:} Maria Bello (F1=1.000)
-\begin{verbatim}
-<answer>
-Maria Bello
-\end{verbatim}
-\textbf{NL extracted:}  (F1=0.000)
-\begin{verbatim}
-<think>
-<premises>
-aikido
-aikido
-aikido
-aikido
-aikido
-aikido
-aikido
-aikido
-aikido
-aikido
-aikido
-aikido
-aikido
-aikido
-aikido
-aikido
-aikido
-aikido
-aikido
-aikido
-aikido
-aikido
-aikido
-aikido
-aikido
-aikido
-aikido
-aikido
-aikido
-aikido
-aikido
-aikido
-aikido
-aikido
-aikido
-aikido
-aikido
-aikido
-aikido
-aikido
-aikido
-aikido
-aikido
-aikido
-aikido
-aikido
-aikido
-aikido
-aikido
-aikido
-aikido
-aikido
-aikido
-aikido
-aikido
-aikido
-aikido
-aikido
-aikido
-aikido
-aikido
-aiki
-...[truncated]...
-aikido
-aikido
-aikido
-aikido
-aikido
-aikido
-aikido
-aikido
-aikido
-aikido
-aikido
-aikido
-aikido
-aikido
-aikido
-aikido
-aikido
-aikido
-aikido
-aikido
-aikido
-aikido
-aikido
-aikido
-aikido
-aikido
-aikido
-aikido
-aikido
-aikido
-aikido
-aikido
-aikido
-aikido
-aikido
-aikido
-aikido
-aikido
-aikido
-aikido
-aikido
-aikido
-aikido
-aikido
-aikido
-aikido
-aikido
-aikido
-aikido
-aikido
-aikido
-aikido
-aikido
-aikido
-aikido
-aikido
-aikido
-aikido
-aikido
-aikido
-aikido
-aikido
-aikido
-aikido
-a
-\end{verbatim}
-
-\clearpage
-
-\section{Supplemental generated figures}
-
-This section embeds every remaining generated PDF figure that was not already placed in the main narrative above. Some panels are older aggregate views now superseded by clearer separated plots; they are retained here so the in-repo report contains the full current figure set.
-
-\begin{figure}[H]\centering
-\includegraphics[width=0.95\linewidth]{figures/ablation_same_target_token_budget_vs_main.pdf}
-\caption{Same target-token budget ablation compared with the main train-1-to-25 logic and NL baselines.}
-\end{figure}
-
-\begin{figure}[H]\centering
-\includegraphics[width=0.95\linewidth]{figures/ablation_symbol_padded_depth_curve_train1to25.pdf}
-\caption{Symbol-padded equal-length logic depth curve for train-1-to-25. This older length-control view is kept alongside the cleaner compact/wordified comparison.}
-\end{figure}
-
-\begin{figure}[H]\centering
-\includegraphics[width=0.95\linewidth]{figures/olmo7b_checkpoint_correct_k8_k16.pdf}
-\caption{Earlier combined OLMo-7B checkpoint curves for correct@8 and correct@16. The main text uses separated logic/NL @16 panels, but this aggregate view is retained for completeness.}
-\end{figure}
-
-\begin{figure}[H]\centering
-\includegraphics[width=0.95\linewidth]{figures/olmo7b_checkpoint_joint_k8_k16.pdf}
-\caption{Earlier combined OLMo-7B checkpoint curves for joint correct+valid at @8 and @16. The main text uses separated logic/NL @16 panels.}
-\end{figure}
-
-\begin{figure}[H]\centering
-\includegraphics[width=0.95\linewidth]{figures/qwen7b_partial_ood_correct_joint.pdf}
-\caption{Initial Qwen-2.5-7B partial architecture-ablation view. Superseded by the full architecture tables and figures, but retained as a generated result artifact.}
-\end{figure}
-
-\begin{figure}[H]\centering
-\includegraphics[width=0.95\linewidth]{figures/sample_generation_panels.pdf}
-\caption{Synthetic sample-generation panels with extracted answers, gold answers, correctness, and validity metadata.}
-\end{figure}
-
-\begin{figure}[H]\centering
-\includegraphics[width=0.95\linewidth]{figures/tiny_llama_100m_depth_correct_joint.pdf}
-\caption{Earlier combined Tiny Llama 100M depth curve showing correct and joint metrics together.}
-\end{figure}
-
-\begin{figure}[H]\centering
-\includegraphics[width=0.95\linewidth]{figures/tiny_llama_200m_depth_correct_joint.pdf}
-\caption{Earlier combined Tiny Llama 200M depth curve showing correct and joint metrics together.}
-\end{figure}
-
-\begin{figure}[H]\centering
-\includegraphics[width=0.95\linewidth]{figures/tiny_llama_50m_depth_correct_joint.pdf}
-\caption{Earlier combined Tiny Llama 50M depth curve showing correct and joint metrics together.}
-\end{figure}
-
-\begin{figure}[H]\centering
-\includegraphics[width=0.95\linewidth]{figures/tiny_llama_checkpoint_correct_k8.pdf}
-\caption{Earlier all-size Tiny Llama checkpoint curve for correct@8. Size-separated checkpoint plots are in the main text.}
-\end{figure}
-
-\begin{figure}[H]\centering
-\includegraphics[width=0.95\linewidth]{figures/tiny_llama_checkpoint_joint_k8.pdf}
-\caption{Earlier all-size Tiny Llama checkpoint curve for joint correct+valid@8. Size-separated checkpoint plots are in the main text.}
-\end{figure}
-
-\begin{figure}[H]\centering
-\includegraphics[width=0.95\linewidth]{figures/tiny_llama_final_bands_correct_joint.pdf}
-\caption{Earlier aggregate Tiny Llama final-band view combining correct and joint metrics.}
-\end{figure}
-
-\section{Artifacts}
-The following generated artifacts are part of this report bundle.
-
-\paragraph{CSV result tables.}
-\begin{verbatim}
-ablation_training_sequence_examples.csv
-ablation_training_token_audit_512.csv
-active_experiment_artifact_status.csv
-active_paired_partial_by_seed.csv
-active_paired_partial_summary.csv
-all_group_summary.csv
-architecture_ablation_summary.csv
-conditioned_dual_50k_by_seed.csv
-conditioned_dual_50k_checkpoint_by_seed.csv
-conditioned_dual_50k_checkpoint_summary.csv
-conditioned_dual_50k_summary.csv
-conditioned_dual_by_seed.csv
-conditioned_dual_partial_by_seed.csv
-conditioned_dual_partial_summary.csv
-conditioned_dual_summary.csv
-conditioned_dual_vs_main_by_train_depth.csv
-cot_bare_ood_generation_examples.csv
-group_summary_all.csv
-hfsa_batch_size_ablation_diagnostics.csv
-hfsa_batch_size_ablation_partial_by_seed.csv
-hfsa_batch_size_ablation_partial_summary.csv
-hybrid_order_ablation_by_seed.csv
-hybrid_order_ablation_summary.csv
-hybrid_order_with_main_baselines.csv
-logic_length_control_depth_curve_vs_main_train25.csv
-logic_length_control_eval_vs_main.csv
-logic_length_control_surface_examples.csv
-logic_length_control_token_match.csv
-logic_symbol_padded_depth_curve_vs_main_train25.csv
-logic_symbol_padded_eval_by_seed.csv
-logic_symbol_padded_eval_summary.csv
-logic_symbol_padded_eval_vs_main.csv
-logic_symbol_padded_length_audit_512.csv
-logic_symbol_padded_token_match.csv
-logic_wordified_eval_by_seed.csv
-logic_wordified_eval_summary.csv
-logic_wordified_length_audit_512.csv
-main_olmo7b_cot_bare_ood_by_seed.csv
-main_olmo7b_cot_bare_ood_summary.csv
-main_olmo7b_depth_curves_k16.csv
-main_olmo7b_ood_lmeval_by_seed.csv
-main_olmo7b_ood_lmeval_summary.csv
-main_olmo7b_sft_token_lengths.csv
-main_olmo7b_summary.csv
-olmo32_cot_bare_gsm8k.csv
-ood_gsm8k_strict_recompute_from_samples.csv
-paired_full_suite_partial_by_seed.csv
-paired_full_suite_partial_summary.csv
-paired_igsm_semantic_by_seed.csv
-paired_igsm_semantic_summary.csv
-qwen7b_partial_summary.csv
-same_target_token_budget_by_seed.csv
-same_target_token_budget_summary.csv
-same_target_token_budget_vs_main_logic.csv
-same_token_budget_exposure_accounting.csv
-sample_generation_snippets.csv
-shortcut_kind_ablation_by_seed.csv
-shortcut_kind_ablation_summary.csv
-shortcut_kind_ablation_vs_main.csv
-shortcut_rate_ablation_by_seed.csv
-shortcut_rate_ablation_summary.csv
-shortcut_rate_ablation_vs_main.csv
-tiny_llama_100k_cot_bare_ood_by_seed.csv
-tiny_llama_100k_cot_bare_ood_summary.csv
-tiny_llama_100k_final_summary.csv
-tiny_llama_cot_bare_ood_by_seed.csv
-tiny_llama_cot_bare_ood_summary.csv
-tiny_llama_depth_curves_k8.csv
-tiny_llama_final_summary.csv
-tiny_llama_ood_lmeval_by_seed.csv
-tiny_llama_ood_lmeval_summary.csv
-trace_control_ablation_by_seed.csv
-trace_control_ablation_summary.csv
-trace_control_ablation_with_main_baselines.csv
-\end{verbatim}
-
-\paragraph{PDF figures.}
-\begin{verbatim}
-ablation_conditioned_dual_50k_convergence_train1to25.pdf
-ablation_conditioned_dual_vs_main_by_train_depth.pdf
-ablation_hybrid_order_partial.pdf
-ablation_logic_length_control_depth_curve_train1to25.pdf
-ablation_same_target_token_budget_vs_main.pdf
-ablation_shortcut_kind_rate_lines_vs_main.pdf
-ablation_shortcut_kind_summary.pdf
-ablation_shortcut_rate_vs_main.pdf
-ablation_symbol_padded_depth_curve_train1to25.pdf
-ablation_trace_controls_summary.pdf
-active_paired_partial_summary.pdf
-architecture_depth30_50_correct16_by_train_depth.pdf
-architecture_ood_correct16_by_train_depth.pdf
-hfsa_batch_size_ablation_partial.pdf
-hfsa_batch_size_conditioned_delta.pdf
-olmo7b_checkpoint_correct_k8_k16.pdf
-olmo7b_checkpoint_joint_k8_k16.pdf
-olmo7b_checkpoint_train1to10_correct16.pdf
-olmo7b_checkpoint_train1to10_joint16.pdf
-olmo7b_checkpoint_train1to15_correct16.pdf
-olmo7b_checkpoint_train1to15_joint16.pdf
-olmo7b_checkpoint_train1to20_correct16.pdf
-olmo7b_checkpoint_train1to20_joint16.pdf
-olmo7b_checkpoint_train1to25_correct16.pdf
-olmo7b_checkpoint_train1to25_depthbands_correct16.pdf
-olmo7b_checkpoint_train1to25_depthbands_joint16.pdf
-olmo7b_checkpoint_train1to25_joint16.pdf
-olmo7b_checkpoint_train1to5_correct16.pdf
-olmo7b_checkpoint_train1to5_joint16.pdf
-olmo7b_depth_correct16.pdf
-olmo7b_depth_joint16.pdf
-olmo7b_final_by_train_depth.pdf
-paired_full_suite_family_partial.pdf
-paired_full_suite_official_igsm_partial.pdf
-paired_igsm_semantic_summary.pdf
-qwen7b_partial_ood_correct_joint.pdf
-sample_generation_panels.pdf
-tiny_llama_100k_100m_checkpoint_depthbands_correct_k8.pdf
-tiny_llama_100k_100m_checkpoint_depthbands_joint_k8.pdf
-tiny_llama_100k_200m_checkpoint_depthbands_correct_k8.pdf
-tiny_llama_100k_200m_checkpoint_depthbands_joint_k8.pdf
-tiny_llama_100k_50m_checkpoint_depthbands_correct_k8.pdf
-tiny_llama_100k_50m_checkpoint_depthbands_joint_k8.pdf
-tiny_llama_100m_bands_correct_k8.pdf
-tiny_llama_100m_bands_joint_k8.pdf
-tiny_llama_100m_checkpoint_correct_k8.pdf
-tiny_llama_100m_checkpoint_depthbands_correct_k8.pdf
-tiny_llama_100m_checkpoint_depthbands_joint_k8.pdf
-tiny_llama_100m_checkpoint_joint_k8.pdf
-tiny_llama_100m_depth_correct_joint.pdf
-tiny_llama_100m_depth_correct_k8.pdf
-tiny_llama_100m_depth_joint_k8.pdf
-tiny_llama_200m_bands_correct_k8.pdf
-tiny_llama_200m_bands_joint_k8.pdf
-tiny_llama_200m_checkpoint_correct_k8.pdf
-tiny_llama_200m_checkpoint_depthbands_correct_k8.pdf
-tiny_llama_200m_checkpoint_depthbands_joint_k8.pdf
-tiny_llama_200m_checkpoint_joint_k8.pdf
-tiny_llama_200m_depth_correct_joint.pdf
-tiny_llama_200m_depth_correct_k8.pdf
-tiny_llama_200m_depth_joint_k8.pdf
-tiny_llama_50m_bands_correct_k8.pdf
-tiny_llama_50m_bands_joint_k8.pdf
-tiny_llama_50m_checkpoint_correct_k8.pdf
-tiny_llama_50m_checkpoint_depthbands_correct_k8.pdf
-tiny_llama_50m_checkpoint_depthbands_joint_k8.pdf
-tiny_llama_50m_checkpoint_joint_k8.pdf
-tiny_llama_50m_depth_correct_joint.pdf
-tiny_llama_50m_depth_correct_k8.pdf
-tiny_llama_50m_depth_joint_k8.pdf
-tiny_llama_checkpoint_correct_k8.pdf
-tiny_llama_checkpoint_joint_k8.pdf
-tiny_llama_final_bands_correct_joint.pdf
-\end{verbatim}
-
-\paragraph{Markdown sample supplements.}
-\begin{verbatim}
-full_generation_sequences_olmo7b_olmo32b_2026-05-28.md
-ood_cot_bare_generation_examples_olmo7b_train1to25_seed3407.md
-ood_generation_examples_olmo7b_train1to25_seed3407.md
-paired_full_suite_partial_samples_2026-05-31.md
-paired_full_suite_partial_samples_2026-06-01.md
-\end{verbatim}
-
-CSV tables live under \texttt{tables/} and all plots are emitted as both PDF and PNG under \texttt{figures/}. This machine currently lacks \texttt{pdflatex}/\texttt{latexmk}, so the LaTeX source is generated but not compiled here.
 \end{document}
