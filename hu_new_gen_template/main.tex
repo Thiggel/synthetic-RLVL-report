@@ -1,0 +1,215 @@
+% ── Preprint template — swap style by changing the \usepackage line ───────────
+% Available styles: styles/seed
+\documentclass[11pt]{article}
+\usepackage{styles/seed}
+
+% ── Paper metadata ────────────────────────────────────────────────────────────
+\title{How we found AGI by using one A100 node}
+
+\author{
+  Patrick Haller\textsuperscript{*} Filipe Laitenberger\textsuperscript{*}
+}
+
+\affiliations{Humboldt-Universität zu Berlin}
+
+\authornotes{%
+  \textsuperscript{*}Corresponding author%
+}
+
+% Optional: arXiv watermark on left margin
+% \arxivwatermark{2506.XXXXX}{cs.LG}
+
+% Logo shown in bottom-right of abstract box (only when fill is off)
+\preprintlogo{assets/hu-logo.png}
+
+% Abstract style toggle:
+%   \abstractfilledtrue   — pale blue fill, no logo (default)
+%   \abstractfilledfalse  — white fill + logo in bottom-right corner
+\abstractfilledfalse
+
+% Abstract metadata
+\preprintdate{June 3, 2026}
+\correspondence{patrick.haller@hu-berlin.de}
+
+% ─────────────────────────────────────────────────────────────────────────────
+\begin{document}
+
+\maketitle
+
+\begin{abstract}
+Linear recurrent models have recently emerged as competitive alternatives to
+Transformers, offering sub-quadratic training complexity and constant-memory
+inference. Among these, \textbf{DeltaProduct}~\cite{vaswani2017attention}
+demonstrated that replacing the scalar forgetting factor of linear attention
+with a product of rank-1 updates significantly improves state-tracking and
+associative recall. However, the original formulation applies a single global
+gate per time step, leaving fine-grained, per-channel dynamics unexploited.
+
+We introduce \textbf{DeltaProduct2}, which augments DeltaProduct with
+\emph{fine-grained input, forget, and output gates} that operate independently
+on each hidden dimension. This allows the model to selectively retain or
+discard information at the feature level, mirroring the expressivity gains seen
+in gated RNNs without sacrificing the hardware-efficient delta-rule update.
+On synthetic state-tracking benchmarks (Flip-Flop, Parity, Dyck languages)
+DeltaProduct2 matches or outperforms prior linear recurrences while training
+$1.4\times$ faster than comparable chunk-parallel baselines. Language-modelling
+experiments on the Pile at the 360M and 1.3B parameter scales show consistent
+perplexity improvements over both DeltaNet and vanilla DeltaProduct,
+approaching Transformer quality with a fraction of the inference cost.
+\end{abstract}
+
+% ─────────────────────────────────────────────────────────────────────────────
+\section{Introduction}
+
+The dominant sequence-modelling paradigm remains the Transformer~\cite{vaswani2017attention},
+whose self-attention mechanism achieves strong empirical results but scales
+quadratically in both compute and memory with sequence length.
+This has spurred a renewed interest in linear recurrent models that retain
+the expressive power of attention while offering $\mathcal{O}(L)$ inference.
+
+\textbf{DeltaNet}~\cite{vaswani2017attention} and its successor
+\textbf{DeltaProduct} extend linear attention with a delta-rule memory update,
+achieving markedly better state-tracking---the ability to maintain and
+manipulate discrete state across long contexts.
+Despite these advances, a key limitation remains: the forgetting mechanism
+applies a single scalar (or low-rank) gate shared across all hidden dimensions,
+which constrains the model's capacity to independently track multiple
+concurrent states.
+
+We address this with \textbf{DeltaProduct2}.
+Our contributions are:
+\begin{itemize}
+  \item A fine-grained gating scheme for the DeltaProduct recurrence that
+        decouples forget and input signals per hidden dimension (\S\ref{sec:method}).
+  \item A hardware-efficient chunk-parallel implementation compatible with
+        modern accelerators (\S\ref{sec:method}).
+  \item Systematic evaluation on state-tracking benchmarks and
+        language-modelling at scale (\S\ref{sec:experiments}).
+\end{itemize}
+
+\subsection{Related Work}
+
+\paragraph{Linear recurrent models.}
+Linear attention~\cite{vaswani2017attention}, S4, Mamba, and RWKV all forgo
+full softmax attention in favour of recurrent state updates.
+We situate DeltaProduct2 within this landscape and contrast it with the
+closest competitors.
+
+\paragraph{Gating in recurrent networks.}
+LSTMs and GRUs introduced per-dimension gates to control information flow.
+Recent work has revisited this idea in the linear-attention setting (e.g.,
+GLA, RetNet with gating variants).
+DeltaProduct2 brings fine-grained gating specifically to the delta-rule
+update, a combination not explored in prior work.
+
+\paragraph{State tracking.}
+\ldots [placeholder: discuss Flip-Flop, Parity, formal languages, prior
+linear-attention results]
+
+% ─────────────────────────────────────────────────────────────────────────────
+\section{Background}
+\label{sec:background}
+
+\subsection{Linear Attention as Associative Memory}
+
+Linear attention can be viewed as a key-value associative memory
+$\mathbf{S}_t \in \mathbb{R}^{d_v \times d_k}$ updated at each step:
+\begin{equation}
+  \mathbf{S}_t = \mathbf{S}_{t-1} + \mathbf{v}_t \mathbf{k}_t^\top, \qquad
+  \mathbf{o}_t = \mathbf{S}_t \mathbf{q}_t.
+\end{equation}
+The absence of a forgetting term causes unbounded memory growth and
+poor state-tracking on tasks requiring selective overwriting.
+
+\subsection{DeltaNet and DeltaProduct}
+
+DeltaNet~\cite{vaswani2017attention} introduces a delta-rule correction:
+\begin{equation}
+  \mathbf{S}_t = \mathbf{S}_{t-1}
+    + \beta_t \bigl(\mathbf{v}_t - \mathbf{S}_{t-1}\mathbf{k}_t\bigr)\mathbf{k}_t^\top,
+\end{equation}
+where $\beta_t \in (0,1)$ is a scalar gate.
+DeltaProduct generalises this by replacing the single update with a
+\emph{product} of rank-1 corrections, improving memory capacity and
+state-tracking at the cost of a more complex recurrence.
+
+% ─────────────────────────────────────────────────────────────────────────────
+\section{DeltaProduct2}
+\label{sec:method}
+
+\subsection{Fine-Grained Gating}
+
+We parameterise separate input gate $\mathbf{i}_t \in \mathbb{R}^{d_v}$,
+forget gate $\mathbf{f}_t \in \mathbb{R}^{d_v}$, and output gate
+$\mathbf{o}_t \in \mathbb{R}^{d_v}$, each produced by a small linear
+projection of the input $\mathbf{x}_t$:
+\begin{align}
+  \mathbf{i}_t &= \sigma(W_i \mathbf{x}_t + b_i), \\
+  \mathbf{f}_t &= \sigma(W_f \mathbf{x}_t + b_f), \\
+  \mathbf{g}_t &= \sigma(W_g \mathbf{x}_t + b_g).
+\end{align}
+The recurrence becomes:
+\begin{equation}
+  \mathbf{S}_t = \mathrm{diag}(\mathbf{f}_t)\,\mathbf{S}_{t-1}
+    + \mathrm{diag}(\mathbf{i}_t)\,
+      \bigl(\mathbf{v}_t - \mathbf{S}_{t-1}\mathbf{k}_t\bigr)\mathbf{k}_t^\top.
+\end{equation}
+
+\subsection{Hardware-Efficient Implementation}
+
+\ldots [placeholder: describe chunk-parallel scan, tiling strategy,
+memory layout, FLOP count comparison]
+
+\subsection{Connection to Prior Models}
+
+Setting $\mathbf{i}_t = \mathbf{f}_t = \beta_t \mathbf{1}$ recovers
+vanilla DeltaNet, and setting $\mathbf{f}_t = \mathbf{1}$ recovers
+standard linear attention---showing DeltaProduct2 strictly generalises
+both.
+
+% ─────────────────────────────────────────────────────────────────────────────
+\section{Experiments}
+\label{sec:experiments}
+
+\subsection{State-Tracking Benchmarks}
+
+We evaluate on three synthetic tasks designed to probe discrete state
+manipulation: \textbf{Flip-Flop}, \textbf{Parity}, and
+\textbf{Dyck-$k$} bracket matching.
+\ldots [placeholder: table of results]
+
+\subsection{Language Modelling}
+
+We train models at 360M and 1.3B parameters on the Pile corpus and
+report perplexity on the held-out validation set.
+\ldots [placeholder: perplexity table, training curve figure]
+
+\subsection{Ablations}
+
+\paragraph{Gate granularity.}
+We compare scalar, per-head, and per-dimension gates to isolate the
+contribution of fine-grained gating.
+
+\paragraph{Number of delta steps.}
+Following DeltaProduct, we sweep the number of rank-1 update steps
+$K \in \{1, 2, 4, 8\}$ with and without fine-grained gates.
+
+% ─────────────────────────────────────────────────────────────────────────────
+\section{Conclusion}
+
+DeltaProduct2 extends the DeltaProduct recurrence with fine-grained,
+per-dimension gates that independently control information flow into and
+out of the associative memory.
+The result is a linear recurrent model that achieves stronger
+state-tracking than its predecessors while remaining computationally
+efficient.
+Future work includes scaling beyond 1.3B parameters, exploring
+multi-head variants with shared gate banks, and applying DeltaProduct2
+to long-document retrieval tasks where fine-grained forgetting is
+especially beneficial.
+
+% ── Bibliography ──────────────────────────────────────────────────────────────
+\bibliographystyle{plainnat}
+\bibliography{references}
+
+\end{document}
