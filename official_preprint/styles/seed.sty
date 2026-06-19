@@ -1,0 +1,200 @@
+% seed.sty — ByteDance Seed-inspired preprint style
+% Derived from bytedance_seed.cls (arXiv:2505.19488)
+\NeedsTeXFormat{LaTeX2e}
+\ProvidesPackage{styles/seed}[2026/06/03 Seed preprint style]
+
+% ── Core packages ─────────────────────────────────────────────────────────────
+\RequirePackage[T1]{fontenc}
+\RequirePackage[utf8]{inputenc}
+\RequirePackage{amsmath}
+\RequirePackage{amssymb}
+\RequirePackage{amsthm}
+\RequirePackage[margin=0.9in, top=1in, bottom=1in]{geometry}
+\RequirePackage{microtype}
+\RequirePackage{parskip}
+\RequirePackage{xcolor}
+\RequirePackage{graphicx}
+\RequirePackage{booktabs}
+\RequirePackage[most]{tcolorbox}
+\RequirePackage{hyperref}
+\RequirePackage[noabbrev,nameinlink]{cleveref}
+\RequirePackage[numbers,sort&compress]{natbib}
+\RequirePackage{titlesec}
+\RequirePackage{eso-pic}
+\RequirePackage{etoolbox}
+
+% ── Fonts ─────────────────────────────────────────────────────────────────────
+% Body: Computer Modern Roman (LaTeX default)
+% Headings/bold: sans-serif — use Source Sans Pro as ByteSans substitute
+\RequirePackage{sourcesanspro}   % available via \sffamily; does not override body font
+\renewcommand{\rmdefault}{cmr}   % body is Computer Modern Roman (serif)
+
+% ── Brand colour (exact hex from bytedance_seed.cls) ─────────────────────────
+\definecolor{seedblue}{HTML}{2E5AA8}
+
+% ── Hyperref ──────────────────────────────────────────────────────────────────
+\hypersetup{
+  colorlinks=true,
+  linkcolor=seedblue,
+  citecolor=seedblue,
+  urlcolor=seedblue,
+}
+
+% ── Section headings (sffamily + bold + seedblue, matching reference) ─────────
+\titleformat{\section}
+  {\fontsize{12}{14}\selectfont\sffamily\bfseries\color{seedblue}}
+  {\thesection}{1em}{}
+
+\titleformat{\subsection}
+  {\fontsize{11}{13}\selectfont\sffamily\bfseries\color{seedblue}}
+  {\thesubsection}{1em}{}
+
+\titleformat{\subsubsection}
+  {\normalsize\sffamily\bfseries\color{seedblue}}
+  {\thesubsubsection}{1em}{}
+
+\titleformat{\paragraph}[runin]
+  {\normalsize\sffamily\bfseries}
+  {}{0em}{}[.]
+
+\titleformat{\subparagraph}[runin]
+  {\normalsize\itshape}
+  {}{0em}{}[.]
+
+% ── textbf: normal serif bold ─────────────────────────────────────────────────
+\DeclareTextFontCommand{\textbf}{\bfseries}
+
+% ── Bibliography font ─────────────────────────────────────────────────────────
+\def\bibfont{\small}
+
+% ── Institution / logo commands ───────────────────────────────────────────────
+\newcommand{\@logopath}{}
+\newcommand{\@logotext}{}
+\newcommand{\preprintlogo}[1]{\renewcommand{\@logopath}{#1}}
+\newcommand{\preprintlogotext}[1]{\renewcommand{\@logotext}{#1}}
+
+% ── arXiv watermark ───────────────────────────────────────────────────────────
+\newcommand{\@arxivid}{}
+\newcommand{\@arxivdate}{}
+\newcommand{\arxivwatermark}[2]{%
+  \renewcommand{\@arxivid}{#1}%
+  \renewcommand{\@arxivdate}{#2}%
+}
+
+\newcommand{\drawwatermark}{%
+  \ifx\@arxivid\empty\else
+    \AddToShipoutPictureBG{%
+      \AtPageLowerLeft{%
+        \rotatebox{90}{%
+          \hspace{1.2cm}%
+          \parbox{0.8\paperheight}{%
+            \centering\small\color{gray!70}
+            arXiv:\@arxivid\quad[\@arxivdate]%
+          }%
+        }%
+      }%
+    }%
+  \fi
+}
+
+% ── Abstract metadata commands ────────────────────────────────────────────────
+\newcommand{\@preprintdate}{}
+\newcommand{\@correspondence}{}
+\newcommand{\preprintdate}[1]{\renewcommand{\@preprintdate}{#1}}
+\newcommand{\correspondence}[1]{\renewcommand{\@correspondence}{#1}}
+
+% ── Abstract fill toggle ──────────────────────────────────────────────────────
+% \abstractfilledtrue  (default) — pale blue fill, no logo
+% \abstractfilledfalse           — white fill, logo in bottom-right corner
+\newif\ifabstractfilled
+\abstractfilledtrue
+
+% ── Abstract box ──────────────────────────────────────────────────────────────
+\renewenvironment{abstract}{%
+  \ifabstractfilled
+    \begin{tcolorbox}[
+      enhanced,
+      colback=seedblue!5,
+      colframe=seedblue,
+      boxrule=0.5pt,
+      arc=6mm,
+      left=8mm, right=8mm, top=6mm, bottom=6mm,
+      before skip=18pt, after skip=12pt,
+    ]
+  \else
+    \begin{tcolorbox}[
+      enhanced,
+      colback=white,
+      colframe=seedblue,
+      boxrule=0.5pt,
+      arc=6mm,
+      left=8mm, right=8mm, top=6mm, bottom=3mm,
+      before skip=18pt, after skip=12pt,
+    ]
+  \fi
+  \begin{center}
+    {\fontsize{12}{12}\selectfont\sffamily\bfseries\color{seedblue} Abstract}
+    \vspace{3mm}
+  \end{center}
+  \setlength{\parindent}{0cm}%
+  \setlength{\parskip}{4pt}%
+}{%
+  \par\medskip
+  \noindent\begin{minipage}[c]{%
+    \ifabstractfilled\linewidth%
+    \else
+      \ifx\@logopath\empty\linewidth\else 0.75\linewidth\fi%
+    \fi}%
+    \ifx\@preprintdate\empty\else
+      {\small\sffamily{\bfseries Date:} \@preprintdate}\par%
+    \fi
+    \ifx\@correspondence\empty\else
+      {\small\sffamily{\bfseries Correspondence:} \@correspondence}%
+    \fi
+  \end{minipage}%
+  \ifabstractfilled\else
+    \ifx\@logopath\empty\else
+      \hfill
+      \begin{minipage}[c]{0.2\linewidth}
+        \raggedleft\includegraphics[height=3em]{\@logopath}
+      \end{minipage}%
+    \fi
+  \fi
+  \end{tcolorbox}
+}
+
+% ── Title block ───────────────────────────────────────────────────────────────
+\renewcommand{\maketitle}{%
+  \drawwatermark
+  % Top rule
+  {\color{seedblue}\hrule height 0.5pt}
+  \vspace{6mm}
+  % Title
+  \begin{center}
+    {\fontsize{17}{20}\selectfont\sffamily\bfseries \@title \par}
+  \end{center}
+  \vspace{6mm}
+  % Bottom rule
+  {\color{seedblue}\hrule height 0.5pt}
+  \vspace{6mm}
+  % Authors / affiliations
+  \begin{center}
+    {\fontsize{12}{14}\selectfont\sffamily \@author \par}
+    \vspace{3mm}
+    \ifx\@affiliations\undefined\else
+      {\fontsize{10}{12}\selectfont\sffamily\fontseries{l}\selectfont \@affiliations \par}
+      \vspace{3mm}
+    \fi
+    \ifx\@authornotes\undefined\else
+      {\fontsize{10}{12}\selectfont \@authornotes \par}% serif, no sffamily
+    \fi
+  \end{center}
+  \vspace{6mm}
+}
+
+% ── Affiliation and author-note helpers ───────────────────────────────────────
+\newcommand{\affiliations}[1]{\def\@affiliations{#1}}
+\newcommand{\authornotes}[1]{\def\@authornotes{#1}}
+
+% ── Footnote symbols ──────────────────────────────────────────────────────────
+\renewcommand{\thefootnote}{\fnsymbol{footnote}}
