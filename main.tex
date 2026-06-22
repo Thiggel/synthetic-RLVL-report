@@ -392,10 +392,11 @@ and causal faithfulness require additional objectives or verification.
 The tasks are synthetic. This is necessary for the paired substrate comparison,
 but it limits claims about open-domain reasoning. The main model is OLMo-7B,
 with architecture checks rather than a full scaling law. Natural-language
-translated validity is family-specific and unsupported for attribute
-constraints. The 32B result is only a short-context sanity check. Finally, the
-current terse-natural control is not a clean compression control because the
-default natural-language traces are already terse.
+translated validity remains family-specific, and the attribute-constraint
+translator does not remove the long-depth failure mode: depth-50 translated
+joint validity remains weak. The 32B result is only a short-context sanity
+check. Finally, the current terse-natural control is not a clean compression
+control because the default natural-language traces are already terse.
 
 \section{Conclusion}
 
