@@ -2,7 +2,7 @@
 \documentclass[11pt]{article}
 \usepackage{official_preprint/styles/seed}
 
-\title{Formal Logic is a Better Reasoning Substrate for Large Language Models}
+\title{Compact Formal Traces Improve Supervised Symbolic Reasoning}
 
 \author{
   Filipe Laitenberger\textsuperscript{1, 3}, Dawid Kopiczko\textsuperscript{2}, Patrick Haller\textsuperscript{1}, Yuki Asano\textsuperscript{2}, Alan Akbik\textsuperscript{1}
@@ -11,104 +11,103 @@
 \affiliations{\textsuperscript{1}Humboldt-Universität zu Berlin\\
 \textsuperscript{2}University of Technology Nuremberg}
 
-%\authornotes{%
-%  \textsuperscript{3}Corresponding author (filipe.laitenberger@hu-berlin.de)%
-%}
+\authornotes{%
+  \textsuperscript{3}Corresponding author (filipe.laitenberger@hu-berlin.de)%
+}
 
 \preprintlogo{official_preprint/assets/hu-logo.png}
 \abstractfilledfalse
-\preprintdate{June 19, 2026}
+\preprintdate{June 23, 2026}
 \correspondence{filipe.laitenberger@hu-berlin.de}
 
-\newcommand{\bpc}{branching proof chains}
-\newcommand{\ac}{attribute constraints}
-\newcommand{\formal}{\textsc{Formal}}
-\newcommand{\natural}{\textsc{Natural}}
-\newcommand{\passk}{pass@16}
+\newcommand{\branchproof}{\textsc{BranchProof}}
+\newcommand{\attrcon}{\textsc{AttrCon}}
+\newcommand{\logic}{\textsc{Logic}}
+\newcommand{\nl}{\textsc{Natural}}
+\newcommand{\passsixteen}{pass@16}
 
 \begin{document}
 
 \maketitle
 
 \begin{abstract}
-Chain-of-thought supervision is usually expressed in natural language, even for
-tasks whose latent structure is symbolic. We study whether a language model
-learns more reliable reasoning when the same latent proof is supervised in a
-compact formal language instead. To isolate the representation variable, we
-generate paired synthetic tasks in which each instance has the same prompt,
-answer, and latent derivation, but two target traces: one formal and one
-natural-language. Across branching proof chains and attribute constraints,
-formal traces improve answer correctness under length extrapolation. With
-OLMo-7B trained on proof chains up to depth 25, formal traces reach
-92.1\% held-out correctness and 83.3\% depth-50 correctness, compared with
-79.4\% and 51.0\% for natural-language traces. The effect is robust across
-Qwen and Gemma models and is strongest when training data contain shortcut
-distractors. Ablations show that the gain is not recovered by longer traces,
-wordified predicates, pseudocode, rule-annotated natural language, or
-dual-modality training. At the same time, invalid formal-looking traces can
-preserve high answer accuracy while losing mechanical proof validity. The
-evidence therefore supports a precise claim: compact formal traces can be a
-better supervised substrate for learning correct symbolic reasoning, while
-validity and faithfulness remain separate objectives.
+Chain-of-thought supervision is usually written in natural language, even when
+the latent reasoning problem is symbolic. We ask whether supervised language
+models learn more reliable symbolic reasoning when the same derivation is
+written instead as a compact formal trace. To isolate the trace substrate, we
+construct paired synthetic tasks in which each instance has the same prompt,
+answer, and latent proof, but two target traces: a formal derivation and a
+natural-language derivation. On branching proof chains, OLMo-7B trained on
+depths up to 25 reaches 92.1\% \passsixteen{} correctness averaged over depths
+30--50 and 83.3\% at depth 50 with formal traces, compared with 79.4\% and
+51.0\% with natural-language traces. On attribute constraints, formal traces
+again improve answer correctness on the hard-depth band and at depth 50.
+The effect is robust across Qwen and Gemma model families and becomes sharper
+when training data contain shortcut distractors. Ablations show that the gain is
+not recovered by longer traces, word-like predicates, pseudocode, explicit rule
+annotations, or dual-modality training. At the same time, invalid formal-looking
+traces can preserve high answer accuracy while losing mechanical proof validity.
+The evidence therefore supports a precise conclusion: compact formal traces can
+be a better supervised substrate for learning correct symbolic computations,
+but answer correctness and proof faithfulness remain distinct objectives.
 \end{abstract}
 
 \section{Introduction}
 
-Chain-of-thought methods ask language models to expose intermediate reasoning
-before committing to an answer~\citep{wei2022chain,kojima2022large}. The
-reasoning trace is almost always written in natural language. This is a sensible
-default for human readability, but it also introduces surface variation,
-ambiguity, and long-range discourse dependencies. For symbolic reasoning tasks,
-there is a natural alternative: write the same derivation in a compact formal
-language.
+Chain-of-thought methods improve language-model reasoning by asking the model to
+produce intermediate steps before a final answer~\citep{wei2022chain,
+kojima2022large}. Almost all such supervision is expressed in natural language.
+That choice is useful for human readability, but it is not obviously optimal for
+the model. Natural language is verbose, underspecified, and entangles the
+underlying computation with discourse style. Symbolic tasks have another
+natural representation: a compact formal derivation with explicit local rule
+applications.
 
-This paper asks a narrow empirical question. Holding the underlying proof
-fixed, which target language produces better supervised reasoning behavior:
-natural-language chain of thought, or formal-logic chain of thought? We study
-this under supervised fine-tuning, not prompting, because our goal is to measure
-what small and mid-sized models can learn from the trace representation itself.
-The comparison is not between a neural model and an external solver. The model
-generates the trace and answer in both conditions; validators are used only for
-measurement.
+This paper studies the substrate question directly. Holding the latent proof
+fixed, should a model be supervised to reason in natural language or in formal
+logic? We focus on supervised fine-tuning rather than prompting, because the
+goal is to measure what models learn from the target trace itself. In both
+conditions, the model generates the trace and the answer. Validators are used
+only after generation, to measure whether a produced trace is mechanically
+checkable.
 
-We use controlled synthetic tasks rather than natural benchmarks because the
-causal comparison requires paired supervision. Each instance is generated from
-a latent proof and rendered twice: once as a formal derivation and once as a
-natural-language derivation. The main task family consists of branching proof
-chains: Horn-style rules, coherent distractor branches, and a target conclusion
-whose depth is controlled by the generator. The second family consists of
-attribute constraints over objects, slots, and values. These tasks are not
-intended to be broad benchmarks. They are instruments for testing whether a
-reasoning substrate helps models learn compositional rule application, state
-tracking, distractor rejection, and extrapolation to longer derivations.
+We use controlled synthetic tasks because the causal comparison requires paired
+supervision. Each instance is sampled from a latent derivation and rendered in
+two ways. The first task, \branchproof{}, contains branching Horn-style proof
+chains with coherent distractor branches and controlled proof depth. The second,
+\attrcon{}, contains object--attribute constraint derivations. These tasks are
+not meant to be broad reasoning benchmarks. They are instruments for testing
+whether a trace substrate helps models learn compositional rule application,
+state tracking, distractor rejection, and extrapolation to longer derivations.
 
-The main result is that formal traces improve answer correctness. On branching
-proof chains, formal supervision is substantially stronger at depth 50, far
-beyond the training range. On attribute constraints, the held-out gap is smaller
-but the depth-50 gap remains large. The rest of the paper tests whether this is
-an artifact of trace length, explicit rule labels, syntax, shortcuts, hybrid
-targets, or architecture choice. The answer is mostly no: compact formal syntax
-is the strongest representation among the variants we tried.
+The main empirical result is that compact formal traces improve answer
+correctness. On \branchproof{}, the formal advantage is strongest beyond the
+training depth range. On \attrcon{}, the same answer-correctness pattern appears
+on a harder constraint-satisfaction surface, although long-depth proof validity
+remains weak for both trace styles. The effect persists across model families
+and under shortcut-rich training. We then ask whether the result is explained by
+trace length, explicit rule labels, code-like syntax, or the availability of
+both natural and formal modalities. The answer is no: compact formal traces
+remain the strongest representation among the variants we tested.
 
-The result also has an important limitation. Formal-looking traces are not
-automatically faithful proofs. Negative controls with invalid or shuffled
-formal traces can keep high answer accuracy while mechanical validity collapses.
-We therefore separate the correctness claim from the stronger claim that the
-model's trace is a causally faithful proof. Our experiments establish the
-former more clearly than the latter.
+The paper also separates answer correctness from faithfulness. Formal syntax
+does not make a generated trace a valid proof by itself. Invalid formal-looking
+traces can keep high answer accuracy while formal validity collapses. We
+therefore make a narrow claim. Formal traces improve supervised learning of the
+correct symbolic computation in these controlled settings; they do not by
+themselves guarantee that every generated trace is a faithful proof.
 
 \section{Related Work}
 
 \subsection{Natural-language reasoning traces}
 
-Chain-of-thought prompting showed that intermediate rationales can substantially
-improve large-model performance on arithmetic, commonsense, and symbolic
-reasoning tasks~\citep{wei2022chain}. Subsequent work studies zero-shot
-reasoning cues~\citep{kojima2022large}, iterative rationale
+Chain-of-thought prompting showed that natural-language rationales can elicit
+stronger reasoning from large models~\citep{wei2022chain}. Subsequent work
+studies zero-shot reasoning prompts~\citep{kojima2022large}, rationale
 bootstrapping~\citep{zelikman2022star}, decomposition into subproblems
 ~\citep{zhou2023least}, and search over alternative reasoning states
-~\citep{yao2023tree}. These methods largely keep natural language as the
-reasoning medium. We instead vary the medium while holding the latent proof
+~\citep{yao2023tree}. These methods largely preserve natural language as the
+reasoning medium. We instead vary the medium while holding the latent derivation
 fixed.
 
 \subsection{Executable and symbolic substrates}
@@ -119,8 +118,8 @@ intermediate representation, often delegating computation to an interpreter
 into formal representations and call symbolic solvers or verifiers
 ~\citep{pan2023logiclm,ling2023deductive}. These approaches demonstrate the
 value of non-natural-language substrates, but they also change the execution
-mechanism. Our experiments keep generation-only inference and compare the
-learned trace representation directly.
+mechanism. Our experiments keep inference as plain next-token generation and
+compare the supervised trace representation directly.
 
 \subsection{Formal proof generation}
 
@@ -128,368 +127,440 @@ LLM-assisted theorem proving trains or prompts models to produce machine-checkab
 proofs in systems such as Lean~\citep{polu2020generative,jiang2022draft,
 leandojo2023,leanCopilot2024}. This literature is closest in spirit to our
 formal-trace condition, but its target domain is mathematical theorem proving.
-We use much simpler generated tasks so that the same derivation can be rendered
-as either formal logic or natural language, enabling a controlled substrate
+We use simpler generated tasks so that each latent derivation can be rendered as
+either formal logic or natural language, enabling a controlled substrate
 comparison.
 
 \subsection{Shortcut learning}
 
-Shortcut learning occurs when models rely on correlations that work in the
+Shortcut learning occurs when a model exploits correlations that work in the
 training distribution but fail under shift~\citep{geirhos2020shortcut}. Our
 generators let us create shortcut-rich training distributions while evaluating
-on shortcut-neutral data. This gives a direct test of whether a trace language
-encourages the intended rule-following computation or a brittle heuristic.
+on shortcut-neutral examples. This gives a direct test of whether a trace
+language encourages rule following or brittle heuristic use.
+
+\section{Method}
+\label{sec:method}
+
+\subsection{Paired reasoning tasks}
+
+Each example is generated from a latent proof. The prompt and final answer are
+identical across trace conditions; only the target reasoning trace changes.
+\branchproof{} prompts contain facts and Horn-style rules over symbolic
+predicates. Exactly one branch supports the queried conclusion; other branches
+are coherent distractors. \attrcon{} prompts contain objects, slots, values, and
+constraints that propagate attributes through a derivation.
+
+\begin{figure}[t]
+\centering
+\begin{tcolorbox}[
+  width=0.96\linewidth,
+  colback=seedblue!4,
+  colframe=seedblue!45,
+  boxrule=0.4pt,
+  arc=2mm,
+  left=3mm,
+  right=3mm,
+  top=2mm,
+  bottom=2mm
+]
+\small
+\begin{center}
+\begin{tabular}{p{0.27\linewidth}p{0.30\linewidth}p{0.30\linewidth}}
+\toprule
+Shared latent proof & \logic{} target trace & \nl{} target trace \\
+\midrule
+\texttt{Fact: P(a)}\newline
+\texttt{Rule: P(x) -> Q(x)}\newline
+\texttt{Query: Q(a)?}
+&
+\texttt{1. P(a) premise}\newline
+\texttt{2. Q(a) by rule 1}\newline
+\texttt{answer: yes}
+&
+\texttt{a has property P.}\newline
+\texttt{Anything with P has Q, so a has Q.}\newline
+\texttt{answer: yes}
+\\
+\bottomrule
+\end{tabular}
+\end{center}
+\end{tcolorbox}
+\caption{Paired supervision design. Each instance has one latent derivation and
+one answer, but two trace renderings. The experiment changes the supervised
+reasoning substrate while holding the underlying problem fixed.}
+\label{fig:paired-design}
+\end{figure}
+
+\subsection{Trace substrates}
+
+The \logic{} trace uses compact symbolic atoms and explicit rule-application
+lines. The \nl{} trace describes the same derivation in short controlled
+sentences. Additional ablations modify this surface: symbol-padded logic,
+wordified logic, pseudocode, rule-annotated natural language, shuffled traces,
+invalid formal traces, same-datapoint hybrids, and mode-conditioned
+dual-modality training.
+
+\subsection{Evaluation protocol}
+
+We report \passsixteen{}, i.e. whether at least one of 16 sampled generations is
+correct. The primary metric is final-answer correctness. We also report
+correct-plus-valid joint metrics when validators support the trace surface. For
+formal traces, validity is a mechanical proof check. For natural-language
+traces, validity requires translation into the formal checker and is therefore a
+diagnostic rather than a universal measure.
+
+We use explicit depth terms throughout. The \emph{training range} contains
+depths seen during fine-tuning. The
+\emph{long-depth band} contains evaluated \branchproof{} depths greater than the
+maximum training depth; for the main train-1-to-25 setting, this is depths
+30, 35, 40, 45, and 50. The \emph{depth-50 endpoint} is the single hardest
+evaluated proof depth. For \attrcon{}, we additionally report a
+\emph{hard-depth band}, the fixed difficult slice used by that evaluator, and
+the same depth-50 endpoint.
 
 \section{Experimental Setup}
 \label{sec:setup}
 
-\subsection{Tasks}
+The main sweep fine-tunes OLMo-7B on \branchproof{} with maximum training depth
+in $\{5,10,15,20,25\}$ over three seeds. The principal comparison is between
+matched \logic{} and \nl{} targets. We repeat the train-1-to-25 comparison on
+Qwen-2.5-1.5B, Qwen-2.5-7B, and Gemma-3-4B to check whether the result is
+architecture-specific. All main tables report mean $\pm$ standard deviation over
+three seeds.
 
-The primary task family is \emph{branching proof chains}. A prompt contains
-facts and Horn-style rules over symbolic predicates. Exactly one chain supports
-the queried conclusion; other branches are locally coherent distractors. The
-generator controls proof depth, branch structure, and shortcut markers. Formal
-targets consist of compact derivation lines with rule applications. Natural
-targets describe the same derivation in short sentences. Both targets end with
-the same answer tag.
-
-The secondary family is \emph{attribute constraints}. Instances contain objects
-with slot/value attributes and rules that propagate values through a derivation.
-This family tests whether the formal-trace effect survives a more semantic
-surface where symbols are closer to words and correctness depends on preserving
-object--attribute bindings.
-
-More generator detail and examples are given in Appendix~\ref{app:tasks}.
-
-\subsection{Models and evaluation}
-
-The main sweep fine-tunes OLMo-7B on branching proof chains with maximum
-training depth in $\{5,10,15,20,25\}$ over three seeds. Evaluation reports
-\passk{} answer correctness on held-out examples and on a sparse depth-50 split.
-We also report joint correctness-plus-validity where the validator supports the
-trace surface. For formal traces this is mechanical formal validity. For
-natural-language traces this is translated validity and is therefore only
-meaningful for task families with a supported translator.
-
-All tables report mean $\pm$ standard deviation over seeds unless otherwise
-specified. We use plots only for depth or shortcut-rate trends; ablations are
-reported as tables to make the comparisons explicit.
+For \attrcon{}, we use the same paired-rendering principle and report
+three-seed train-1-to-25 results. The \attrcon{} numbers are used as a
+replication of the answer-correctness effect on a different symbolic surface;
+the depth-50 validity metrics are treated as diagnostics, not as evidence of
+solved long-depth proof generation.
 
 \section{Results}
 \label{sec:results}
 
-\subsection{Formal traces improve correctness}
+\subsection{Formal traces improve extrapolative answer correctness}
 
 \begin{table}[t]
 \centering
 \small
 \begin{tabular}{llcccc}
 \toprule
-Task & Trace & Held-out corr. & Held-out joint & Depth-50 corr. & Depth-50 joint \\
+Task and band & Trace & Band corr. & Depth-50 corr. & Band joint & Depth-50 joint \\
 \midrule
-Proof chains & Formal & \textbf{92.1 $\pm$ 3.4} & 71.0 $\pm$ 9.5 & \textbf{83.3 $\pm$ 10.6} & 41.7 $\pm$ 15.6 \\
-Proof chains & Natural & 79.4 $\pm$ 7.7 & \textbf{74.8 $\pm$ 5.6} & 51.0 $\pm$ 6.4 & \textbf{42.7 $\pm$ 5.3} \\
+\branchproof{} long-depth & \logic{} & \textbf{92.1 $\pm$ 3.4} & \textbf{83.3 $\pm$ 10.6} & 71.0 $\pm$ 9.5 & 41.7 $\pm$ 15.6 \\
+\branchproof{} long-depth & \nl{} & 79.4 $\pm$ 7.7 & 51.0 $\pm$ 6.4 & \textbf{74.8 $\pm$ 5.6} & \textbf{42.7 $\pm$ 5.3} \\
 \midrule
-Attribute constraints & Formal & \textbf{89.6 $\pm$ 9.0} & \textbf{73.6 $\pm$ 5.3} & \textbf{45.8 $\pm$ 31.6} & 0.0 $\pm$ 0.0 \\
-Attribute constraints & Natural & 81.7 $\pm$ 6.2 & n/a & 10.4 $\pm$ 18.0 & n/a \\
+\attrcon{} hard-depth & \logic{} & \textbf{89.6 $\pm$ 9.0} & \textbf{45.8 $\pm$ 31.6} & 73.6 $\pm$ 5.3 & 0.0 $\pm$ 0.0 \\
+\attrcon{} hard-depth & \nl{} & 80.8 $\pm$ 4.9 & 8.3 $\pm$ 14.4 & \textbf{79.5 $\pm$ 3.0} & \textbf{7.3 $\pm$ 12.6} \\
 \bottomrule
 \end{tabular}
-\caption{Main three-seed OLMo-7B results at maximum training depth 25. The primary claim is answer correctness. Joint validity is surface-specific: formal validity for formal traces and translated validity where supported for natural traces. Attribute-constraint natural-language validity is not supported by the current translator.}
+\caption{Main train-1-to-25 three-seed results. Formal traces improve answer
+correctness on both symbolic task families, especially at the depth-50 endpoint.
+Joint validity is surface-specific and should not be read as the primary
+cross-task metric.}
 \label{tab:main}
 \end{table}
 
-Table~\ref{tab:main} is the main empirical result. On branching proof chains,
-formal traces are substantially better on answer correctness, especially at
-depth 50. Natural language slightly exceeds formal logic on joint validity at
-train depth 25, but this does not erase the correctness gap. On attribute
-constraints, formal traces again improve correctness; the depth-50 gap is large
-despite high seed variance.
+Table~\ref{tab:main} gives the central result. On \branchproof{}, formal traces
+improve long-depth correctness from 79.4\% to 92.1\%, and depth-50 correctness
+from 51.0\% to 83.3\%. On \attrcon{}, the answer-correctness pattern repeats:
+formal traces are stronger on the hard-depth band and much stronger at depth 50.
+The joint-validity columns show a different fact. Natural language can match or
+exceed formal traces on translated validity in some bands, and \attrcon{}
+depth-50 validity remains weak. The robust claim is therefore answer
+correctness, not automatic proof faithfulness.
 
 \begin{figure}[t]
   \centering
-  \includegraphics[width=0.92\linewidth]{official_preprint/figures/main_correctness.pdf}
-  \caption{Depth scaling on branching proof chains. Formal traces are especially strong when evaluation depth exceeds the training range. Lines are three-seed means; bands are standard deviations.}
+  \includegraphics[width=0.93\linewidth]{official_preprint/figures/main_correctness.pdf}
+  \caption{\branchproof{} correctness as the maximum training depth increases.
+  The left panel averages evaluated depths beyond the training range; the right
+  panel isolates the depth-50 endpoint. Formal traces are strongest when the
+  required derivation is longer than those seen in training.}
   \label{fig:main-correctness}
 \end{figure}
 
-Figure~\ref{fig:main-correctness} shows the depth trend behind the first two
-rows of Table~\ref{tab:main}. The advantage is not a smooth monotone function
-of training depth, but the best formal models are consistently stronger on the
-harder extrapolation split.
-
-\subsection{The effect is robust across model families}
-
-\begin{table}[t]
-\centering
-\small
-\begin{tabular}{llccc}
-\toprule
-Model & Trace & Held-out corr. & Depth-50 corr. & Short-context corr. \\
-\midrule
-OLMo-7B & Formal & \textbf{92.1 $\pm$ 3.4} & \textbf{83.3 $\pm$ 10.6} & 100.0 $\pm$ 0.0 \\
-OLMo-7B & Natural & 79.4 $\pm$ 7.7 & 51.0 $\pm$ 6.4 & 100.0 $\pm$ 0.0 \\
-\midrule
-Qwen-2.5-1.5B & Formal & \textbf{77.1 $\pm$ 18.2} & \textbf{70.8 $\pm$ 34.6} & 100.0 $\pm$ 0.0 \\
-Qwen-2.5-1.5B & Natural & 54.2 $\pm$ 3.3 & 43.8 $\pm$ 8.8 & 100.0 $\pm$ 0.0 \\
-\midrule
-Qwen-2.5-7B & Formal & \textbf{90.6 $\pm$ 3.6} & \textbf{85.4 $\pm$ 6.4} & 100.0 $\pm$ 0.0 \\
-Qwen-2.5-7B & Natural & 56.9 $\pm$ 9.0 & 25.0 $\pm$ 22.7 & 100.0 $\pm$ 0.0 \\
-\midrule
-Gemma-3-4B & Formal & \textbf{69.6 $\pm$ 5.5} & \textbf{56.2 $\pm$ 11.1} & 100.0 $\pm$ 0.0 \\
-Gemma-3-4B & Natural & 39.4 $\pm$ 34.6 & 30.2 $\pm$ 42.7 & 100.0 $\pm$ 0.0 \\
-\midrule
-OLMo-2-32B short-context & Formal & -- & -- & 100.0 \\
-OLMo-2-32B short-context & Natural & -- & -- & 100.0 \\
-\bottomrule
-\end{tabular}
-\caption{Architecture check on branching proof chains. OOD/depth-50 rows use train depth 25 except for OLMo-2-32B, where only a one-seed short-context sanity evaluation is available. The 32B rows verify that both trace formats are learnable in-distribution; they are not depth-extrapolation evidence.}
-\label{tab:architecture}
-\end{table}
-
-The formal advantage is not specific to OLMo-7B. Table~\ref{tab:architecture}
-shows the same direction on Qwen and Gemma variants. The OLMo-2-32B row is a
-limited sanity check rather than a comparable extrapolation run; it confirms
-that the short-context training problem itself is not malformed.
+Figure~\ref{fig:main-correctness} shows how the effect changes with training
+depth. Performance is not monotonic at small training ranges, but the strongest
+formal models extrapolate better than the strongest natural-language models.
 
 \subsection{Formal traces are more robust to shortcut-rich training}
+
+We next test whether the model learns the intended derivation or a superficial
+training correlation. During training, shortcut markers identify the active
+branch with probability $r$; at evaluation, examples are shortcut-neutral.
 
 \begin{table}[t]
 \centering
 \small
 \begin{tabular}{lcccc}
 \toprule
-Trace & Shortcut rate & Held-out corr. & Held-out joint & Depth-50 corr. \\
+Trace & Shortcut rate & Long-depth corr. & Long-depth joint & Depth-50 corr. \\
 \midrule
-Formal & 0.3 & 89.2 & 59.8 & \textbf{84.4} \\
-Formal & 0.5 & 90.6 & 67.7 & \textbf{83.3} \\
-Formal & 0.8 & 94.0 & 79.4 & \textbf{82.3} \\
+\logic{} & 0.0 & 92.1 & 71.0 & 83.3 \\
+\logic{} & 0.3 & 89.2 & 59.8 & 84.4 \\
+\logic{} & 0.5 & 90.6 & 67.7 & 83.3 \\
+\logic{} & 0.8 & 94.0 & 79.4 & 82.3 \\
 \midrule
-Natural & 0.3 & 58.8 & 57.1 & 45.8 \\
-Natural & 0.5 & 64.2 & 58.5 & 38.5 \\
-Natural & 0.8 & 63.8 & 56.5 & 28.1 \\
+\nl{} & 0.0 & 79.4 & 74.8 & 51.0 \\
+\nl{} & 0.3 & 58.8 & 57.1 & 45.8 \\
+\nl{} & 0.5 & 64.2 & 58.5 & 38.5 \\
+\nl{} & 0.8 & 63.8 & 56.5 & 28.1 \\
 \bottomrule
 \end{tabular}
-\caption{Shortcut-rate ablation on branching proof chains. Training contains shortcut markers at the given rate; evaluation is shortcut-neutral. Formal depth-50 correctness remains high, while natural-language depth-50 correctness degrades as shortcut rate increases.}
+\caption{Shortcut-rate ablation on \branchproof{}. Evaluation removes the
+shortcut marker. Formal depth-50 correctness stays near 82--84\%, while
+natural-language depth-50 correctness deteriorates as shortcuts become common.}
 \label{tab:shortcut-rate}
 \end{table}
 
 \begin{figure}[t]
   \centering
   \includegraphics[width=0.58\linewidth]{official_preprint/figures/shortcut_robustness.pdf}
-  \caption{Depth-50 correctness under shortcut-rich training. The line plot is included because the rate trend is the claim.}
+  \caption{Depth-50 correctness under shortcut-rich training. The line plot is
+  the right medium here because the claim is a rate trend: natural-language
+  traces become more shortcut-sensitive, while formal traces remain stable.}
   \label{fig:shortcut}
 \end{figure}
 
-The shortcut ablation tests whether the model learns the intended derivation or
-a training correlation. Formal traces are stable across shortcut rates
-(Table~\ref{tab:shortcut-rate}, Figure~\ref{fig:shortcut}). Natural-language
-traces do not collapse in held-out correctness, but their depth-50 correctness
-falls sharply as shortcuts become more frequent. Appendix~\ref{app:shortcuts}
-reports the position and initial-marker shortcut variants.
+Table~\ref{tab:shortcut-rate} and Figure~\ref{fig:shortcut} show that the formal
+advantage is not only a clean-distribution effect. Natural-language traces can
+produce correct answers in normal training, but shortcut-rich training exposes
+greater fragility at long proof depths.
 
-\subsection{Syntax and trace controls}
+\subsection{The effect is not architecture-specific}
 
 \begin{table}[t]
 \centering
 \small
-\begin{tabular}{lcccc}
+\begin{tabular}{llcc}
 \toprule
-Trace condition & Held-out corr. & Held-out joint & Depth-50 corr. & Depth-50 joint \\
+Model & Trace & Long-depth corr. & Depth-50 corr. \\
 \midrule
-Compact formal & \textbf{92.1 $\pm$ 3.4} & 71.0 $\pm$ 9.5 & \textbf{83.3 $\pm$ 10.6} & \textbf{41.7 $\pm$ 15.6} \\
-Natural language & 79.4 $\pm$ 7.7 & \textbf{74.8 $\pm$ 5.6} & 51.0 $\pm$ 6.4 & \textbf{42.7 $\pm$ 5.3} \\
-Token-budget matched formal & 89.8 $\pm$ 6.6 & 33.5 $\pm$ 9.1 & 79.2 $\pm$ 11.0 & 12.5 $\pm$ 0.0 \\
-Token-budget matched natural & 55.4 $\pm$ 10.6 & 47.3 $\pm$ 18.1 & 34.4 $\pm$ 16.5 & 21.9 $\pm$ 23.6 \\
-Symbol-padded formal & 67.5 $\pm$ 11.6 & 20.6 $\pm$ 9.9 & 56.2 $\pm$ 10.8 & 9.4 $\pm$ 13.6 \\
-Wordified formal & 50.8 $\pm$ 11.6 & 32.3 $\pm$ 11.9 & 34.4 $\pm$ 10.8 & 9.4 $\pm$ 8.3 \\
-Pseudocode & 54.4 $\pm$ 24.8 & 47.9 $\pm$ 28.5 & 20.8 $\pm$ 10.0 & 10.4 $\pm$ 1.8 \\
-Rule-annotated natural & 57.5 $\pm$ 5.4 & 48.5 $\pm$ 13.5 & 34.4 $\pm$ 19.0 & 14.6 $\pm$ 11.0 \\
-Terse natural & 34.8 $\pm$ 18.4 & 27.7 $\pm$ 17.9 & 9.4 $\pm$ 6.2 & 1.0 $\pm$ 1.8 \\
+OLMo-7B & \logic{} & \textbf{92.1 $\pm$ 3.4} & \textbf{83.3 $\pm$ 10.6} \\
+OLMo-7B & \nl{} & 79.4 $\pm$ 7.7 & 51.0 $\pm$ 6.4 \\
+\midrule
+Qwen-2.5-1.5B & \logic{} & \textbf{77.1 $\pm$ 18.2} & \textbf{70.8 $\pm$ 34.6} \\
+Qwen-2.5-1.5B & \nl{} & 54.2 $\pm$ 3.3 & 43.8 $\pm$ 8.8 \\
+\midrule
+Qwen-2.5-7B & \logic{} & \textbf{90.6 $\pm$ 3.6} & \textbf{85.4 $\pm$ 6.4} \\
+Qwen-2.5-7B & \nl{} & 56.9 $\pm$ 9.0 & 25.0 $\pm$ 22.7 \\
+\midrule
+Gemma-3-4B & \logic{} & \textbf{69.6 $\pm$ 5.5} & \textbf{56.2 $\pm$ 11.1} \\
+Gemma-3-4B & \nl{} & 39.4 $\pm$ 34.6 & 30.2 $\pm$ 42.7 \\
 \bottomrule
 \end{tabular}
-\caption{Syntax and length controls at train depth 25. The compact formal trace is not matched by adding length, words, rule labels, or pseudocode structure. The terse-natural row is a weak control because the default natural-language trace is already short in these artifacts.}
+\caption{\branchproof{} architecture check at train depth 25. Formal traces
+improve answer correctness across the tested model families; the table is meant
+as a robustness check, not a scaling law.}
+\label{tab:architecture}
+\end{table}
+
+The effect is directionally consistent across the tested architectures
+(Table~\ref{tab:architecture}). The variance is larger for some smaller or less
+stable runs, but every model family shows higher depth-50 correctness after
+formal-trace supervision.
+
+\section{Analysis}
+\label{sec:analysis}
+
+\subsection{Compact symbolic syntax is the useful ingredient}
+
+\begin{table}[t]
+\centering
+\small
+\begin{tabular}{p{0.24\linewidth}p{0.37\linewidth}cc}
+\toprule
+Training trace & Explanation tested & Long-depth corr. & Depth-50 corr. \\
+\midrule
+Compact formal & Main formal substrate & \textbf{92.1} & \textbf{83.3} \\
+Natural language & Main natural-language substrate & 79.4 & 51.0 \\
+Same-token formal & More target-token exposure is not the cause & 89.8 & 79.2 \\
+Same-token natural & Equalizing token budget does not rescue NL & 55.4 & 34.4 \\
+Symbol-padded formal & Longer formal syntax is not enough & 67.5 & 56.2 \\
+Wordified formal & Replacing compact symbols with word-like predicates hurts & 50.8 & 34.4 \\
+Pseudocode & Code-like formatting is not enough & 54.4 & 20.8 \\
+Rule-annotated natural & Explicit rule labels are not enough & 57.5 & 34.4 \\
+Terse natural & Current terse NL control is weak and underperforms & 34.8 & 9.4 \\
+\bottomrule
+\end{tabular}
+\caption{Surface and token-budget controls at train depth 25. The gain is not
+explained by length, rule labels, or code-like formatting; the best condition is
+the compact formal representation itself.}
 \label{tab:syntax}
 \end{table}
 
-Table~\ref{tab:syntax} rules out several simple explanations. Formal traces do
-not win because they are longer; token-budget matching and symbol padding do
-not recover the result. They do not win because they look more like code;
-pseudocode remains far below compact formal traces. They do not win merely
-because rules are visible; rule-annotated natural language is also weaker. The
-most consistent explanation is that compact symbolic atoms and local rule
+Table~\ref{tab:syntax} rules out several simple explanations. The formal model
+does not win merely because it sees more useful target tokens: same-token formal
+nearly preserves answer correctness but loses much of its validity. The gain is
+also not recovered by making logic longer, replacing symbols with words, adding
+rule labels to natural language, or wrapping steps in pseudocode. The most
+consistent interpretation is that short symbolic atoms and local rule
 applications make the supervised mapping easier to learn.
+
+\subsection{Answer correctness and proof validity are distinct}
 
 \begin{table}[t]
 \centering
 \small
 \begin{tabular}{lcccc}
 \toprule
-Trace condition & Held-out corr. & Formal joint & Depth-50 corr. & Depth-50 formal joint \\
+Trace condition & Long-depth corr. & Long-depth formal joint & Depth-50 corr. & Depth-50 formal joint \\
 \midrule
 Compact formal & 92.1 $\pm$ 3.4 & \textbf{71.0 $\pm$ 9.5} & 83.3 $\pm$ 10.6 & \textbf{41.7 $\pm$ 15.6} \\
 Invalid formal & 89.2 $\pm$ 5.6 & 0.0 $\pm$ 0.0 & 75.0 $\pm$ 11.3 & 0.0 $\pm$ 0.0 \\
 Shuffled formal & 69.0 $\pm$ 2.6 & 0.0 $\pm$ 0.0 & 51.0 $\pm$ 10.0 & 0.0 $\pm$ 0.0 \\
-Shuffled natural & 49.0 $\pm$ 15.6 & 0.0 $\pm$ 0.0 & 34.4 $\pm$ 28.6 & 0.0 $\pm$ 0.0 \\
 \bottomrule
 \end{tabular}
-\caption{Trace-integrity controls. Invalid formal-looking traces retain high answer correctness but lose mechanical proof validity. Correctness and proof faithfulness must therefore be reported separately.}
+\caption{Trace-integrity controls. Invalid formal-looking traces can preserve
+high answer correctness while mechanical proof validity collapses, so formal
+syntax alone is not a faithfulness guarantee.}
 \label{tab:integrity}
 \end{table}
 
-Table~\ref{tab:integrity} is the main caveat. Invalid formal traces remain
-surprisingly accurate, which means the model can exploit formal-looking
-regularities without producing a valid proof. This does not contradict the
-correctness result, but it prevents a stronger faithfulness claim.
+\begin{figure}[t]
+  \centering
+  \includegraphics[width=0.55\linewidth]{official_preprint/figures/trace_integrity.pdf}
+  \caption{Correctness and validity separate under trace corruption. This is
+  the key caveat: formal traces help answer correctness, but valid proof
+  generation remains an additional requirement.}
+  \label{fig:integrity}
+\end{figure}
 
-\subsection{Combining substrates does not beat compact formal traces}
+Table~\ref{tab:integrity} and Figure~\ref{fig:integrity} prevent a stronger but
+unsupported conclusion. The model can exploit formal-looking regularities and
+still answer correctly even when the trace is not a valid proof. This does not
+undo the correctness results, but it means that proof faithfulness requires
+additional training objectives, decoding constraints, or verification.
+
+\subsection{Combining substrates does not improve over compact formal traces}
 
 \begin{table}[t]
 \centering
 \small
-\begin{tabular}{lcccc}
+\begin{tabular}{lcc}
 \toprule
-Training format & Held-out corr. & Held-out joint & Depth-50 corr. & Depth-50 joint \\
+Training format & Long-depth corr. & Depth-50 corr. \\
 \midrule
-Formal only & \textbf{92.1 $\pm$ 3.4} & 71.0 $\pm$ 9.5 & \textbf{83.3 $\pm$ 10.6} & 41.7 $\pm$ 15.6 \\
-Natural only & 79.4 $\pm$ 7.7 & 74.8 $\pm$ 5.6 & 51.0 $\pm$ 6.4 & 42.7 $\pm$ 5.3 \\
-Formal then natural & 87.9 & \textbf{80.4} & 64.6 & \textbf{51.0} \\
-Natural then formal & 57.3 & 41.9 & 34.4 & 13.5 \\
-Conditioned formal & 83.3 & 34.8 & 67.7 & 14.6 \\
-Conditioned natural & 67.5 & 53.1 & 53.1 & 25.0 \\
+Formal only & \textbf{92.1 $\pm$ 3.4} & \textbf{83.3 $\pm$ 10.6} \\
+Natural only & 79.4 $\pm$ 7.7 & 51.0 $\pm$ 6.4 \\
+Formal then natural, same target & 87.9 $\pm$ 4.5 & 64.6 $\pm$ 18.8 \\
+Natural then formal, same target & 57.3 $\pm$ 4.5 & 34.4 $\pm$ 6.2 \\
+Conditioned dual, formal prompt & 83.3 $\pm$ 13.5 & 67.7 $\pm$ 25.5 \\
+Conditioned dual, natural prompt & 67.5 $\pm$ 8.2 & 53.1 $\pm$ 6.2 \\
 \bottomrule
 \end{tabular}
-\caption{Hybrid and conditioned-dual results at train depth 25. Hybrid rows use translated joint for the natural-language block; conditioned rows use the corresponding mode-specific joint metric. Combining substrates is informative but does not improve on compact formal training.}
+\caption{Hybrid and dual-modality results at train depth 25. Combining
+modalities is informative, but neither same-target hybrids nor separate
+mode-conditioned training improves on compact formal-only supervision.}
 \label{tab:hybrid}
 \end{table}
 
-Same-datapoint hybrids answer a natural objection: perhaps formal and natural
-language are complementary. Table~\ref{tab:hybrid} suggests otherwise. Putting
-the formal trace first is much better than putting natural language first, but
-formal-only training remains the strongest correctness condition. Separate
-mode-conditioned examples remove the same-target length issue, but they also do
-not recover the formal-only baseline. The likely failure modes are
-representation interference and reduced per-substrate exposure rather than a
-simple train-test prompt mismatch.
+Hybrid traces answer a natural objection: formal and natural language may be
+complementary. The results do not support that hypothesis
+(Table~\ref{tab:hybrid}). Formal-first hybrids are much better than
+natural-language-first hybrids, indicating that order matters, but they still
+fall short of formal-only training on depth-50 correctness. Separate
+mode-conditioned examples remove the same-target length issue and train longer,
+but still do not recover the formal-only baseline.
 
 \section{Discussion}
+\label{sec:discussion}
 
-The results support a modest but useful conclusion. For these controlled
-symbolic tasks, compact formal traces are a better supervised representation
-for learning answer correctness than natural-language traces. The evidence is
-strongest under depth extrapolation and shortcut shift, where natural-language
-traces are more fragile. The ablations narrow the explanation: the gain is not
-caused by trace length, explicit rule labels, pseudocode, or mixing formal and
-natural language.
+The experiments support a specific claim about supervised reasoning. When the
+latent task is symbolic and the supervision can be rendered from the same proof,
+the trace substrate matters. Compact formal traces make the answer computation
+easier to learn than natural-language traces in our controlled settings. The
+effect is clearest under length extrapolation and shortcut shift, where
+natural-language traces are more fragile.
 
-The paper should not be read as claiming that formal chain of thought is always
-faithful. The invalid-trace controls show that answer correctness can survive
-even when proof validity is destroyed. This is a central distinction. Formal
-syntax appears to help the model learn the correct computation, but validity
-and causal faithfulness require additional objectives or verification.
+The ablations narrow the mechanism. The useful ingredient is not simply more
+tokens, more explicit rule labels, or a code-like wrapper. It is also not enough
+to train the model on both substrates at once. The best representation we tested
+uses compact symbolic atoms and local formal rule applications. This suggests
+that formal traces reduce the burden of learning through natural-language
+surface variation and discourse dependencies.
+
+The validity controls are equally important. A model can learn to answer
+correctly from formal-looking traces without producing a mechanically valid
+proof. The current evidence therefore argues for formal traces as a better
+\emph{training substrate for correctness}, not as a complete solution to
+faithful reasoning. A natural next research direction is to combine compact
+formal supervision with objectives or decoders that directly optimize trace
+validity.
 
 \section{Limitations}
 
-The tasks are synthetic. This is necessary for the paired substrate comparison,
-but it limits claims about open-domain reasoning. The main model is OLMo-7B,
-with architecture checks rather than a full scaling law. Natural-language
-translated validity remains family-specific, and the attribute-constraint
-translator does not remove the long-depth failure mode: depth-50 translated
-joint validity remains weak. The 32B result is only a short-context sanity
-check. Finally, the current terse-natural control is not a clean compression
-control because the default natural-language traces are already terse.
+The tasks are synthetic. This is necessary for a paired substrate comparison,
+but it limits claims about open-domain reasoning. The main evidence comes from
+supervised fine-tuning, not inference-time prompting or full-parameter
+continued pretraining. The architecture checks are robustness tests rather than
+a scaling law. Natural-language validity depends on task-specific translation
+coverage, while formal validity does not imply causal faithfulness. Finally, the
+current control set is extensive but not exhaustive; other formal languages,
+different proof granularities, and different decoding constraints may change the
+tradeoffs.
 
 \section{Conclusion}
 
-When the latent problem is symbolic, the language used for chain-of-thought
-supervision matters. In our controlled paired setting, compact formal traces
-yield higher answer correctness than natural-language traces, especially under
-depth extrapolation and shortcut-rich training. The effect survives architecture
-checks and is not reproduced by superficial variants of the trace. The next
-step is to connect this correctness benefit to stronger guarantees about proof
-validity and faithfulness.
+Natural language is not the only possible substrate for chain-of-thought
+supervision. In controlled paired symbolic tasks, compact formal traces improve
+answer correctness, especially beyond the training depth range and under
+shortcut-rich training. The result repeats across task surfaces and model
+families, and it is not reproduced by length, pseudocode, rule labels, or
+dual-modality training. Formal traces help models learn the right computation,
+but validity and faithfulness remain separate problems.
 
 \clearpage
 \appendix
 
-\section{Task Generation Details}
-\label{app:tasks}
+\section{Task Details}
 
-Branching proof chains generate a finite set of symbols, facts, and Horn-style
-rules. A target path of depth $d$ is sampled, and distractor branches are added
-so that local facts and rules remain plausible but do not derive the queried
-answer. The training split samples depths up to a configured maximum; the
-extrapolation split evaluates depth 50. Shortcut variants add marker features
-that are predictive during training and removed at evaluation.
+\branchproof{} samples a target proof path of controlled depth and adds
+distractor branches that are locally coherent but do not support the queried
+answer. Shortcut variants add training-only marker correlations that identify
+the active branch with a chosen probability. Evaluation removes those markers.
 
-Attribute constraints use object identities, slots, and values. A derivation
-propagates a value through a sequence of constraints. Formal traces name the
-slot/value relations directly; natural-language traces describe the same
-propagation in words. This task changes the ontology while preserving the
-paired rendering principle.
-
-\section{Trace Formats and Metrics}
-\label{app:formats}
-
-\begin{table}[h]
-\centering
-\small
-\begin{tabular}{ll}
-\toprule
-Format & Description \\
-\midrule
-Compact formal & Short symbolic atoms and explicit rule-application lines. \\
-Natural language & Sentence-level derivation of the same latent proof. \\
-Token-budget matched & Same target-token budget as the comparison format. \\
-Symbol-padded formal & Formal atoms are mechanically lengthened with extra syntax. \\
-Wordified formal & Formal predicates are replaced by semantic word-like names. \\
-Pseudocode & Algorithm-like derivation statements wrapping proof steps. \\
-Rule-annotated natural & Natural-language proof lines with explicit rule labels. \\
-Hybrid & Formal and natural traces appear in the same target sequence. \\
-Conditioned dual & Separate formal and natural examples selected by a mode token. \\
-\bottomrule
-\end{tabular}
-\caption{Trace formats used in the ablations. All formats are generated from paired latent derivations; the ablations change the supervised trace representation, not the underlying proof instance.}
-\label{tab:format-defs}
-\end{table}
-
-Answer correctness is computed after extracting the final answer field from the
-generation. Formal validity checks whether the generated proof lines can be
-validated against the task facts and rules. Natural-language joint validity is
-reported only when the controlled translator supports the task family. We
-therefore treat correctness as the primary cross-family metric and use validity
-to diagnose whether a high-correctness trace is also mechanically checkable.
+\attrcon{} samples objects, slots, values, and propagation constraints. The
+formal trace names slot/value relations directly; the natural trace describes
+the same propagation in controlled prose. This changes the symbolic surface
+while preserving the paired-rendering principle.
 
 \section{Additional Shortcut Variants}
-\label{app:shortcuts}
 
 \begin{table}[h]
 \centering
 \small
-\begin{tabular}{llcccc}
+\begin{tabular}{llccc}
 \toprule
-Shortcut type & Trace & Rate & Held-out corr. & Held-out joint & Depth-50 corr. \\
+Shortcut type & Trace & Rate & Long-depth corr. & Depth-50 corr. \\
 \midrule
-Position & Formal & 0.5 & 90.0 & 61.9 & 84.4 \\
-Position & Formal & 0.8 & 87.9 & 65.0 & 76.0 \\
-Position & Natural & 0.5 & 54.0 & 43.1 & 39.6 \\
-Position & Natural & 0.8 & 51.2 & 48.8 & 39.6 \\
+Position & \logic{} & 0.5 & 90.0 & 84.4 \\
+Position & \logic{} & 0.8 & 87.9 & 76.0 \\
+Position & \nl{} & 0.5 & 54.0 & 39.6 \\
+Position & \nl{} & 0.8 & 51.3 & 39.6 \\
 \midrule
-Initial marker & Formal & 0.5 & 88.3 & 62.5 & 85.4 \\
-Initial marker & Formal & 0.8 & 88.5 & 61.0 & 86.5 \\
-Initial marker & Natural & 0.5 & 46.9 & 42.1 & 11.5 \\
-Initial marker & Natural & 0.8 & 77.1 & 70.2 & 66.7 \\
+Initial marker & \logic{} & 0.5 & 88.3 & 85.4 \\
+Initial marker & \logic{} & 0.8 & 88.5 & 86.5 \\
+Initial marker & \nl{} & 0.5 & 46.9 & 11.5 \\
+Initial marker & \nl{} & 0.8 & 77.1 & 66.7 \\
 \bottomrule
 \end{tabular}
-\caption{Additional shortcut mechanisms. Evaluation is shortcut-neutral in all rows. The initial-marker natural-language rate-0.8 result is a real measured improvement under the current setup, but it should be treated as a distribution-specific regularization effect rather than evidence that shortcuts generally help natural-language traces.}
+\caption{Additional shortcut mechanisms. Formal traces are consistently robust;
+the natural-language initial-marker rate-0.8 row is a measured exception and
+should be interpreted as distribution-specific rather than a general shortcut
+benefit.}
 \label{tab:shortcut-kind}
 \end{table}
 
-\section{Reporting Notes}
+\section{Metric Definitions}
 
-The old generated informal report remains available at
-\texttt{informal\_report/main.tex}. It contains the complete operational
-tables, sample-generation snippets, and historical diagnostics. The present
-preprint selects the subset of results that support the main scientific claims.
+Answer correctness is computed after extracting the final answer field from the
+generation. Formal joint validity requires both answer correctness and a
+mechanically valid formal trace. Natural-language joint validity requires answer
+correctness and successful translation of the generated natural-language trace
+into a valid formal proof. Because the natural-language translator is
+task-specific, answer correctness is the primary cross-task metric.
 
 \bibliographystyle{plainnat}
 \bibliography{official_preprint/references}

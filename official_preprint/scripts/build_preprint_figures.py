@@ -47,8 +47,8 @@ def main_correctness():
 
     fig, axes = plt.subplots(1, 2, figsize=(7.8, 3.1), sharey=True)
     for ax, metric, title in [
-        (axes[0], "ood_correct@16", "Held-out depths"),
-        (axes[1], "depth50_correct@16", "Depth 50 extrapolation"),
+        (axes[0], "ood_correct@16", "Long-depth band"),
+        (axes[1], "depth50_correct@16", "Depth-50 endpoint"),
     ]:
         for template in ["logic", "nl_exact"]:
             sub = df[df["template"] == template].sort_values("train_max")
@@ -88,8 +88,8 @@ def attribute_correctness():
 
     fig, axes = plt.subplots(1, 2, figsize=(7.8, 3.1), sharey=True)
     for ax, metric, title in [
-        (axes[0], "ood_correct@16", "Held-out depths"),
-        (axes[1], "depth50_correct@16", "Depth 50 extrapolation"),
+        (axes[0], "ood_correct@16", "Hard-depth band"),
+        (axes[1], "depth50_correct@16", "Depth-50 endpoint"),
     ]:
         for template, color, label in [("logic", LOGIC, "Formal logic"), ("nl", NL, "Natural language")]:
             sub = g[g["template"].eq(template)].sort_values("train_max")
@@ -227,8 +227,8 @@ def hybrids():
 
     fig, axes = plt.subplots(1, 2, figsize=(7.8, 3.1), sharey=True)
     for ax, metric, title in [
-        (axes[0], "ood_correct@16", "Held-out depths"),
-        (axes[1], "depth50_correct@16", "Depth 50 extrapolation"),
+        (axes[0], "ood_correct@16", "Long-depth band"),
+        (axes[1], "depth50_correct@16", "Depth-50 endpoint"),
     ]:
         for template, color, label in [("logic", LOGIC, "Logic only"), ("nl_exact", NL, "NL only")]:
             sub = main[main["template"].eq(template)].sort_values("train_max")
@@ -260,7 +260,7 @@ def conditioned_dual():
     x = np.arange(len(labels))
     width = 0.36
     fig, ax = plt.subplots(figsize=(5.8, 3.2))
-    ax.bar(x - width / 2, pct([r[1] for r in rows]), width, yerr=pct([r[2] for r in rows]), label="Held-out", color=[r[5] for r in rows], alpha=0.95, capsize=3)
+    ax.bar(x - width / 2, pct([r[1] for r in rows]), width, yerr=pct([r[2] for r in rows]), label="Long-depth", color=[r[5] for r in rows], alpha=0.95, capsize=3)
     ax.bar(x + width / 2, pct([r[3] for r in rows]), width, yerr=pct([r[4] for r in rows]), label="Depth 50", color=[r[5] for r in rows], alpha=0.55, capsize=3)
     ax.set_xticks(x)
     ax.set_xticklabels(labels)
