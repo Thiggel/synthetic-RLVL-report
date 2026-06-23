@@ -1,4 +1,5 @@
 from pathlib import Path
+import textwrap
 
 import matplotlib.pyplot as plt
 import numpy as np
@@ -37,6 +38,102 @@ def save(fig, name):
     fig.savefig(OUT / f"{name}.pdf", bbox_inches="tight")
     fig.savefig(OUT / f"{name}.png", dpi=240, bbox_inches="tight")
     plt.close(fig)
+
+
+def overview_claim():
+    main = pd.read_csv(TABLES / "main_olmo7b_summary.csv")
+    attr = pd.read_csv(TABLES / "active_paired_partial_by_seed.csv")
+    trace = pd.read_csv(TABLES / "trace_control_ablation_by_seed.csv")
+
+    logic = main[(main["template"].eq("logic")) & (main["train_max"].eq(25))].iloc[0]
+    nl = main[(main["template"].eq("nl_exact")) & (main["train_max"].eq(25))].iloc[0]
+    attr25 = attr[(attr["family"].eq("hard_attribute_fresh")) & (attr["train_max"].eq(25))]
+    attr_logic = attr25[attr25["template"].eq("logic")]
+    attr_nl = attr25[attr25["template"].eq("nl_exact")]
+    invalid = trace[trace["template"].eq("invalid_logic")]
+
+    fig = plt.figure(figsize=(7.8, 5.2))
+    gs = fig.add_gridspec(2, 2, height_ratios=[0.95, 1.05], width_ratios=[1.05, 0.95])
+    ax_design = fig.add_subplot(gs[0, 0])
+    ax_gap = fig.add_subplot(gs[0, 1])
+    ax_valid = fig.add_subplot(gs[1, 0])
+    ax_examples = fig.add_subplot(gs[1, 1])
+
+    # A. Design.
+    ax_design.axis("off")
+    ax_design.set_title("A. Controlled substrate comparison", loc="left", fontweight="bold")
+    boxes = [
+        (0.04, 0.55, 0.34, 0.28, "same prompt\nsame answer\nsame latent proof", "#F5F7FB"),
+        (0.58, 0.72, 0.34, 0.20, "compact formal\ntrace", "#E8EFFB"),
+        (0.58, 0.36, 0.34, 0.20, "controlled natural-\nlanguage trace", "#E7F5F1"),
+    ]
+    for x, y, w, h, txt, color in boxes:
+        ax_design.add_patch(
+            plt.Rectangle((x, y), w, h, facecolor=color, edgecolor="#777777", linewidth=0.8)
+        )
+        ax_design.text(x + w / 2, y + h / 2, txt, ha="center", va="center", fontsize=9)
+    ax_design.annotate("", xy=(0.58, 0.82), xytext=(0.38, 0.69), arrowprops=dict(arrowstyle="->", lw=1.2, color=GRAY))
+    ax_design.annotate("", xy=(0.58, 0.46), xytext=(0.38, 0.66), arrowprops=dict(arrowstyle="->", lw=1.2, color=GRAY))
+    ax_design.text(0.04, 0.14, "Only the trace substrate changes.", fontsize=9, color=GRAY)
+    ax_design.set_xlim(0, 1)
+    ax_design.set_ylim(0, 1)
+
+    # B. Main depth-50 answer gap.
+    tasks = ["BranchProof", "AttrCon"]
+    logic_means = [logic["depth50_correct@16"], attr_logic["depth50_correct@16"].mean()]
+    logic_stds = [logic["depth50_correct@16_std"], attr_logic["depth50_correct@16"].std()]
+    nl_means = [nl["depth50_correct@16"], attr_nl["depth50_correct@16"].mean()]
+    nl_stds = [nl["depth50_correct@16_std"], attr_nl["depth50_correct@16"].std()]
+    x = np.arange(len(tasks))
+    width = 0.34
+    ax_gap.bar(x - width / 2, pct(logic_means), width, yerr=pct(logic_stds), color=LOGIC, label="Formal", capsize=3)
+    ax_gap.bar(x + width / 2, pct(nl_means), width, yerr=pct(nl_stds), color=NL, label="Natural", capsize=3)
+    ax_gap.set_xticks(x)
+    ax_gap.set_xticklabels(tasks)
+    ax_gap.set_title("B. Depth-50 answer correctness", loc="left", fontweight="bold")
+    clean_axes(ax_gap)
+    ax_gap.legend(frameon=False, loc="upper right", fontsize=8)
+    for xi, lm, nm in zip(x, logic_means, nl_means):
+        ax_gap.text(xi, max(pct([lm, nm])) + 9, f"+{100*(lm-nm):.1f}", ha="center", fontsize=8, color=GRAY)
+
+    # C. Faithfulness caveat.
+    labels = ["Compact\nformal", "Invalid\nformal"]
+    corr = [logic["depth50_correct@16"], invalid["depth50_correct@16"].mean()]
+    corr_std = [logic["depth50_correct@16_std"], invalid["depth50_correct@16"].std()]
+    joint = [logic["depth50_joint@16"], invalid["depth50_formal_joint@16"].mean()]
+    joint_std = [logic["depth50_joint@16_std"], invalid["depth50_formal_joint@16"].std()]
+    x = np.arange(len(labels))
+    ax_valid.bar(x - width / 2, pct(corr), width, yerr=pct(corr_std), color=LOGIC, label="Correct answer", capsize=3)
+    ax_valid.bar(x + width / 2, pct(joint), width, yerr=pct(joint_std), color=RED, label="Correct + valid proof", capsize=3)
+    ax_valid.set_xticks(x)
+    ax_valid.set_xticklabels(labels)
+    ax_valid.set_title("C. Correctness is not proof faithfulness", loc="left", fontweight="bold")
+    clean_axes(ax_valid)
+    ax_valid.legend(frameon=False, loc="upper right", fontsize=8)
+
+    # D. Representative logged generations.
+    ax_examples.axis("off")
+    ax_examples.set_title("D. Representative logged generations", loc="left", fontweight="bold")
+    snippets = [
+        ("Formal depth-50 success", "<proof> ... Uo ; ->E\n<answer> olive", LOGIC),
+        ("Natural depth-50 failure", "<think> premise chain ...\n(no answer tag before stop)", NL),
+        ("Invalid formal success", "<proof> repeated R steps ...\n<answer> birch", RED),
+    ]
+    y = 0.88
+    for title, body, color in snippets:
+        ax_examples.text(0.02, y, title, color=color, fontsize=9, fontweight="bold", va="top")
+        wrapped = "\n".join(textwrap.wrap(body, width=34, break_long_words=False))
+        ax_examples.text(0.04, y - 0.10, wrapped, fontsize=8.2, family="monospace", va="top")
+        y -= 0.30
+    ax_examples.text(0.02, 0.02, "Snippets are illustrative logged samples; metrics use 16 samples per prompt.", fontsize=7.8, color=GRAY)
+
+    fig.suptitle(
+        "Formal traces improve extrapolative answers, but proof validity remains a separate target",
+        fontsize=10.5,
+        fontweight="bold",
+        y=1.02,
+    )
+    save(fig, "overview_claim")
 
 
 def main_correctness():
@@ -168,7 +265,6 @@ def syntax_controls():
     for template, label, color in [
         ("pseudocode", "Pseudo-\ncode", GRAY),
         ("rule_annotated_nl", "Rule-\nannotated NL", NL_LIGHT),
-        ("terse_nl", "Terse\nNL", NL_LIGHT),
     ]:
         sub = trace[trace["template"].eq(template)]
         rows.append((label, sub["ood_correct@16"].mean(), sub["ood_correct@16"].std(), color))
@@ -261,7 +357,7 @@ def conditioned_dual():
     width = 0.36
     fig, ax = plt.subplots(figsize=(5.8, 3.2))
     ax.bar(x - width / 2, pct([r[1] for r in rows]), width, yerr=pct([r[2] for r in rows]), label="Long-depth", color=[r[5] for r in rows], alpha=0.95, capsize=3)
-    ax.bar(x + width / 2, pct([r[3] for r in rows]), width, yerr=pct([r[4] for r in rows]), label="Depth 50", color=[r[5] for r in rows], alpha=0.55, capsize=3)
+    ax.bar(x + width / 2, pct([r[3] for r in rows]), width, yerr=pct([r[4] for r in rows]), label="Depth-50", color=[r[5] for r in rows], alpha=0.55, capsize=3)
     ax.set_xticks(x)
     ax.set_xticklabels(labels)
     ax.set_title("Conditioned dual training does not recover each single modality")
@@ -303,6 +399,7 @@ def main():
             "ps.fonttype": 42,
         }
     )
+    overview_claim()
     main_correctness()
     attribute_correctness()
     shortcut_robustness()
