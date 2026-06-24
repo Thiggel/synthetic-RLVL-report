@@ -17,7 +17,7 @@
 
 \preprintlogo{official_preprint/assets/hu-logo.png}
 \abstractfilledfalse
-\preprintdate{June 23, 2026}
+\preprintdate{June 24, 2026}
 \correspondence{filipe.laitenberger@hu-berlin.de}
 
 \newcommand{\branchproof}{\textsc{BranchProof}}
@@ -41,7 +41,8 @@ natural-language derivation. On branching proof chains, OLMo-7B trained on
 depths up to 25 reaches 92.1\% \passsixteen{} correctness averaged over depths
 30--50 and 83.3\% at depth 50 with formal traces, compared with 79.4\% and
 51.0\% with natural-language traces. On attribute constraints, formal traces
-again improve answer correctness on the hard-depth band and at depth 50.
+show a positive but high-variance mean answer-correctness gap on the hard-depth
+band and at depth 50.
 The direction is consistent across Qwen and Gemma model families, though some
 architecture checks have high seed variance, and it becomes sharper when
 training data contain shortcut distractors. Ablations show that the gain is not
@@ -72,8 +73,8 @@ applications.
   same latent proof, find a large depth-50 answer-correctness gap on the two
   main symbolic tasks, and explicitly show the faithfulness caveat: a
   formal-looking trace can answer correctly while failing the proof checker.
-  Error bars are standard deviations over three seeds; snippets are logged
-  generations selected for illustration, not additional metrics.}
+  Error bars are standard deviations over three seeds; sample excerpts are read
+  from the generation-snippet artifact and are not additional metrics.}
   \label{fig:overview}
 \end{figure}
 
@@ -101,8 +102,9 @@ on a harder constraint-satisfaction surface, although long-depth proof validity
 remains weak for both trace styles. The effect persists across model families
 and under shortcut-rich training. We then ask whether the result is explained by
 trace length, explicit rule labels, code-like syntax, or the availability of
-both natural and formal modalities. The answer is no: compact formal traces
-remain the strongest representation among the variants we tested.
+both natural and formal modalities. The controls do not support these simple
+explanations: compact formal traces remain the strongest representation among
+the variants we tested.
 
 The paper also separates answer correctness from faithfulness. Formal syntax
 does not make a generated trace a valid proof by itself. Invalid formal-looking
@@ -116,11 +118,12 @@ design for isolating the supervised reasoning substrate while holding prompts,
 answers, and latent derivations fixed. Second, we show that compact formal
 traces improve extrapolative answer correctness on \branchproof{} and replicate
 the answer-correctness pattern on \attrcon{}, with the strongest evidence at
-depth 50. Third, we organize ablations as reviewer objections: the effect is not
-explained by token budget, explicit rule labels, code-like formatting, shortcut
-markers, tested model family, or simply training both modalities. Fourth, we
-show the boundary of the claim: formal traces are a correctness substrate here,
-not a guarantee of faithful proof generation.
+depth 50, while emphasizing the high seed variance of that replication. Third,
+we organize ablations as reviewer objections: the effect is not explained by
+token budget, explicit rule labels, code-like formatting, shortcut markers,
+tested model family, or simply training both modalities. Fourth, we show the
+boundary of the claim: formal traces are a correctness substrate here, not a
+guarantee of faithful proof generation.
 
 \section{Related Work}
 
@@ -301,8 +304,9 @@ long-depth result.}
 
 Table~\ref{tab:main} gives the central result. On \branchproof{}, formal traces
 improve long-depth correctness from 79.4\% to 92.1\%, and depth-50 correctness
-from 51.0\% to 83.3\%. On \attrcon{}, the answer-correctness pattern repeats:
-formal traces are stronger on the hard-depth band and much stronger at depth 50.
+from 51.0\% to 83.3\%. On \attrcon{}, the mean answer-correctness gap is
+positive but less clean: formal traces are stronger on the hard-depth band and
+much stronger at depth 50, with high variance across seeds.
 The joint-validity columns show a different fact. Natural language slightly
 exceeds formal traces on \branchproof{} depth-50 joint validity, and \attrcon{}
 depth-50 validity remains weak for both trace styles. The robust claim is
@@ -328,10 +332,10 @@ formal models extrapolate better than the strongest natural-language models.
 \begin{figure}[t]
   \centering
   \includegraphics[width=0.84\linewidth]{official_preprint/figures/attribute_correctness.pdf}
-  \caption{\attrcon{} repeats the answer-correctness pattern on a different
-  symbolic surface, but depth-50 variance is large and depth-50 joint validity
-  remains weak. This figure is evidence of transfer across task construction,
-  not evidence that long constraint proofs are solved.}
+  \caption{\attrcon{} is a high-variance replication check on a different
+  symbolic surface. Formal traces have the higher mean answer correctness, but
+  the large depth-50 variance and weak depth-50 joint validity make this a
+  caveat figure rather than a clean second solved task.}
   \label{fig:attribute-correctness}
 \end{figure}
 
@@ -434,8 +438,8 @@ not unique to one checkpoint family.
 
 The ablations are organized around specific objections. Is the effect just more
 token exposure? Is it code-like formatting? Is it explicit rule annotation? Is
-it simply that formal traces are longer or more structured? The answer is no
-for the controls we ran, but these controls do not isolate a single causal
+it simply that formal traces are longer or more structured? The controls do not
+support those simple explanations, but they also do not isolate a single causal
 feature. They narrow the explanation to a cluster of substrate properties:
 compact symbols, local rule applications, low discourse load, and mechanical
 grounding.
@@ -555,8 +559,7 @@ but still do not recover the formal-only baseline.
   \end{tabular}
   \caption{Two ways of combining substrates fail to beat compact formal-only
   supervision. Same-target hybrids are order-sensitive, and mode-conditioned
-  dual training underexposes each modality relative to the single-modality
-  baselines.}
+  dual training does not recover the corresponding single-modality baselines.}
   \label{fig:hybrids}
 \end{figure}
 
@@ -658,7 +661,100 @@ task-specific translator maps those sentences back into the formal checker.
 Because translation coverage is task-specific, final-answer correctness is the
 primary cross-task metric and translated validity is reported as a diagnostic.
 
-\section{Controls Not Used as Main Evidence}
+The operational \branchproof{} formal surface is:
+
+\begin{verbatim}
+<formal>
+<constants> CONST_DEF+ </constants>
+<predicates> PRED_DEF+ </predicates>
+<premises> FORMULA+ </premises>
+<proof> PROOF_LINE+ </proof>
+<conclusion> ATOM </conclusion>
+<answer> LABEL </answer>
+
+CONST_DEF  ::= CONST "=" LABEL
+PRED_DEF   ::= PRED "x:" "x is" LABEL
+ATOM       ::= PRED CONST
+FORMULA    ::= ATOM | ATOM "&" ATOM "->" ATOM | ATOM "->" ATOM
+PROOF_LINE ::= FORMULA "; R," REF
+             | ATOM "; ->E," REF "," REF
+             | ATOM "&" ATOM "; &I," REF "," REF
+\end{verbatim}
+
+The \attrcon{} surface uses the same block structure but replaces unary
+predicate atoms with object--slot--value relations. In both tasks, references
+must point to earlier proof lines or listed premises; generated lines cannot
+justify future steps.
+
+\section{Generator and Evaluation Mechanics}
+\label{sec:generator-eval}
+
+The \branchproof{} generator samples a target path, assigns labels to constants
+and predicates, then adds distractor branches that remain locally coherent but
+do not derive the queried conclusion. In pseudocode:
+
+\begin{verbatim}
+sample target answer label
+sample initial object state
+for depth step in 1..D:
+    sample active branch rule(s)
+    derive next object state
+    add coherent distractor rules for inactive branches
+render one prompt
+render the same latent proof as formal and natural-language targets
+\end{verbatim}
+
+The \attrcon{} generator follows the same paired-rendering principle with
+objects, slots, values, and propagation constraints. The natural-language target
+is not free-form prose; it is controlled text produced from the same latent
+derivation.
+
+Answer extraction first searches for the final \texttt{<answer>} field. If no
+well-formed final answer is present, the generation is counted incorrect even
+when earlier text contains the gold label. Formal validation then parses block
+boundaries, declarations, formulas, proof-line references, and rule
+applications. Common validation failures are malformed block structure,
+undeclared symbols, references to unavailable lines, applying implication
+elimination to the wrong antecedent, and stopping before the queried conclusion.
+Natural-language validation adds one more possible failure mode: the controlled
+sentence must translate back into a formal step before the proof checker can
+evaluate it.
+
+\section{Minimal Paired Example}
+\label{sec:paired-example}
+
+The following toy example shows the pairing used throughout the experiments.
+The prompt and answer are identical; only the target trace substrate changes.
+
+\begin{verbatim}
+Prompt:
+a is ruby. a is north.
+If a is north and a is ruby, then b is olive.
+If b is olive, then b is east.
+What is b?
+
+Formal target:
+<formal>
+<constants> a = a b = b </constants>
+<predicates> Rx: x is ruby Nx: x is north Ox: x is olive </predicates>
+<premises> Ra Na Na & Ra -> Ob </premises>
+<proof> Ra ; R,1
+Na ; R,2
+Na & Ra ; &I,5,4
+Ob ; ->E,3,6 </proof>
+<conclusion> Ob </conclusion>
+<answer> olive </answer>
+
+Natural-language target:
+<think>
+a is ruby. a is north.
+Since a is north and a is ruby, b is olive.
+Therefore, b is olive.
+</think>
+<answer> olive </answer>
+\end{verbatim}
+
+\section{Artifact Control Not Used as Main Evidence}
 \label{sec:excluded-controls}
 
 The terse-NL artifact is not used as a main mechanism result. The audit found
@@ -666,17 +762,6 @@ that, for the inspected training sequence, the current terse-NL target is
 token-identical to the natural-language baseline, so it is not a clean shorter
 natural-language control. Its result remains in the generated CSV artifacts but
 is omitted from the main syntax table and figure.
-
-Two completed diagnostic suites are also excluded from the main story. The
-semantic iGSM arithmetic suite is useful for studying grounding and
-variable-aliasing failures, but the generated long traces expose
-evaluator-equivalence issues and therefore do not isolate the trace-substrate
-question cleanly. The typed maze-navigation suite is a negative
-generation-budget result: even after typed symbols remove the namespace
-ambiguity, both trace styles largely fail to produce complete depth-50 answers.
-These failures matter scientifically because they show that compact formal
-traces are not a universal fix, but they are not clean positive or negative
-evidence for the paired \branchproof{}/\attrcon{} claim.
 
 \section{Additional Shortcut Variants}
 \label{sec:shortcut-kind}

@@ -24,7 +24,7 @@ def pct(x):
     return 100.0 * np.asarray(x, dtype=float)
 
 
-def clean_axes(ax, ylabel="Accuracy (%)", ylim=(0, 105)):
+def clean_axes(ax, ylabel="pass@16 answer correctness (%)", ylim=(0, 105)):
     ax.set_ylabel(ylabel)
     ax.set_ylim(*ylim)
     ax.grid(axis="y", color="#DDDDDD", linewidth=0.8)
@@ -32,18 +32,37 @@ def clean_axes(ax, ylabel="Accuracy (%)", ylim=(0, 105)):
     ax.spines["right"].set_visible(False)
 
 
-def save(fig, name):
+def save(fig, name, tight_kwargs=None):
     OUT.mkdir(parents=True, exist_ok=True)
-    fig.tight_layout()
+    if tight_kwargs is None:
+        fig.tight_layout()
+    elif tight_kwargs is False:
+        pass
+    else:
+        fig.tight_layout(**tight_kwargs)
     fig.savefig(OUT / f"{name}.pdf", bbox_inches="tight")
-    fig.savefig(OUT / f"{name}.png", dpi=240, bbox_inches="tight")
     plt.close(fig)
+
+
+def generation_excerpt(samples, label_fragment, max_chars=92):
+    row = samples[samples["label"].str.contains(label_fragment, regex=False)].iloc[0]
+    generation = " ".join(str(row["generation"]).split())
+    if len(generation) > max_chars:
+        generation = generation[:max_chars].rstrip() + " ..."
+    answer = str(row["answer"])
+    if answer.startswith("<") or len(answer) > 24:
+        answer = "missing"
+    return (
+        f"gold={row['gold']}; answer={answer}; valid={int(row['valid'])}\n"
+        f"{generation}"
+    )
 
 
 def overview_claim():
     main = pd.read_csv(TABLES / "main_olmo7b_summary.csv")
     attr = pd.read_csv(TABLES / "active_paired_partial_by_seed.csv")
     trace = pd.read_csv(TABLES / "trace_control_ablation_by_seed.csv")
+    samples = pd.read_csv(TABLES / "sample_generation_snippets.csv")
 
     logic = main[(main["template"].eq("logic")) & (main["train_max"].eq(25))].iloc[0]
     nl = main[(main["template"].eq("nl_exact")) & (main["train_max"].eq(25))].iloc[0]
@@ -52,8 +71,15 @@ def overview_claim():
     attr_nl = attr25[attr25["template"].eq("nl_exact")]
     invalid = trace[trace["template"].eq("invalid_logic")]
 
-    fig = plt.figure(figsize=(7.8, 5.2))
-    gs = fig.add_gridspec(2, 2, height_ratios=[0.95, 1.05], width_ratios=[1.05, 0.95])
+    fig = plt.figure(figsize=(8.4, 5.55))
+    gs = fig.add_gridspec(
+        2,
+        2,
+        height_ratios=[0.95, 1.05],
+        width_ratios=[1.02, 0.98],
+        wspace=0.42,
+        hspace=0.58,
+    )
     ax_design = fig.add_subplot(gs[0, 0])
     ax_gap = fig.add_subplot(gs[0, 1])
     ax_valid = fig.add_subplot(gs[1, 0])
@@ -63,38 +89,40 @@ def overview_claim():
     ax_design.axis("off")
     ax_design.set_title("A. Controlled substrate comparison", loc="left", fontweight="bold")
     boxes = [
-        (0.04, 0.55, 0.34, 0.28, "same prompt\nsame answer\nsame latent proof", "#F5F7FB"),
-        (0.58, 0.72, 0.34, 0.20, "compact formal\ntrace", "#E8EFFB"),
-        (0.58, 0.36, 0.34, 0.20, "controlled natural-\nlanguage trace", "#E7F5F1"),
+        (0.04, 0.38, 0.32, 0.34, "same prompt\nsame answer\nsame latent\nproof", "#F5F7FB"),
+        (0.58, 0.62, 0.38, 0.20, "compact formal\ntrace", "#E8EFFB"),
+        (0.58, 0.25, 0.38, 0.20, "controlled natural\nlanguage trace", "#E7F5F1"),
     ]
     for x, y, w, h, txt, color in boxes:
         ax_design.add_patch(
             plt.Rectangle((x, y), w, h, facecolor=color, edgecolor="#777777", linewidth=0.8)
         )
-        ax_design.text(x + w / 2, y + h / 2, txt, ha="center", va="center", fontsize=9)
-    ax_design.annotate("", xy=(0.58, 0.82), xytext=(0.38, 0.69), arrowprops=dict(arrowstyle="->", lw=1.2, color=GRAY))
-    ax_design.annotate("", xy=(0.58, 0.46), xytext=(0.38, 0.66), arrowprops=dict(arrowstyle="->", lw=1.2, color=GRAY))
-    ax_design.text(0.04, 0.14, "Only the trace substrate changes.", fontsize=9, color=GRAY)
+        ax_design.text(x + w / 2, y + h / 2, txt, ha="center", va="center", fontsize=8.4)
+    ax_design.annotate("", xy=(0.58, 0.72), xytext=(0.36, 0.57), arrowprops=dict(arrowstyle="->", lw=1.25, color=GRAY))
+    ax_design.annotate("", xy=(0.58, 0.35), xytext=(0.36, 0.52), arrowprops=dict(arrowstyle="->", lw=1.25, color=GRAY))
+    ax_design.text(0.04, 0.12, "Only the trace substrate changes.", fontsize=8.6, color=GRAY)
     ax_design.set_xlim(0, 1)
     ax_design.set_ylim(0, 1)
 
     # B. Main depth-50 answer gap.
-    tasks = ["BranchProof", "AttrCon"]
-    logic_means = [logic["depth50_correct@16"], attr_logic["depth50_correct@16"].mean()]
-    logic_stds = [logic["depth50_correct@16_std"], attr_logic["depth50_correct@16"].std()]
-    nl_means = [nl["depth50_correct@16"], attr_nl["depth50_correct@16"].mean()]
-    nl_stds = [nl["depth50_correct@16_std"], attr_nl["depth50_correct@16"].std()]
-    x = np.arange(len(tasks))
-    width = 0.34
-    ax_gap.bar(x - width / 2, pct(logic_means), width, yerr=pct(logic_stds), color=LOGIC, label="Formal", capsize=3)
-    ax_gap.bar(x + width / 2, pct(nl_means), width, yerr=pct(nl_stds), color=NL, label="Natural", capsize=3)
-    ax_gap.set_xticks(x)
-    ax_gap.set_xticklabels(tasks)
+    width = 0.26
+    bp_center = 0.0
+    attr_center = 1.05
+    ax_gap.bar(bp_center - width / 2, pct(logic["depth50_correct@16"]), width, yerr=pct(logic["depth50_correct@16_std"]), color=LOGIC, label="Formal", capsize=3)
+    ax_gap.bar(bp_center + width / 2, pct(nl["depth50_correct@16"]), width, yerr=pct(nl["depth50_correct@16_std"]), color=NL, label="Natural", capsize=3)
+    for offset, values, color in [
+        (-width / 2, attr_logic["depth50_correct@16"], LOGIC),
+        (width / 2, attr_nl["depth50_correct@16"], NL),
+    ]:
+        xs = np.full(len(values), attr_center + offset)
+        ax_gap.scatter(xs, pct(values), s=31, color=color, edgecolor="white", linewidth=0.7, zorder=3)
+        ax_gap.hlines(pct(values.mean()), attr_center + offset - 0.10, attr_center + offset + 0.10, color=color, linewidth=2.5)
+    ax_gap.set_xticks([bp_center, attr_center])
+    ax_gap.set_xticklabels(["BranchProof\nmean $\\pm$ sd", "AttrCon\nseed dots"])
     ax_gap.set_title("B. Depth-50 answer correctness", loc="left", fontweight="bold")
     clean_axes(ax_gap)
     ax_gap.legend(frameon=False, loc="upper right", fontsize=8)
-    for xi, lm, nm in zip(x, logic_means, nl_means):
-        ax_gap.text(xi, max(pct([lm, nm])) + 9, f"+{100*(lm-nm):.1f}", ha="center", fontsize=8, color=GRAY)
+    ax_gap.text(bp_center, 95, f"+{100*(logic['depth50_correct@16']-nl['depth50_correct@16']):.1f}", ha="center", fontsize=8, color=GRAY)
 
     # C. Faithfulness caveat.
     labels = ["Compact\nformal", "Invalid\nformal"]
@@ -108,24 +136,23 @@ def overview_claim():
     ax_valid.set_xticks(x)
     ax_valid.set_xticklabels(labels)
     ax_valid.set_title("C. Correctness is not proof faithfulness", loc="left", fontweight="bold")
-    clean_axes(ax_valid)
+    clean_axes(ax_valid, ylabel="pass@16 rate (%)")
     ax_valid.legend(frameon=False, loc="upper right", fontsize=8)
 
-    # D. Representative logged generations.
+    # D. Representative sample excerpts.
     ax_examples.axis("off")
-    ax_examples.set_title("D. Representative logged generations", loc="left", fontweight="bold")
+    ax_examples.set_title("D. Representative sample excerpts", loc="left", fontweight="bold")
     snippets = [
-        ("Formal depth-50 success", "<proof> ... Uo ; ->E\n<answer> olive", LOGIC),
-        ("Natural depth-50 failure", "<think> premise chain ...\n(no answer tag before stop)", NL),
-        ("Invalid formal success", "<proof> repeated R steps ...\n<answer> birch", RED),
+        ("Formal depth-50 success", generation_excerpt(samples, "OLMo-7B logic train1..25 depth-50"), LOGIC),
+        ("Natural depth-50 failure", generation_excerpt(samples, "OLMo-7B NL train1..25 depth-50"), NL),
     ]
-    y = 0.88
+    y = 0.86
     for title, body, color in snippets:
         ax_examples.text(0.02, y, title, color=color, fontsize=9, fontweight="bold", va="top")
-        wrapped = "\n".join(textwrap.wrap(body, width=34, break_long_words=False))
+        wrapped = "\n".join(textwrap.wrap(body, width=39, break_long_words=False))
         ax_examples.text(0.04, y - 0.10, wrapped, fontsize=8.2, family="monospace", va="top")
-        y -= 0.30
-    ax_examples.text(0.02, 0.02, "Snippets are illustrative logged samples; metrics use 16 samples per prompt.", fontsize=7.8, color=GRAY)
+        y -= 0.39
+    ax_examples.text(0.02, 0.03, "Excerpts come from sample_generation_snippets.csv; metrics use 16 samples per prompt.", fontsize=7.4, color=GRAY)
 
     fig.suptitle(
         "Formal traces improve extrapolative answers, but proof validity remains a separate target",
@@ -133,7 +160,8 @@ def overview_claim():
         fontweight="bold",
         y=1.02,
     )
-    save(fig, "overview_claim")
+    fig.subplots_adjust(left=0.07, right=0.98, bottom=0.08, top=0.90, wspace=0.42, hspace=0.60)
+    save(fig, "overview_claim", tight_kwargs=False)
 
 
 def main_correctness():
@@ -144,8 +172,8 @@ def main_correctness():
 
     fig, axes = plt.subplots(1, 2, figsize=(7.8, 3.1), sharey=True)
     for ax, metric, title in [
-        (axes[0], "ood_correct@16", "Long-depth band"),
-        (axes[1], "depth50_correct@16", "Depth-50 endpoint"),
+        (axes[0], "ood_correct@16", "Long-depth band pass@16"),
+        (axes[1], "depth50_correct@16", "Depth-50 endpoint pass@16"),
     ]:
         for template in ["logic", "nl_exact"]:
             sub = df[df["template"] == template].sort_values("train_max")
@@ -185,8 +213,8 @@ def attribute_correctness():
 
     fig, axes = plt.subplots(1, 2, figsize=(7.8, 3.1), sharey=True)
     for ax, metric, title in [
-        (axes[0], "ood_correct@16", "Hard-depth band"),
-        (axes[1], "depth50_correct@16", "Depth-50 endpoint"),
+        (axes[0], "ood_correct@16", "Hard-depth band pass@16"),
+        (axes[1], "depth50_correct@16", "Depth-50 endpoint pass@16"),
     ]:
         for template, color, label in [("logic", LOGIC, "Formal logic"), ("nl", NL, "Natural language")]:
             sub = g[g["template"].eq(template)].sort_values("train_max")
@@ -243,7 +271,7 @@ def shortcut_robustness():
             linewidth=0,
         )
     ax.set_xlabel("Shortcut-marker rate in training (%)")
-    ax.set_title("Depth 50 correctness under shortcut distractors")
+    ax.set_title("Depth-50 pass@16 after shortcut-rich training")
     clean_axes(ax)
     ax.legend(frameon=False, loc="lower left")
     save(fig, "shortcut_robustness")
@@ -275,7 +303,7 @@ def syntax_controls():
     ax.bar(x, pct(means), yerr=pct(stds), color=colors, edgecolor="white", capsize=3)
     ax.set_xticks(x)
     ax.set_xticklabels(labels)
-    ax.set_title("Surface syntax controls at maximum training depth")
+    ax.set_title("Long-depth pass@16 for syntax controls")
     clean_axes(ax)
     save(fig, "syntax_controls")
 
@@ -306,7 +334,7 @@ def trace_integrity():
     ax.set_xticks(x)
     ax.set_xticklabels(labels)
     ax.set_title("Correctness is not the same as proof validity")
-    clean_axes(ax)
+    clean_axes(ax, ylabel="pass@16 rate (%)")
     ax.legend(frameon=False, loc="upper right")
     save(fig, "trace_integrity")
 
@@ -323,8 +351,8 @@ def hybrids():
 
     fig, axes = plt.subplots(1, 2, figsize=(7.8, 3.1), sharey=True)
     for ax, metric, title in [
-        (axes[0], "ood_correct@16", "Long-depth band"),
-        (axes[1], "depth50_correct@16", "Depth-50 endpoint"),
+        (axes[0], "ood_correct@16", "Long-depth band pass@16"),
+        (axes[1], "depth50_correct@16", "Depth-50 endpoint pass@16"),
     ]:
         for template, color, label in [("logic", LOGIC, "Logic only"), ("nl_exact", NL, "NL only")]:
             sub = main[main["template"].eq(template)].sort_values("train_max")
@@ -379,7 +407,7 @@ def architecture():
         ax.bar(x + offset, pct(sub["depth50_correct@16"]), width, yerr=pct(sub["depth50_correct@16_std"]), label=label, color=color, capsize=3)
     ax.set_xticks(x)
     ax.set_xticklabels(models, rotation=15, ha="right")
-    ax.set_title("Depth 50 correctness across model families")
+    ax.set_title("Depth-50 pass@16 across model families")
     clean_axes(ax)
     ax.legend(frameon=False, loc="upper right")
     save(fig, "architecture_depth50")
