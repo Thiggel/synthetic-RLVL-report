@@ -51,21 +51,39 @@ def seed_jitter(seed, width=1.0):
     return SEED_JITTER.get(int(seed), 0.0) * width
 
 
-def label_last_point(ax, x, y, text, color, dx=0.45):
-    ax.text(x + dx, y, text, color=color, va="center", ha="left", fontsize=8)
+def label_last_point(ax, x, y, text, color, dx=0.45, dy=0.0):
+    ax.text(x + dx, y + dy, text, color=color, va="center", ha="left", fontsize=8)
 
 
-def draw_seed_line(ax, df, x_col, y_col, template, color, label, marker, jitter_width=1.0, label_dx=0.45):
-    sub = df[df["template"].eq(template)].copy()
+def draw_seed_line(
+    ax,
+    df,
+    x_col,
+    y_col,
+    template,
+    color,
+    label,
+    marker,
+    jitter_width=1.0,
+    label_dx=0.45,
+    group_col="template",
+    linestyle="-",
+    linewidth=2.1,
+    alpha=1.0,
+    label_dy=0.0,
+):
+    sub = df[df[group_col].eq(template)].copy()
     grouped = sub.groupby(x_col)[y_col].mean().reset_index().sort_values(x_col)
     ax.plot(
         grouped[x_col],
         pct(grouped[y_col]),
         color=color,
         marker=marker,
-        linewidth=2.1,
+        linewidth=linewidth,
         markersize=5.5,
         label=label,
+        linestyle=linestyle,
+        alpha=alpha,
     )
     for _, row in sub.iterrows():
         ax.scatter(
@@ -78,7 +96,49 @@ def draw_seed_line(ax, df, x_col, y_col, template, color, label, marker, jitter_
             linewidth=0,
             zorder=2,
         )
-    label_last_point(ax, grouped[x_col].iloc[-1], pct(grouped[y_col].iloc[-1]), label, color, dx=label_dx)
+    if label_dx is not None:
+        label_last_point(
+            ax,
+            grouped[x_col].iloc[-1],
+            pct(grouped[y_col].iloc[-1]),
+            label,
+            color,
+            dx=label_dx,
+            dy=label_dy,
+        )
+
+
+def connected_category_plot(ax, rows, line_color="#444444", seed_width=0.16):
+    """Draw a compact connected-point plot for categorical comparisons."""
+    x = np.arange(len(rows))
+    means = [np.mean(values) for _, values, _, _ in rows]
+    ax.plot(x, pct(means), color=line_color, linewidth=1.45, alpha=0.75, zorder=1)
+    for xi, (_, values, color, marker) in zip(x, rows):
+        ax.plot(
+            [xi],
+            [pct(np.mean(values))],
+            marker=marker,
+            markersize=6.8,
+            color=color,
+            linestyle="None",
+            zorder=4,
+        )
+        if len(values) > 1:
+            offsets = np.linspace(-seed_width / 2, seed_width / 2, len(values))
+            for offset, value in zip(offsets, values):
+                ax.scatter(
+                    xi + offset,
+                    pct(value),
+                    marker=marker,
+                    s=21,
+                    facecolor="white",
+                    edgecolor=color,
+                    linewidth=0.9,
+                    alpha=0.9,
+                    zorder=3,
+                )
+    ax.set_xticks(x)
+    ax.set_xticklabels([label for label, _, _, _ in rows])
 
 
 def endpoint_rows_from_main():
@@ -119,13 +179,12 @@ def generation_excerpt(samples, label_fragment, max_chars=92):
 
 
 def overview_claim():
-    main = pd.read_csv(TABLES / "main_olmo7b_summary.csv")
+    branch = endpoint_rows_from_main()
     attr = pd.read_csv(TABLES / "active_paired_partial_by_seed.csv")
     trace = pd.read_csv(TABLES / "trace_control_ablation_by_seed.csv")
     samples = pd.read_csv(TABLES / "sample_generation_snippets.csv")
 
-    logic = main[(main["template"].eq("logic")) & (main["train_max"].eq(25))].iloc[0]
-    nl = main[(main["template"].eq("nl_exact")) & (main["train_max"].eq(25))].iloc[0]
+    branch25 = branch[branch["train_max"].eq(25)]
     attr25 = attr[(attr["family"].eq("hard_attribute_fresh")) & (attr["train_max"].eq(25))]
     attr_logic = attr25[attr25["template"].eq("logic")]
     attr_nl = attr25[attr25["template"].eq("nl_exact")]
@@ -165,34 +224,57 @@ def overview_claim():
     ax_design.set_ylim(0, 1)
 
     # B. Main depth-50 answer gap.
-    width = 0.26
-    bp_center = 0.0
-    attr_center = 1.05
-    ax_gap.bar(bp_center - width / 2, pct(logic["depth50_correct@16"]), width, yerr=pct(logic["depth50_correct@16_std"]), color=LOGIC, label="Formal", capsize=3)
-    ax_gap.bar(bp_center + width / 2, pct(nl["depth50_correct@16"]), width, yerr=pct(nl["depth50_correct@16_std"]), color=NL, label="Natural", capsize=3)
-    for offset, values, color in [
-        (-width / 2, attr_logic["depth50_correct@16"], LOGIC),
-        (width / 2, attr_nl["depth50_correct@16"], NL),
+    task_x = np.array([0.0, 1.0])
+    task_labels = ["BranchProof\ndepth 50", "AttrCon\ndepth 50"]
+    for template, attr_sub, color, marker, label in [
+        ("logic", attr_logic, LOGIC, "o", "Formal"),
+        ("nl_exact", attr_nl, NL, "s", "Natural"),
     ]:
-        xs = np.full(len(values), attr_center + offset)
-        ax_gap.scatter(xs, pct(values), s=31, color=color, edgecolor="white", linewidth=0.7, zorder=3)
-        ax_gap.hlines(pct(values.mean()), attr_center + offset - 0.10, attr_center + offset + 0.10, color=color, linewidth=2.5)
-    ax_gap.set_xticks([bp_center, attr_center])
-    ax_gap.set_xticklabels(["BranchProof\nmean $\\pm$ sd", "AttrCon\nseed dots"])
-    ax_gap.set_title("B. Formal gap is large, but task-dependent", loc="left", fontweight="bold")
+        branch_sub = branch25[branch25["template"].eq(template)]
+        means = [branch_sub["depth50_correct@16"].mean(), attr_sub["depth50_correct@16"].mean()]
+        ax_gap.plot(task_x, pct(means), color=color, marker=marker, linewidth=2.1, markersize=5.8, label=label)
+        for xi, values in zip(task_x, [branch_sub["depth50_correct@16"], attr_sub["depth50_correct@16"]]):
+            offsets = np.linspace(-0.035, 0.035, len(values))
+            for offset, value in zip(offsets, values):
+                ax_gap.scatter(
+                    xi + offset,
+                    pct(value),
+                    marker=marker,
+                    s=22,
+                    facecolor="white",
+                    edgecolor=color,
+                    linewidth=0.9,
+                    alpha=0.9,
+                    zorder=3,
+                )
+    bp_gap = (
+        branch25[branch25["template"].eq("logic")]["depth50_correct@16"].mean()
+        - branch25[branch25["template"].eq("nl_exact")]["depth50_correct@16"].mean()
+    )
+    ax_gap.text(0.0, 94, f"+{100 * bp_gap:.1f}", ha="center", fontsize=8, color=GRAY)
+    ax_gap.set_xticks(task_x)
+    ax_gap.set_xticklabels(task_labels)
+    ax_gap.set_title("B. Depth-50 gap is large, but task-dependent", loc="left", fontweight="bold")
     clean_axes(ax_gap)
     ax_gap.legend(frameon=False, loc="upper right", fontsize=8)
-    ax_gap.text(bp_center, 95, f"+{100*(logic['depth50_correct@16']-nl['depth50_correct@16']):.1f}", ha="center", fontsize=8, color=GRAY)
+    ax_gap.set_xlim(-0.25, 1.25)
 
     # C. Faithfulness caveat.
     labels = ["Compact\nformal", "Invalid\nformal"]
-    corr = [logic["depth50_correct@16"], invalid["depth50_correct@16"].mean()]
-    corr_std = [logic["depth50_correct@16_std"], invalid["depth50_correct@16"].std()]
-    joint = [logic["depth50_joint@16"], invalid["depth50_formal_joint@16"].mean()]
-    joint_std = [logic["depth50_joint@16_std"], invalid["depth50_formal_joint@16"].std()]
+    compact = branch25[branch25["template"].eq("logic")]
+    corr_values = [compact["depth50_correct@16"].to_numpy(), invalid["depth50_correct@16"].to_numpy()]
+    joint_values = [compact["depth50_joint@16"].to_numpy(), invalid["depth50_formal_joint@16"].to_numpy()]
+    corr = [values.mean() for values in corr_values]
+    joint = [values.mean() for values in joint_values]
     x = np.arange(len(labels))
-    ax_valid.bar(x - width / 2, pct(corr), width, yerr=pct(corr_std), color=LOGIC, label="Correct answer", capsize=3)
-    ax_valid.bar(x + width / 2, pct(joint), width, yerr=pct(joint_std), color=RED, label="Correct + valid proof", capsize=3)
+    ax_valid.plot(x, pct(corr), color=LOGIC, marker="o", linewidth=2.1, markersize=5.8, label="Correct answer")
+    ax_valid.plot(x, pct(joint), color=RED, marker="D", linewidth=2.1, markersize=5.4, label="Correct + valid proof")
+    for xi, values in zip(x, corr_values):
+        for offset, value in zip(np.linspace(-0.035, 0.035, len(values)), values):
+            ax_valid.scatter(xi + offset, pct(value), marker="o", s=21, facecolor="white", edgecolor=LOGIC, linewidth=0.9, zorder=3)
+    for xi, values in zip(x, joint_values):
+        for offset, value in zip(np.linspace(-0.035, 0.035, len(values)), values):
+            ax_valid.scatter(xi + offset, pct(value), marker="D", s=21, facecolor="white", edgecolor=RED, linewidth=0.9, zorder=3)
     ax_valid.set_xticks(x)
     ax_valid.set_xticklabels(labels)
     ax_valid.set_title("C. Correct answers need not be valid proofs", loc="left", fontweight="bold")
@@ -241,7 +323,6 @@ def main_correctness():
         ax.set_xlabel("Maximum training depth")
         clean_axes(ax)
         ax.set_xlim(3.5, 28.5)
-    axes[0].legend(frameon=False, loc="lower right", fontsize=8)
     save(fig, "main_correctness")
 
 
@@ -261,7 +342,6 @@ def attribute_correctness():
         ax.set_xlabel("Maximum training depth")
         clean_axes(ax)
         ax.set_xlim(3.5, 28.5)
-    axes[0].legend(frameon=False, loc="lower right", fontsize=8)
     save(fig, "attribute_correctness")
 
 
@@ -282,44 +362,40 @@ def shortcut_robustness():
     ax.set_xticks([0, 0.3, 0.5, 0.8])
     ax.set_xticklabels(["0", "30", "50", "80"])
     ax.set_xlim(-0.08, 1.18)
-    ax.legend(frameon=False, loc="lower left", fontsize=8)
     save(fig, "shortcut_robustness")
 
 
 def syntax_controls():
     rows = []
     main = endpoint_rows_from_main()
-    for template, label, color, marker in [("logic", "Compact\nformal", LOGIC, "o"), ("nl_exact", "Natural\nlanguage", NL, "s")]:
-        sub = main[(main["template"].eq(template)) & (main["train_max"].eq(25))]
-        rows.append((label, sub["ood_correct@16"].to_numpy(), color, marker))
+    same_token = pd.read_csv(TABLES / "same_target_token_budget_by_seed.csv")
+    compact = main[(main["template"].eq("logic")) & (main["train_max"].eq(25))]
+    natural = main[(main["template"].eq("nl_exact")) & (main["train_max"].eq(25))]
+    rows.append(("Compact\nformal", compact["ood_correct@16"].to_numpy(), LOGIC, "o"))
+    rows.append(("Same-token\nformal", same_token[same_token["template"].eq("logic")]["ood_correct@16"].to_numpy(), LOGIC_LIGHT, "^"))
     for path, label, color, marker in [
         ("logic_wordified_eval_by_seed.csv", "Wordified\nformal", LOGIC_LIGHT, "D"),
         ("logic_symbol_padded_eval_by_seed.csv", "Symbol\npadded", LOGIC_LIGHT, "^"),
     ]:
         df = pd.read_csv(TABLES / path)
         rows.append((label, df["ood_correct@16"].to_numpy(), color, marker))
+    rows.append(("Natural\nlanguage", natural["ood_correct@16"].to_numpy(), NL, "s"))
+    rows.append(("Same-token\nnatural", same_token[same_token["template"].eq("nl_exact")]["ood_correct@16"].to_numpy(), NL_LIGHT, "v"))
     trace = pd.read_csv(TABLES / "trace_control_ablation_by_seed.csv")
     for template, label, color, marker in [
-        ("pseudocode", "Pseudocode", LIGHT_GRAY, "v"),
         ("rule_annotated_nl", "Rule labels\nin NL", NL_LIGHT, "P"),
+        ("pseudocode", "Pseudocode", LIGHT_GRAY, "X"),
     ]:
         sub = trace[trace["template"].eq(template)]
         rows.append((label, sub["ood_correct@16"].to_numpy(), color, marker))
 
-    labels = [r[0] for r in rows]
-    means = [np.mean(r[1]) for r in rows]
-    colors = [r[2] for r in rows]
-    markers = [r[3] for r in rows]
-    x = np.arange(len(labels))
-    fig, ax = plt.subplots(figsize=(7.4, 3.2))
-    ax.bar(x, pct(means), color=colors, edgecolor="white", alpha=0.84)
-    for xi, (_, values, color, marker) in zip(x, rows):
-        for j, value in enumerate(values):
-            ax.scatter(xi + [-0.10, 0.0, 0.10][j % 3], pct(value), marker=marker, s=28, color="#222222", alpha=0.75, zorder=3)
-    ax.set_xticks(x)
-    ax.set_xticklabels(labels)
-    ax.set_title("Compact formal syntax is the hard-to-match condition")
+    fig, ax = plt.subplots(figsize=(7.9, 3.2))
+    connected_category_plot(ax, rows)
+    ax.axhline(pct(compact["ood_correct@16"].mean()), color=LOGIC, linewidth=1.0, linestyle=":", alpha=0.55)
+    ax.axhline(pct(natural["ood_correct@16"].mean()), color=NL, linewidth=1.0, linestyle=":", alpha=0.55)
+    ax.set_title("Most controls fall below the compact formal baseline")
     clean_axes(ax)
+    ax.set_xlim(-0.4, len(rows) - 0.6)
     save(fig, "syntax_controls")
 
 
@@ -334,17 +410,16 @@ def trace_integrity():
         rows.append((label, sub["ood_correct@16"].to_numpy(), sub["ood_formal_joint@16"].to_numpy()))
     labels = [r[0] for r in rows]
     x = np.arange(len(labels))
-    width = 0.36
     fig, ax = plt.subplots(figsize=(5.1, 3.1))
     corr = [np.mean(r[1]) for r in rows]
     joint = [np.mean(r[2]) for r in rows]
-    ax.bar(x - width / 2, pct(corr), width, label="Correct answer", color=LOGIC, alpha=0.88)
-    ax.bar(x + width / 2, pct(joint), width, label="Correct + valid proof", color=RED, alpha=0.88)
+    ax.plot(x, pct(corr), marker="o", markersize=5.8, linewidth=2.1, color=LOGIC, label="Correct answer")
+    ax.plot(x, pct(joint), marker="D", markersize=5.3, linewidth=2.1, color=RED, label="Correct + valid proof")
     for xi, (_, corr_values, joint_values) in zip(x, rows):
-        for j, value in enumerate(corr_values):
-            ax.scatter(xi - width / 2 + [-0.05, 0.0, 0.05][j % 3], pct(value), marker="o", s=22, color="#222222", alpha=0.72, zorder=3)
-        for j, value in enumerate(joint_values):
-            ax.scatter(xi + width / 2 + [-0.05, 0.0, 0.05][j % 3], pct(value), marker="D", s=22, color="#222222", alpha=0.72, zorder=3)
+        for offset, value in zip(np.linspace(-0.05, 0.05, len(corr_values)), corr_values):
+            ax.scatter(xi + offset, pct(value), marker="o", s=21, facecolor="white", edgecolor=LOGIC, linewidth=0.9, zorder=3)
+        for offset, value in zip(np.linspace(-0.05, 0.05, len(joint_values)), joint_values):
+            ax.scatter(xi + offset, pct(value), marker="D", s=21, facecolor="white", edgecolor=RED, linewidth=0.9, zorder=3)
     ax.set_xticks(x)
     ax.set_xticklabels(labels)
     ax.set_title("Invalid traces keep answers but lose validity")
@@ -356,47 +431,30 @@ def trace_integrity():
 def hybrids():
     main = endpoint_rows_from_main()
     hybrid = pd.read_csv(TABLES / "hybrid_order_ablation_by_seed.csv")
-    rows = [
-        ("Formal\nonly", main[(main["template"].eq("logic")) & (main["train_max"].eq(25))]["depth50_correct@16"].to_numpy(), LOGIC, "o"),
-        ("Natural\nonly", main[(main["template"].eq("nl_exact")) & (main["train_max"].eq(25))]["depth50_correct@16"].to_numpy(), NL, "s"),
-        ("Formal\nthen NL", hybrid[(hybrid["mode"].eq("formal_think")) & (hybrid["train_max"].eq(25))]["depth50_correct@16"].to_numpy(), LOGIC_LIGHT, "^"),
-        ("NL then\nformal", hybrid[(hybrid["mode"].eq("think_formal")) & (hybrid["train_max"].eq(25))]["depth50_correct@16"].to_numpy(), NL_LIGHT, "D"),
-    ]
-    fig, ax = plt.subplots(figsize=(4.6, 3.15))
-    x = np.arange(len(rows))
-    ax.bar(x, pct([np.mean(r[1]) for r in rows]), color=[r[2] for r in rows], edgecolor="white", alpha=0.86)
-    for xi, (_, values, _, marker) in zip(x, rows):
-        for j, value in enumerate(values):
-            ax.scatter(xi + [-0.10, 0.0, 0.10][j % 3], pct(value), marker=marker, s=30, color="#222222", alpha=0.75, zorder=3)
-    ax.set_xticks(x)
-    ax.set_xticklabels([r[0] for r in rows])
-    ax.set_title("Hybrid traces do not beat formal only")
+    fig, ax = plt.subplots(figsize=(4.9, 3.15))
+    draw_seed_line(ax, main, "train_max", "depth50_correct@16", "logic", LOGIC, "Formal only", "o", label_dx=0.55, linestyle="--", linewidth=1.8, alpha=0.85)
+    draw_seed_line(ax, main, "train_max", "depth50_correct@16", "nl_exact", NL, "Natural only", "s", label_dx=0.55, linestyle="--", linewidth=1.8, alpha=0.85, label_dy=-1.5)
+    draw_seed_line(ax, hybrid, "train_max", "depth50_correct@16", "formal_think", LOGIC_LIGHT, "Formal then NL", "^", label_dx=0.55, group_col="mode", label_dy=2.0)
+    draw_seed_line(ax, hybrid, "train_max", "depth50_correct@16", "think_formal", NL_LIGHT, "NL then formal", "D", label_dx=0.55, group_col="mode", label_dy=-2.0)
+    ax.set_xlabel("Maximum training depth")
+    ax.set_title("Hybrids trail formal-only extrapolation")
     clean_axes(ax)
+    ax.set_xlim(3.5, 34.0)
     save(fig, "hybrid_order")
 
 
 def conditioned_dual():
     main = endpoint_rows_from_main()
     dual = pd.read_csv(TABLES / "conditioned_dual_50k_by_seed.csv")
-    rows = []
-    for template, label, color, marker in [("logic", "Formal\nonly", LOGIC, "o"), ("nl_exact", "Natural\nonly", NL, "s")]:
-        sub = main[(main["template"].eq(template)) & (main["train_max"].eq(25))]
-        rows.append((label, sub["depth50_correct@16"].to_numpy(), color, marker))
-    for template, label, color, marker in [("conditioned_logic", "Dual,\nformal", LOGIC_LIGHT, "^"), ("conditioned_nl", "Dual,\nNL", NL_LIGHT, "D")]:
-        sub = dual[(dual["eval_template"].eq(template)) & (dual["train_max"].eq(25))]
-        rows.append((label, sub["depth50_correct@16"].to_numpy(), color, marker))
-
-    labels = [r[0] for r in rows]
-    x = np.arange(len(labels))
-    fig, ax = plt.subplots(figsize=(4.6, 3.15))
-    ax.bar(x, pct([np.mean(r[1]) for r in rows]), color=[r[2] for r in rows], edgecolor="white", alpha=0.86)
-    for xi, (_, values, _, marker) in zip(x, rows):
-        for j, value in enumerate(values):
-            ax.scatter(xi + [-0.10, 0.0, 0.10][j % 3], pct(value), marker=marker, s=30, color="#222222", alpha=0.75, zorder=3)
-    ax.set_xticks(x)
-    ax.set_xticklabels(labels)
-    ax.set_title("Dual training still trails formal only")
+    fig, ax = plt.subplots(figsize=(4.9, 3.15))
+    draw_seed_line(ax, main, "train_max", "depth50_correct@16", "logic", LOGIC, "Formal only", "o", label_dx=0.55, linestyle="--", linewidth=1.8, alpha=0.85)
+    draw_seed_line(ax, main, "train_max", "depth50_correct@16", "nl_exact", NL, "Natural only", "s", label_dx=0.55, linestyle="--", linewidth=1.8, alpha=0.85, label_dy=-4.0)
+    draw_seed_line(ax, dual, "train_max", "depth50_correct@16", "conditioned_logic", LOGIC_LIGHT, "Dual, formal prompt", "^", label_dx=0.55, group_col="eval_template", label_dy=2.0)
+    draw_seed_line(ax, dual, "train_max", "depth50_correct@16", "conditioned_nl", NL_LIGHT, "Dual, NL prompt", "D", label_dx=0.55, group_col="eval_template", label_dy=5.0)
+    ax.set_xlabel("Maximum training depth")
+    ax.set_title("Dual training still trails formal-only")
     clean_axes(ax)
+    ax.set_xlim(3.5, 34.0)
     save(fig, "conditioned_dual")
 
 
