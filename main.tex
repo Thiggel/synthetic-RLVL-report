@@ -37,17 +37,17 @@ models learn more reliable symbolic reasoning when the same derivation is
 written instead as a compact formal trace. To isolate the trace substrate, we
 construct paired synthetic tasks in which each instance has the same prompt,
 answer, and latent proof, but two target traces: a formal derivation and a
-natural-language derivation. On branching proof chains, OLMo-7B trained on
+natural language derivation. On branching proof chains, OLMo-7B trained on
 depths up to 25 reaches 92.1\% \passsixteen{} correctness averaged over depths
 30 to 50 and 83.3\% at depth 50 with formal traces, compared with 79.4\% and
-51.0\% with natural-language traces. On attribute constraints, formal traces
-show a positive but high-variance mean answer-correctness gap on the hard-depth
-band and at depth 50.
+51.0\% with natural language traces. On attribute constraints, formal traces
+show a positive mean gap in answer correctness, but with high seed variance at
+depth 50.
 The direction is consistent across Qwen and Gemma model families, though some
 architecture checks have high seed variance, and it becomes sharper when
 training data contain shortcut distractors. Ablations show that the gain is not
 recovered by longer traces, word-like predicates, pseudocode, explicit rule
-annotations, or dual-modality training. Invalid formal-looking traces can still
+annotations, or dual modality training. Invalid formal looking traces can still
 preserve high answer accuracy while losing mechanical proof validity. Compact
 formal traces are a better supervised substrate for learning correct symbolic
 computations in these settings, but answer correctness and proof faithfulness
@@ -72,7 +72,7 @@ applications.
   validity remains a separate target.} We compare two trace renderings of the
   same latent proof, find a large depth-50 answer-correctness gap on the two
   main symbolic tasks, and explicitly show the faithfulness caveat: a
-  formal-looking trace can answer correctly while failing the proof checker.
+  formal looking trace can answer correctly while failing the proof checker.
   Error bars are standard deviations over three seeds. Sample excerpts are read
   from the generation-snippet artifact and are not additional metrics.}
   \label{fig:overview}
@@ -108,22 +108,19 @@ the strongest representation among the variants we tested.
 
 Correctness and faithfulness separate even in formal syntax. A generated trace
 does not become a valid proof merely because it looks formal. Invalid
-formal-looking traces can keep high answer accuracy while formal validity
+formal looking traces can keep high answer accuracy while formal validity
 collapses. We therefore make a narrow claim. Formal traces improve supervised
 learning of the correct symbolic computation in these controlled settings. They
 do not by themselves guarantee that every generated trace is a faithful proof.
 
-\textbf{Contributions and claims.} First, we introduce a paired experimental
-design for isolating the supervised reasoning substrate while holding prompts,
-answers, and latent derivations fixed. Second, we show that compact formal
-traces improve extrapolative answer correctness on \branchproof{} and replicate
-the answer-correctness pattern on \attrcon{}, with the strongest evidence at
-depth 50, while emphasizing the high seed variance of that replication. Third,
-we organize ablations as reviewer objections: the effect is not explained by
-token budget, explicit rule labels, code-like formatting, shortcut markers,
-tested model family, or simply training both modalities. Fourth, we show the
-boundary of the claim: formal traces are a correctness substrate here, not a
-guarantee of faithful proof generation.
+\textbf{Contributions and claims.} We isolate the trace substrate with paired
+examples that hold prompts, answers, and latent derivations fixed. Compact
+formal traces improve length extrapolation on \branchproof{} and show a
+positive but noisier mean gap on \attrcon{}. The controls rule out several
+simple explanations, including token budget, rule labels, code-like formatting,
+shortcut markers, tested model family, and simply training both modalities. The
+boundary is just as important: formal traces are a correctness substrate here,
+not a guarantee of faithful proof generation.
 
 \section{Related Work}
 
@@ -151,7 +148,7 @@ used by the model. Prior work shows that chain-of-thought explanations can
 rationalize biased answers or omit features that influenced the prediction
 ~\citep{turpin2023language}, and proposes interventions for measuring CoT
 faithfulness~\citep{lanham2023measuring}. Our trace-integrity controls make the
-same distinction in a formal setting: a formal-looking trace can support answer
+same distinction in a formal setting: a formal looking trace can support answer
 accuracy without being a valid proof.
 
 \subsection{Executable and symbolic substrates}
@@ -214,7 +211,7 @@ lines. The \nl{} trace describes the same derivation in short controlled
 sentences. Additional ablations modify this surface: symbol-padded logic,
 wordified logic, pseudocode, rule-annotated natural language, shuffled traces,
 invalid formal traces, same-datapoint hybrids, and mode-conditioned
-dual-modality training.
+dual modality training.
 
 \subsection{Evaluation protocol}
 
@@ -390,7 +387,7 @@ additional shortcut mechanisms, including one natural-language initial-marker
 exception. The supported claim is schema-level sensitivity, not that every
 shortcut construction hurts natural language.
 
-\subsection{The Direction Repeats Across Architectures}
+\subsection{The Pattern Repeats Across Model Families}
 
 \begin{table}[t]
 \centering
@@ -418,7 +415,7 @@ large seed variance. This is a consistency check, not a scaling law.}
 \label{tab:architecture}
 \end{table}
 
-The effect is directionally consistent across the tested architectures
+The formal direction repeats across the tested model families
 (Table~\ref{tab:architecture}). The variance is large for some smaller or less
 stable runs, especially Gemma-3-4B and Qwen-2.5-1.5B, so this result should not
 be over-read as a scaling law. It does show that the \branchproof{} effect is
@@ -502,7 +499,7 @@ Invalid formal & 89.2 $\pm$ 5.6 & 0.0 $\pm$ 0.0 & 75.0 $\pm$ 11.3 & 0.0 $\pm$ 0.
 Shuffled formal & 69.0 $\pm$ 2.6 & 0.0 $\pm$ 0.0 & 51.0 $\pm$ 10.0 & 0.0 $\pm$ 0.0 \\
 \bottomrule
 \end{tabular}
-\caption{Trace-integrity controls. Invalid formal-looking traces can preserve
+\caption{Trace integrity controls. Invalid formal looking traces can preserve
 high answer correctness while mechanical proof validity collapses, so formal
 syntax alone is not a faithfulness guarantee.}
 \label{tab:integrity}
@@ -518,7 +515,7 @@ syntax alone is not a faithfulness guarantee.}
 \end{figure}
 
 Trace corruption exposes the faithfulness boundary. The model can exploit
-formal-looking regularities and still answer correctly even when the trace is
+formal looking regularities and still answer correctly even when the trace is
 not a valid proof (Table~\ref{tab:integrity} and Figure~\ref{fig:integrity}).
 This does not undo the correctness results, but it means that proof faithfulness
 requires additional training objectives, decoding constraints, or verification.
@@ -540,7 +537,7 @@ Conditioned dual, formal prompt & 83.3 $\pm$ 13.5 & 67.7 $\pm$ 25.5 \\
 Conditioned dual, natural prompt & 67.5 $\pm$ 8.2 & 53.1 $\pm$ 6.2 \\
 \bottomrule
 \end{tabular}
-\caption{Hybrid and dual-modality results at train depth 25. Combining
+\caption{Hybrid and dual modality results at train depth 25. Combining
 modalities is informative, but neither same-target hybrids nor separate
 mode-conditioned training improves on compact formal-only supervision.}
 \label{tab:hybrid}
@@ -583,7 +580,7 @@ suggests that formal traces reduce the burden of learning through
 natural-language surface variation and discourse dependencies.
 
 The validity controls are equally important. A model can learn to answer
-correctly from formal-looking traces without producing a mechanically valid
+correctly from formal looking traces without producing a mechanically valid
 proof. The current evidence therefore argues for formal traces as a better
 \emph{training substrate for correctness}, not as a complete solution to
 faithful reasoning. A natural next research direction is to combine compact

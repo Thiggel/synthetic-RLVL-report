@@ -11,13 +11,16 @@ PREPRINT = Path(__file__).resolve().parents[1]
 TABLES = ROOT / "tables"
 OUT = PREPRINT / "figures"
 
-LOGIC = "#2E5AA8"
-NL = "#2A9D8F"
-LOGIC_LIGHT = "#86A5E5"
-NL_LIGHT = "#7BC8B8"
+LOGIC = "#4477AA"
+NL = "#228833"
+LOGIC_LIGHT = "#88AADD"
+NL_LIGHT = "#66CC99"
 GRAY = "#555555"
-RED = "#B85042"
+LIGHT_GRAY = "#B7B7B7"
+RED = "#CC6677"
 GOLD = "#C28E2C"
+MARKERS = {"logic": "o", "nl_exact": "s", "nl": "s"}
+SEED_JITTER = {3407: -0.12, 3408: 0.0, 3409: 0.12}
 
 
 def pct(x):
@@ -42,6 +45,63 @@ def save(fig, name, tight_kwargs=None):
         fig.tight_layout(**tight_kwargs)
     fig.savefig(OUT / f"{name}.pdf", bbox_inches="tight")
     plt.close(fig)
+
+
+def seed_jitter(seed, width=1.0):
+    return SEED_JITTER.get(int(seed), 0.0) * width
+
+
+def label_last_point(ax, x, y, text, color, dx=0.45):
+    ax.text(x + dx, y, text, color=color, va="center", ha="left", fontsize=8)
+
+
+def draw_seed_line(ax, df, x_col, y_col, template, color, label, marker, jitter_width=1.0, label_dx=0.45):
+    sub = df[df["template"].eq(template)].copy()
+    grouped = sub.groupby(x_col)[y_col].mean().reset_index().sort_values(x_col)
+    ax.plot(
+        grouped[x_col],
+        pct(grouped[y_col]),
+        color=color,
+        marker=marker,
+        linewidth=2.1,
+        markersize=5.5,
+        label=label,
+    )
+    for _, row in sub.iterrows():
+        ax.scatter(
+            row[x_col] + seed_jitter(row["seed"], jitter_width),
+            pct(row[y_col]),
+            marker=marker,
+            s=24,
+            color=color,
+            alpha=0.34,
+            linewidth=0,
+            zorder=2,
+        )
+    label_last_point(ax, grouped[x_col].iloc[-1], pct(grouped[y_col].iloc[-1]), label, color, dx=label_dx)
+
+
+def endpoint_rows_from_main():
+    curves = pd.read_csv(TABLES / "main_olmo7b_depth_curves_k16.csv")
+    rows = []
+    for template in ["logic", "nl_exact"]:
+        for train_max in sorted(curves[curves["template"].eq(template)]["train_max"].unique()):
+            sub = curves[(curves["template"].eq(template)) & (curves["train_max"].eq(train_max))]
+            for seed, seed_df in sub.groupby("seed"):
+                long_depth = seed_df[seed_df["depth"].gt(train_max)]["correct"].mean()
+                depth50 = seed_df[seed_df["depth"].eq(50)]["correct"].mean()
+                rows.append(
+                    {
+                        "template": template,
+                        "train_max": train_max,
+                        "seed": seed,
+                        "ood_correct@16": long_depth,
+                        "depth50_correct@16": depth50,
+                        "ood_joint@16": seed_df[seed_df["depth"].gt(train_max)]["joint"].mean(),
+                        "depth50_joint@16": seed_df[seed_df["depth"].eq(50)]["joint"].mean(),
+                    }
+                )
+    return pd.DataFrame(rows)
 
 
 def generation_excerpt(samples, label_fragment, max_chars=92):
@@ -119,7 +179,7 @@ def overview_claim():
         ax_gap.hlines(pct(values.mean()), attr_center + offset - 0.10, attr_center + offset + 0.10, color=color, linewidth=2.5)
     ax_gap.set_xticks([bp_center, attr_center])
     ax_gap.set_xticklabels(["BranchProof\nmean $\\pm$ sd", "AttrCon\nseed dots"])
-    ax_gap.set_title("B. Formal traces win at depth 50", loc="left", fontweight="bold")
+    ax_gap.set_title("B. Formal gap is large, but task-dependent", loc="left", fontweight="bold")
     clean_axes(ax_gap)
     ax_gap.legend(frameon=False, loc="upper right", fontsize=8)
     ax_gap.text(bp_center, 95, f"+{100*(logic['depth50_correct@16']-nl['depth50_correct@16']):.1f}", ha="center", fontsize=8, color=GRAY)
@@ -165,38 +225,23 @@ def overview_claim():
 
 
 def main_correctness():
-    df = pd.read_csv(TABLES / "main_olmo7b_summary.csv")
-    df = df[df["template"].isin(["logic", "nl_exact"])].copy()
+    df = endpoint_rows_from_main()
     labels = {"logic": "Formal logic", "nl_exact": "Natural language"}
     colors = {"logic": LOGIC, "nl_exact": NL}
+    markers = {"logic": "o", "nl_exact": "s"}
 
     fig, axes = plt.subplots(1, 2, figsize=(7.8, 3.1), sharey=True)
     for ax, metric, title in [
-        (axes[0], "ood_correct@16", "Long-depth band pass@16"),
-        (axes[1], "depth50_correct@16", "Depth-50 endpoint pass@16"),
+        (axes[0], "ood_correct@16", "Formal traces extrapolate farther"),
+        (axes[1], "depth50_correct@16", "The endpoint gap opens late"),
     ]:
         for template in ["logic", "nl_exact"]:
-            sub = df[df["template"] == template].sort_values("train_max")
-            ax.plot(
-                sub["train_max"],
-                pct(sub[metric]),
-                marker="o",
-                linewidth=2.2,
-                color=colors[template],
-                label=labels[template],
-            )
-            ax.fill_between(
-                sub["train_max"],
-                pct(sub[metric] - sub[f"{metric}_std"]),
-                pct(sub[metric] + sub[f"{metric}_std"]),
-                color=colors[template],
-                alpha=0.17,
-                linewidth=0,
-            )
+            draw_seed_line(ax, df, "train_max", metric, template, colors[template], labels[template], markers[template])
         ax.set_title(title)
         ax.set_xlabel("Maximum training depth")
         clean_axes(ax)
-    axes[0].legend(frameon=False, loc="lower right")
+        ax.set_xlim(3.5, 28.5)
+    axes[0].legend(frameon=False, loc="lower right", fontsize=8)
     save(fig, "main_correctness")
 
 
@@ -204,193 +249,154 @@ def attribute_correctness():
     df = pd.read_csv(TABLES / "active_paired_partial_by_seed.csv")
     df = df[df["family"].eq("hard_attribute_fresh")].copy()
     df["template"] = df["template"].replace({"nl_exact": "nl"})
-    g = (
-        df.groupby(["template", "train_max"])[["ood_correct@16", "depth50_correct@16"]]
-        .agg(["mean", "std"])
-        .reset_index()
-    )
-    g.columns = ["_".join(c).strip("_") for c in g.columns]
 
     fig, axes = plt.subplots(1, 2, figsize=(7.8, 3.1), sharey=True)
     for ax, metric, title in [
-        (axes[0], "ood_correct@16", "Hard-depth band pass@16"),
-        (axes[1], "depth50_correct@16", "Depth-50 endpoint pass@16"),
+        (axes[0], "ood_correct@16", "Constraint transfer is positive"),
+        (axes[1], "depth50_correct@16", "Depth 50 remains high variance"),
     ]:
         for template, color, label in [("logic", LOGIC, "Formal logic"), ("nl", NL, "Natural language")]:
-            sub = g[g["template"].eq(template)].sort_values("train_max")
-            ax.plot(
-                sub["train_max"],
-                pct(sub[f"{metric}_mean"]),
-                marker="o",
-                linewidth=2.2,
-                color=color,
-                label=label,
-            )
-            ax.fill_between(
-                sub["train_max"],
-                pct(sub[f"{metric}_mean"] - sub[f"{metric}_std"]),
-                pct(sub[f"{metric}_mean"] + sub[f"{metric}_std"]),
-                color=color,
-                alpha=0.17,
-                linewidth=0,
-            )
+            draw_seed_line(ax, df, "train_max", metric, template, color, label, MARKERS[template])
         ax.set_title(title)
         ax.set_xlabel("Maximum training depth")
         clean_axes(ax)
-    axes[0].legend(frameon=False, loc="lower right")
+        ax.set_xlim(3.5, 28.5)
+    axes[0].legend(frameon=False, loc="lower right", fontsize=8)
     save(fig, "attribute_correctness")
 
 
 def shortcut_robustness():
     df = pd.read_csv(TABLES / "shortcut_rate_ablation_by_seed.csv")
     df["rate"] = df["shortcut_rate"].str.replace("p", ".", regex=False).astype(float)
-    g = (
-        df.groupby(["template", "rate"])[["depth50_correct@16"]]
-        .agg(["mean", "std"])
-        .reset_index()
-    )
-    g.columns = ["_".join(c).strip("_") for c in g.columns]
+    baseline = endpoint_rows_from_main()
+    baseline = baseline[baseline["train_max"].eq(25)][["template", "seed", "depth50_correct@16"]].copy()
+    baseline["rate"] = 0.0
+    df = pd.concat([baseline, df[["template", "seed", "rate", "depth50_correct@16"]]], ignore_index=True)
 
     fig, ax = plt.subplots(figsize=(4.7, 3.15))
     for template, color, label in [("logic", LOGIC, "Formal logic"), ("nl_exact", NL, "Natural language")]:
-        sub = g[g["template"].eq(template)].sort_values("rate")
-        ax.plot(
-            pct(sub["rate"]),
-            pct(sub["depth50_correct@16_mean"]),
-            marker="o",
-            linewidth=2.4,
-            color=color,
-            label=label,
-        )
-        ax.fill_between(
-            pct(sub["rate"]),
-            pct(sub["depth50_correct@16_mean"] - sub["depth50_correct@16_std"]),
-            pct(sub["depth50_correct@16_mean"] + sub["depth50_correct@16_std"]),
-            color=color,
-            alpha=0.18,
-            linewidth=0,
-        )
+        draw_seed_line(ax, df, "rate", "depth50_correct@16", template, color, label, MARKERS[template], jitter_width=0.08, label_dx=0.03)
     ax.set_xlabel("Shortcut-marker rate in training (%)")
-    ax.set_title("Depth-50 pass@16 after shortcut-rich training")
+    ax.set_title("Formal traces resist shortcut shift")
     clean_axes(ax)
-    ax.legend(frameon=False, loc="lower left")
+    ax.set_xticks([0, 0.3, 0.5, 0.8])
+    ax.set_xticklabels(["0", "30", "50", "80"])
+    ax.set_xlim(-0.08, 1.18)
+    ax.legend(frameon=False, loc="lower left", fontsize=8)
     save(fig, "shortcut_robustness")
 
 
 def syntax_controls():
     rows = []
-    main = pd.read_csv(TABLES / "main_olmo7b_summary.csv")
-    for template, label in [("logic", "Logic"), ("nl_exact", "NL")]:
-        sub = main[(main["template"].eq(template)) & (main["train_max"].eq(25))].iloc[0]
-        rows.append((label, sub["ood_correct@16"], sub["ood_correct@16_std"], LOGIC if template == "logic" else NL))
-    for path, label, color in [
-        ("logic_wordified_eval_by_seed.csv", "Wordified\nlogic", LOGIC_LIGHT),
-        ("logic_symbol_padded_eval_by_seed.csv", "Symbol-\npadded", LOGIC_LIGHT),
+    main = endpoint_rows_from_main()
+    for template, label, color, marker in [("logic", "Compact\nformal", LOGIC, "o"), ("nl_exact", "Natural\nlanguage", NL, "s")]:
+        sub = main[(main["template"].eq(template)) & (main["train_max"].eq(25))]
+        rows.append((label, sub["ood_correct@16"].to_numpy(), color, marker))
+    for path, label, color, marker in [
+        ("logic_wordified_eval_by_seed.csv", "Wordified\nformal", LOGIC_LIGHT, "D"),
+        ("logic_symbol_padded_eval_by_seed.csv", "Symbol\npadded", LOGIC_LIGHT, "^"),
     ]:
         df = pd.read_csv(TABLES / path)
-        rows.append((label, df["ood_correct@16"].mean(), df["ood_correct@16"].std(), color))
+        rows.append((label, df["ood_correct@16"].to_numpy(), color, marker))
     trace = pd.read_csv(TABLES / "trace_control_ablation_by_seed.csv")
-    for template, label, color in [
-        ("pseudocode", "Pseudo-\ncode", GRAY),
-        ("rule_annotated_nl", "Rule-\nannotated NL", NL_LIGHT),
+    for template, label, color, marker in [
+        ("pseudocode", "Pseudocode", LIGHT_GRAY, "v"),
+        ("rule_annotated_nl", "Rule labels\nin NL", NL_LIGHT, "P"),
     ]:
         sub = trace[trace["template"].eq(template)]
-        rows.append((label, sub["ood_correct@16"].mean(), sub["ood_correct@16"].std(), color))
+        rows.append((label, sub["ood_correct@16"].to_numpy(), color, marker))
 
-    labels, means, stds, colors = zip(*rows)
+    labels = [r[0] for r in rows]
+    means = [np.mean(r[1]) for r in rows]
+    colors = [r[2] for r in rows]
+    markers = [r[3] for r in rows]
     x = np.arange(len(labels))
     fig, ax = plt.subplots(figsize=(7.4, 3.2))
-    ax.bar(x, pct(means), yerr=pct(stds), color=colors, edgecolor="white", capsize=3)
+    ax.bar(x, pct(means), color=colors, edgecolor="white", alpha=0.84)
+    for xi, (_, values, color, marker) in zip(x, rows):
+        for j, value in enumerate(values):
+            ax.scatter(xi + [-0.10, 0.0, 0.10][j % 3], pct(value), marker=marker, s=28, color="#222222", alpha=0.75, zorder=3)
     ax.set_xticks(x)
     ax.set_xticklabels(labels)
-    ax.set_title("Long-depth pass@16 for syntax controls")
+    ax.set_title("Compact formal syntax is the hard-to-match condition")
     clean_axes(ax)
     save(fig, "syntax_controls")
 
 
 def trace_integrity():
     rows = []
-    main = pd.read_csv(TABLES / "main_olmo7b_summary.csv")
-    logic = main[(main["template"].eq("logic")) & (main["train_max"].eq(25))].iloc[0]
-    rows.append(("Valid\nlogic", logic["ood_correct@16"], logic["ood_correct@16_std"], logic["ood_joint@16"], logic["ood_joint@16_std"]))
+    main = endpoint_rows_from_main()
+    logic = main[(main["template"].eq("logic")) & (main["train_max"].eq(25))]
+    rows.append(("Compact\nformal", logic["ood_correct@16"].to_numpy(), logic["ood_joint@16"].to_numpy()))
     trace = pd.read_csv(TABLES / "trace_control_ablation_by_seed.csv")
     for template, label in [("invalid_logic", "Invalid\nlogic"), ("shuffled_logic", "Shuffled\nlogic")]:
         sub = trace[trace["template"].eq(template)]
-        rows.append(
-            (
-                label,
-                sub["ood_correct@16"].mean(),
-                sub["ood_correct@16"].std(),
-                sub["ood_formal_joint@16"].mean(),
-                sub["ood_formal_joint@16"].std(),
-            )
-        )
+        rows.append((label, sub["ood_correct@16"].to_numpy(), sub["ood_formal_joint@16"].to_numpy()))
     labels = [r[0] for r in rows]
     x = np.arange(len(labels))
     width = 0.36
     fig, ax = plt.subplots(figsize=(5.1, 3.1))
-    ax.bar(x - width / 2, pct([r[1] for r in rows]), width, yerr=pct([r[2] for r in rows]), label="Correct", color=LOGIC, capsize=3)
-    ax.bar(x + width / 2, pct([r[3] for r in rows]), width, yerr=pct([r[4] for r in rows]), label="Correct + valid", color=RED, capsize=3)
+    corr = [np.mean(r[1]) for r in rows]
+    joint = [np.mean(r[2]) for r in rows]
+    ax.bar(x - width / 2, pct(corr), width, label="Correct answer", color=LOGIC, alpha=0.88)
+    ax.bar(x + width / 2, pct(joint), width, label="Correct + valid proof", color=RED, alpha=0.88)
+    for xi, (_, corr_values, joint_values) in zip(x, rows):
+        for j, value in enumerate(corr_values):
+            ax.scatter(xi - width / 2 + [-0.05, 0.0, 0.05][j % 3], pct(value), marker="o", s=22, color="#222222", alpha=0.72, zorder=3)
+        for j, value in enumerate(joint_values):
+            ax.scatter(xi + width / 2 + [-0.05, 0.0, 0.05][j % 3], pct(value), marker="D", s=22, color="#222222", alpha=0.72, zorder=3)
     ax.set_xticks(x)
     ax.set_xticklabels(labels)
-    ax.set_title("Correctness is not the same as proof validity")
+    ax.set_title("Invalid traces keep answers but lose validity")
     clean_axes(ax, ylabel="pass@16 rate (%)")
     ax.legend(frameon=False, loc="upper right")
     save(fig, "trace_integrity")
 
 
 def hybrids():
-    main = pd.read_csv(TABLES / "main_olmo7b_summary.csv")
+    main = endpoint_rows_from_main()
     hybrid = pd.read_csv(TABLES / "hybrid_order_ablation_by_seed.csv")
-    hg = (
-        hybrid.groupby(["mode", "train_max"])[["ood_correct@16", "depth50_correct@16"]]
-        .agg(["mean", "std"])
-        .reset_index()
-    )
-    hg.columns = ["_".join(c).strip("_") for c in hg.columns]
-
-    fig, axes = plt.subplots(1, 2, figsize=(7.8, 3.1), sharey=True)
-    for ax, metric, title in [
-        (axes[0], "ood_correct@16", "Long-depth band pass@16"),
-        (axes[1], "depth50_correct@16", "Depth-50 endpoint pass@16"),
-    ]:
-        for template, color, label in [("logic", LOGIC, "Logic only"), ("nl_exact", NL, "NL only")]:
-            sub = main[main["template"].eq(template)].sort_values("train_max")
-            ax.plot(sub["train_max"], pct(sub[metric]), linestyle="--", marker="o", linewidth=1.9, color=color, label=label)
-            ax.fill_between(sub["train_max"], pct(sub[metric] - sub[f"{metric}_std"]), pct(sub[metric] + sub[f"{metric}_std"]), color=color, alpha=0.10, linewidth=0)
-        for mode, color, label in [("formal_think", LOGIC, "Formal first hybrid"), ("think_formal", NL, "NL first hybrid")]:
-            sub = hg[hg["mode"].eq(mode)].sort_values("train_max")
-            ax.plot(sub["train_max"], pct(sub[f"{metric}_mean"]), marker="s", linewidth=2.2, color=color, label=label)
-            ax.fill_between(sub["train_max"], pct(sub[f"{metric}_mean"] - sub[f"{metric}_std"]), pct(sub[f"{metric}_mean"] + sub[f"{metric}_std"]), color=color, alpha=0.16, linewidth=0)
-        ax.set_title(title)
-        ax.set_xlabel("Maximum training depth")
-        clean_axes(ax)
-    axes[0].legend(frameon=False, fontsize=8, loc="lower right")
+    rows = [
+        ("Formal\nonly", main[(main["template"].eq("logic")) & (main["train_max"].eq(25))]["depth50_correct@16"].to_numpy(), LOGIC, "o"),
+        ("Natural\nonly", main[(main["template"].eq("nl_exact")) & (main["train_max"].eq(25))]["depth50_correct@16"].to_numpy(), NL, "s"),
+        ("Formal\nthen NL", hybrid[(hybrid["mode"].eq("formal_think")) & (hybrid["train_max"].eq(25))]["depth50_correct@16"].to_numpy(), LOGIC_LIGHT, "^"),
+        ("NL then\nformal", hybrid[(hybrid["mode"].eq("think_formal")) & (hybrid["train_max"].eq(25))]["depth50_correct@16"].to_numpy(), NL_LIGHT, "D"),
+    ]
+    fig, ax = plt.subplots(figsize=(4.6, 3.15))
+    x = np.arange(len(rows))
+    ax.bar(x, pct([np.mean(r[1]) for r in rows]), color=[r[2] for r in rows], edgecolor="white", alpha=0.86)
+    for xi, (_, values, _, marker) in zip(x, rows):
+        for j, value in enumerate(values):
+            ax.scatter(xi + [-0.10, 0.0, 0.10][j % 3], pct(value), marker=marker, s=30, color="#222222", alpha=0.75, zorder=3)
+    ax.set_xticks(x)
+    ax.set_xticklabels([r[0] for r in rows])
+    ax.set_title("Hybrid traces do not beat formal only")
+    clean_axes(ax)
     save(fig, "hybrid_order")
 
 
 def conditioned_dual():
-    main = pd.read_csv(TABLES / "main_olmo7b_summary.csv")
+    main = endpoint_rows_from_main()
     dual = pd.read_csv(TABLES / "conditioned_dual_50k_by_seed.csv")
     rows = []
-    for template, label, color in [("logic", "Logic\nonly", LOGIC), ("nl_exact", "NL\nonly", NL)]:
-        sub = main[(main["template"].eq(template)) & (main["train_max"].eq(25))].iloc[0]
-        rows.append((label, sub["ood_correct@16"], sub["ood_correct@16_std"], sub["depth50_correct@16"], sub["depth50_correct@16_std"], color))
-    for template, label, color in [("conditioned_logic", "Dual,\nlogic prompt", LOGIC_LIGHT), ("conditioned_nl", "Dual,\nNL prompt", NL_LIGHT)]:
+    for template, label, color, marker in [("logic", "Formal\nonly", LOGIC, "o"), ("nl_exact", "Natural\nonly", NL, "s")]:
+        sub = main[(main["template"].eq(template)) & (main["train_max"].eq(25))]
+        rows.append((label, sub["depth50_correct@16"].to_numpy(), color, marker))
+    for template, label, color, marker in [("conditioned_logic", "Dual,\nformal", LOGIC_LIGHT, "^"), ("conditioned_nl", "Dual,\nNL", NL_LIGHT, "D")]:
         sub = dual[(dual["eval_template"].eq(template)) & (dual["train_max"].eq(25))]
-        rows.append((label, sub["ood_correct@16"].mean(), sub["ood_correct@16"].std(), sub["depth50_correct@16"].mean(), sub["depth50_correct@16"].std(), color))
+        rows.append((label, sub["depth50_correct@16"].to_numpy(), color, marker))
 
     labels = [r[0] for r in rows]
     x = np.arange(len(labels))
-    width = 0.36
-    fig, ax = plt.subplots(figsize=(5.8, 3.2))
-    ax.bar(x - width / 2, pct([r[1] for r in rows]), width, yerr=pct([r[2] for r in rows]), label="Long-depth", color=[r[5] for r in rows], alpha=0.95, capsize=3)
-    ax.bar(x + width / 2, pct([r[3] for r in rows]), width, yerr=pct([r[4] for r in rows]), label="Depth-50", color=[r[5] for r in rows], alpha=0.55, capsize=3)
+    fig, ax = plt.subplots(figsize=(4.6, 3.15))
+    ax.bar(x, pct([np.mean(r[1]) for r in rows]), color=[r[2] for r in rows], edgecolor="white", alpha=0.86)
+    for xi, (_, values, _, marker) in zip(x, rows):
+        for j, value in enumerate(values):
+            ax.scatter(xi + [-0.10, 0.0, 0.10][j % 3], pct(value), marker=marker, s=30, color="#222222", alpha=0.75, zorder=3)
     ax.set_xticks(x)
     ax.set_xticklabels(labels)
-    ax.set_title("Conditioned dual training does not recover each single modality")
+    ax.set_title("Dual training still trails formal only")
     clean_axes(ax)
-    ax.legend(frameon=False, loc="upper right")
     save(fig, "conditioned_dual")
 
 
@@ -400,15 +406,17 @@ def architecture():
     df = df[df["train_max"].eq(25)]
     models = ["OLMo-7B", "Qwen-2.5-1.5B", "Qwen-2.5-7B", "Gemma-3-4B"]
     x = np.arange(len(models))
-    width = 0.36
     fig, ax = plt.subplots(figsize=(7.2, 3.15))
-    for offset, template, label, color in [(-width / 2, "logic", "Formal logic", LOGIC), (width / 2, "nl_exact", "Natural language", NL)]:
+    for offset, template, label, color, marker in [(-0.12, "logic", "Formal logic", LOGIC, "o"), (0.12, "nl_exact", "Natural language", NL, "s")]:
         sub = df[df["template"].eq(template)].set_index("model").reindex(models)
-        ax.bar(x + offset, pct(sub["depth50_correct@16"]), width, yerr=pct(sub["depth50_correct@16_std"]), label=label, color=color, capsize=3)
+        y = pct(sub["depth50_correct@16"])
+        yerr = pct(sub["depth50_correct@16_std"])
+        ax.errorbar(x + offset, y, yerr=yerr, fmt=marker, markersize=6, color=color, elinewidth=1.4, capsize=3, label=label)
+        ax.plot(x + offset, y, color=color, linewidth=1.2, alpha=0.45)
     ax.set_xticks(x)
     ax.set_xticklabels(models, rotation=15, ha="right")
-    ax.set_title("Depth-50 pass@16 across model families")
-    clean_axes(ax)
+    ax.set_title("The formal direction repeats across families")
+    clean_axes(ax, ylim=(0, 115))
     ax.legend(frameon=False, loc="upper right")
     save(fig, "architecture_depth50")
 
