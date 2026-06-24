@@ -53,7 +53,7 @@ def generation_excerpt(samples, label_fragment, max_chars=92):
     if answer.startswith("<") or len(answer) > 24:
         answer = "missing"
     return (
-        f"gold={row['gold']}; answer={answer}; valid={int(row['valid'])}\n"
+        f"gold={row['gold']} | answer={answer} | valid={int(row['valid'])}\n"
         f"{generation}"
     )
 
@@ -87,7 +87,7 @@ def overview_claim():
 
     # A. Design.
     ax_design.axis("off")
-    ax_design.set_title("A. Controlled substrate comparison", loc="left", fontweight="bold")
+    ax_design.set_title("A. Same proof, different trace language", loc="left", fontweight="bold")
     boxes = [
         (0.04, 0.38, 0.32, 0.34, "same prompt\nsame answer\nsame latent\nproof", "#F5F7FB"),
         (0.58, 0.62, 0.38, 0.20, "compact formal\ntrace", "#E8EFFB"),
@@ -119,7 +119,7 @@ def overview_claim():
         ax_gap.hlines(pct(values.mean()), attr_center + offset - 0.10, attr_center + offset + 0.10, color=color, linewidth=2.5)
     ax_gap.set_xticks([bp_center, attr_center])
     ax_gap.set_xticklabels(["BranchProof\nmean $\\pm$ sd", "AttrCon\nseed dots"])
-    ax_gap.set_title("B. Depth-50 answer correctness", loc="left", fontweight="bold")
+    ax_gap.set_title("B. Formal traces win at depth 50", loc="left", fontweight="bold")
     clean_axes(ax_gap)
     ax_gap.legend(frameon=False, loc="upper right", fontsize=8)
     ax_gap.text(bp_center, 95, f"+{100*(logic['depth50_correct@16']-nl['depth50_correct@16']):.1f}", ha="center", fontsize=8, color=GRAY)
@@ -135,13 +135,13 @@ def overview_claim():
     ax_valid.bar(x + width / 2, pct(joint), width, yerr=pct(joint_std), color=RED, label="Correct + valid proof", capsize=3)
     ax_valid.set_xticks(x)
     ax_valid.set_xticklabels(labels)
-    ax_valid.set_title("C. Correctness is not proof faithfulness", loc="left", fontweight="bold")
+    ax_valid.set_title("C. Correct answers need not be valid proofs", loc="left", fontweight="bold")
     clean_axes(ax_valid, ylabel="pass@16 rate (%)")
     ax_valid.legend(frameon=False, loc="upper right", fontsize=8)
 
     # D. Representative sample excerpts.
     ax_examples.axis("off")
-    ax_examples.set_title("D. Representative sample excerpts", loc="left", fontweight="bold")
+    ax_examples.set_title("D. Samples expose success and truncation", loc="left", fontweight="bold")
     snippets = [
         ("Formal depth-50 success", generation_excerpt(samples, "OLMo-7B logic train1..25 depth-50"), LOGIC),
         ("Natural depth-50 failure", generation_excerpt(samples, "OLMo-7B NL train1..25 depth-50"), NL),
@@ -152,7 +152,7 @@ def overview_claim():
         wrapped = "\n".join(textwrap.wrap(body, width=39, break_long_words=False))
         ax_examples.text(0.04, y - 0.10, wrapped, fontsize=8.2, family="monospace", va="top")
         y -= 0.39
-    ax_examples.text(0.02, 0.03, "Excerpts come from sample_generation_snippets.csv; metrics use 16 samples per prompt.", fontsize=7.4, color=GRAY)
+    ax_examples.text(0.02, 0.03, "Excerpts come from sample_generation_snippets.csv. Metrics use 16 samples per prompt.", fontsize=7.4, color=GRAY)
 
     fig.suptitle(
         "Formal traces improve extrapolative answers, but proof validity remains a separate target",
