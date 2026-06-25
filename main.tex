@@ -68,13 +68,11 @@ applications.
 \begin{figure}[t]
   \centering
   \includegraphics[width=0.98\linewidth]{official_preprint/figures/overview_claim.pdf}
-  \caption{\textbf{Formal traces improve extrapolative answers, but proof
-  validity remains a separate target.} We compare two trace renderings of the
-  same latent proof, find a large depth-50 answer-correctness gap on the two
-  main symbolic tasks, and explicitly show the faithfulness caveat: a
-  formal looking trace can answer correctly while failing the proof checker.
-  Error bars are standard deviations over three seeds. Sample excerpts are read
-  from the generation-snippet artifact and are not additional metrics.}
+\caption{\textbf{Trace language is the intervention, extrapolation is the test.}
+Each example has the same prompt, answer, and latent proof; only the supervised
+target trace changes. On \branchproof{} depth-50 evaluation, formal traces
+extrapolate better as the training-depth range increases. Shaded bands are
+standard deviations over three seeds.}
   \label{fig:overview}
 \end{figure}
 
@@ -316,10 +314,11 @@ correctness, while natural-language seeds score 0\%, 0\%, and 25.0\%.
 \begin{figure}[t]
   \centering
   \includegraphics[width=0.93\linewidth]{official_preprint/figures/main_correctness.pdf}
-  \caption{\branchproof{} correctness as the maximum training depth increases.
-  The left panel averages evaluated depths beyond the training range. The right
-  panel isolates the depth-50 endpoint. Formal traces are strongest when the
-  required derivation is longer than those seen in training.}
+\caption{\branchproof{} correctness as the maximum training depth increases.
+The left panel averages evaluated depths beyond the training range. The right
+panel isolates the depth-50 endpoint. Formal traces are strongest when the
+required derivation is longer than those seen in training. Shaded bands are
+standard deviations over three seeds.}
   \label{fig:main-correctness}
 \end{figure}
 
@@ -331,10 +330,11 @@ extrapolate better than the strongest natural-language models
 \begin{figure}[t]
   \centering
   \includegraphics[width=0.84\linewidth]{official_preprint/figures/attribute_correctness.pdf}
-  \caption{\attrcon{} is a high-variance replication check on a different
-  symbolic surface. Formal traces have the higher mean answer correctness, but
-  the large depth-50 variance and weak depth-50 joint validity make this a
-  caveat figure rather than a clean second solved task.}
+\caption{\attrcon{} is a high-variance replication check on a different
+symbolic surface. Formal traces have the higher mean answer correctness, but
+the large depth-50 variance and weak depth-50 joint validity make this a
+caveat figure rather than a clean second solved task. Shaded bands are standard
+deviations over three seeds.}
   \label{fig:attribute-correctness}
 \end{figure}
 
@@ -372,10 +372,11 @@ Rows are mean $\pm$ standard deviation over three seeds.}
 \begin{figure}[t]
   \centering
   \includegraphics[width=0.58\linewidth]{official_preprint/figures/shortcut_robustness.pdf}
-  \caption{Depth-50 correctness under shortcut-rich training. As shortcut
-  markers become more common during training, natural-language traces become
-  less reliable on shortcut-neutral depth-50 evaluation, while formal traces
-  remain comparatively stable.}
+\caption{Depth-50 correctness under shortcut-rich training. As shortcut
+markers become more common during training, natural-language traces become
+less reliable on shortcut-neutral depth-50 evaluation, while formal traces
+remain comparatively stable. Shaded bands are standard deviations over three
+seeds.}
   \label{fig:shortcut}
 \end{figure}
 
@@ -420,15 +421,6 @@ The formal direction repeats across the tested model families
 stable runs, especially Gemma-3-4B and Qwen-2.5-1.5B, so this result should not
 be over-read as a scaling law. It does show that the \branchproof{} effect is
 not unique to one checkpoint family.
-
-\begin{figure}[t]
-  \centering
-  \includegraphics[width=0.76\linewidth]{official_preprint/figures/architecture_depth50.pdf}
-  \caption{Depth-50 correctness across tested model families at train depth 25.
-  The formal-trace direction repeats, while the error bars show why the claim is
-  stated as directional consistency rather than architecture-robust dominance.}
-  \label{fig:architecture}
-\end{figure}
 
 \section{Analysis}
 \label{sec:analysis}
@@ -476,15 +468,6 @@ table because the artifact audit found it is not a clean shorter-NL control. In
 the inspected training sequence it is token-identical to the natural-language
 baseline.
 
-\begin{figure}[t]
-  \centering
-  \includegraphics[width=0.86\linewidth]{official_preprint/figures/syntax_controls.pdf}
-  \caption{Syntax and surface controls at train depth 25. Compact formal traces
-  remain the strongest condition. The negative controls narrow the explanation
-  but do not uniquely identify one causal feature.}
-  \label{fig:syntax-controls}
-\end{figure}
-
 \subsection{Correct Answers Are Not Valid Proofs}
 
 \begin{table}[t]
@@ -505,20 +488,11 @@ syntax alone is not a faithfulness guarantee.}
 \label{tab:integrity}
 \end{table}
 
-\begin{figure}[t]
-  \centering
-  \includegraphics[width=0.55\linewidth]{official_preprint/figures/trace_integrity.pdf}
-  \caption{Correctness and validity separate under trace corruption. This is
-  the key caveat: formal traces help answer correctness, but valid proof
-  generation remains an additional requirement.}
-  \label{fig:integrity}
-\end{figure}
-
 Trace corruption exposes the faithfulness boundary. The model can exploit
 formal looking regularities and still answer correctly even when the trace is
-not a valid proof (Table~\ref{tab:integrity} and Figure~\ref{fig:integrity}).
-This does not undo the correctness results, but it means that proof faithfulness
-requires additional training objectives, decoding constraints, or verification.
+not a valid proof (Table~\ref{tab:integrity}). This does not undo the
+correctness results, but it means that proof faithfulness requires additional
+training objectives, decoding constraints, or verification.
 
 \subsection{Hybrid Traces Do Not Help}
 
@@ -556,9 +530,10 @@ formal-only baseline.
     \includegraphics[width=0.48\linewidth]{official_preprint/figures/hybrid_order.pdf} &
     \includegraphics[width=0.42\linewidth]{official_preprint/figures/conditioned_dual.pdf}
   \end{tabular}
-  \caption{Two ways of combining substrates fail to beat compact formal-only
-  supervision. Same-target hybrids are order-sensitive, and mode-conditioned
-  dual training does not recover the corresponding single-modality baselines.}
+\caption{Two ways of combining substrates fail to beat compact formal-only
+supervision. Same-target hybrids are order-sensitive, and mode-conditioned
+dual training does not recover the corresponding single-modality baselines.
+Shaded bands are standard deviations over three seeds.}
   \label{fig:hybrids}
 \end{figure}
 
@@ -715,23 +690,31 @@ Natural-language validation adds one more possible failure mode: the controlled
 sentence must translate back into a formal step before the proof checker can
 evaluate it.
 
-\section{Minimal Paired Example}
+\section{Paired Target Examples}
 \label{sec:paired-example}
 
-The following toy example shows the pairing used throughout the experiments.
-The prompt and answer are identical. Only the target trace substrate changes.
+The following minimal examples show the paired target format used throughout the
+experiments. The prompt and answer are identical within each pair. Only the
+target trace substrate changes. Full experimental examples include more
+distractor premises and longer derivations.
+
+\paragraph{\branchproof{} example 1.}
 
 \begin{verbatim}
 Prompt:
 a is ruby. a is north.
 If a is north and a is ruby, then b is olive.
-If b is olive, then b is east.
 What is b?
+\end{verbatim}
 
-Formal target:
+\noindent\begin{minipage}[t]{0.48\linewidth}
+\textbf{Formal target}
+\scriptsize
+\begin{verbatim}
 <formal>
 <constants> a = a b = b </constants>
-<predicates> Rx: x is ruby Nx: x is north Ox: x is olive </predicates>
+<predicates> Rx: x is ruby Nx: x is north
+Ox: x is olive </predicates>
 <premises> Ra Na Na & Ra -> Ob </premises>
 <proof> Ra ; R,1
 Na ; R,2
@@ -739,8 +722,12 @@ Na & Ra ; &I,5,4
 Ob ; ->E,3,6 </proof>
 <conclusion> Ob </conclusion>
 <answer> olive </answer>
-
-Natural-language target:
+\end{verbatim}
+\end{minipage}\hfill
+\begin{minipage}[t]{0.48\linewidth}
+\textbf{Natural-language target}
+\scriptsize
+\begin{verbatim}
 <think>
 a is ruby. a is north.
 Since a is north and a is ruby, b is olive.
@@ -748,6 +735,176 @@ Therefore, b is olive.
 </think>
 <answer> olive </answer>
 \end{verbatim}
+\end{minipage}
+
+\paragraph{\branchproof{} example 2.}
+
+\begin{verbatim}
+Prompt:
+a is cobalt. a is east.
+If a is east and a is cobalt, then b is maple.
+If b is maple, then b is south.
+If b is south and b is maple, then c is cedar.
+What is c?
+\end{verbatim}
+
+\noindent\begin{minipage}[t]{0.48\linewidth}
+\textbf{Formal target}
+\scriptsize
+\begin{verbatim}
+<formal>
+<constants> a = a b = b c = c </constants>
+<predicates> Cx: x is cobalt Ex: x is east
+Mx: x is maple Sx: x is south Dx: x is cedar </predicates>
+<premises> Ca Ea
+Ea & Ca -> Mb
+Mb -> Sb
+Sb & Mb -> Dc </premises>
+<proof> Ca ; R,1
+Ea ; R,2
+Ea & Ca ; &I,7,6
+Mb ; ->E,3,8
+Sb ; ->E,4,9
+Sb & Mb ; &I,10,9
+Dc ; ->E,5,11 </proof>
+<conclusion> Dc </conclusion>
+<answer> cedar </answer>
+\end{verbatim}
+\end{minipage}\hfill
+\begin{minipage}[t]{0.48\linewidth}
+\textbf{Natural-language target}
+\scriptsize
+\begin{verbatim}
+<think>
+a is cobalt. a is east.
+Since a is east and a is cobalt, b is maple.
+Since b is maple, b is south.
+Since b is south and b is maple, c is cedar.
+Therefore, c is cedar.
+</think>
+<answer> cedar </answer>
+\end{verbatim}
+\end{minipage}
+
+\paragraph{\attrcon{} example 1.}
+
+\begin{verbatim}
+Prompt:
+s0 has value red. s1 has value blue.
+If s0 is red and s1 is blue, then s2 is green.
+Which values fill all constrained slots?
+\end{verbatim}
+
+\noindent\begin{minipage}[t]{0.48\linewidth}
+\textbf{Formal target}
+\scriptsize
+\begin{verbatim}
+<formal>
+<constants> s0 = attribute slot 0 s1 = attribute slot 1
+s2 = attribute slot 2
+red = attribute value red
+blue = attribute value blue
+green = attribute value green </constants>
+<predicates> Value(x,y): slot x has value y
+Constraint(x,y,z,w,u,v): values y and w at slots x and z
+jointly force value v at slot u </predicates>
+<premises> Value(s0,red) Value(s1,blue)
+Constraint(s0,red,s1,blue,s2,green)
+Value(s0,red) & Value(s1,blue) &
+Constraint(s0,red,s1,blue,s2,green)
+-> Value(s2,green) </premises>
+<proof> Value(s0,red) ; R,1
+Value(s1,blue) ; R,2
+Constraint(s0,red,s1,blue,s2,green) ; R,3
+Value(s0,red) & Value(s1,blue) ; &I,5,6
+Value(s0,red) & Value(s1,blue) &
+Constraint(s0,red,s1,blue,s2,green) ; &I,8,7
+Value(s2,green) ; ->E,4,9 </proof>
+<answer> red-blue-green </answer>
+\end{verbatim}
+\end{minipage}\hfill
+\begin{minipage}[t]{0.48\linewidth}
+\textbf{Natural-language target}
+\scriptsize
+\begin{verbatim}
+<think>
+s0 has value red.
+s1 has value blue.
+The applicable joint constraint maps s0=red and s1=blue
+to s2=green.
+Combine the two prerequisite slot values.
+Therefore s2 has value green.
+</think>
+<answer> red-blue-green </answer>
+\end{verbatim}
+\end{minipage}
+
+\paragraph{\attrcon{} example 2.}
+
+\begin{verbatim}
+Prompt:
+s0 has value amber. s1 has value ivory.
+If s0 is amber and s1 is ivory, then s2 is olive.
+If s0 is amber and s2 is olive, then s3 is coral.
+Which values fill all constrained slots?
+\end{verbatim}
+
+\noindent\begin{minipage}[t]{0.48\linewidth}
+\textbf{Formal target}
+\scriptsize
+\begin{verbatim}
+<formal>
+<constants> s0 = attribute slot 0 s1 = attribute slot 1
+s2 = attribute slot 2 s3 = attribute slot 3
+amber = attribute value amber
+ivory = attribute value ivory
+olive = attribute value olive
+coral = attribute value coral </constants>
+<predicates> Value(x,y): slot x has value y
+Constraint(x,y,z,w,u,v): values y and w at slots x and z
+jointly force value v at slot u </predicates>
+<premises> Value(s0,amber) Value(s1,ivory)
+Constraint(s0,amber,s1,ivory,s2,olive)
+Value(s0,amber) & Value(s1,ivory) &
+Constraint(s0,amber,s1,ivory,s2,olive) -> Value(s2,olive)
+Constraint(s0,amber,s2,olive,s3,coral)
+Value(s0,amber) & Value(s2,olive) &
+Constraint(s0,amber,s2,olive,s3,coral)
+-> Value(s3,coral) </premises>
+<proof> Value(s0,amber) ; R,1
+Value(s1,ivory) ; R,2
+Constraint(s0,amber,s1,ivory,s2,olive) ; R,3
+Value(s0,amber) & Value(s1,ivory) ; &I,7,8
+Value(s0,amber) & Value(s1,ivory) &
+Constraint(s0,amber,s1,ivory,s2,olive) ; &I,10,9
+Value(s2,olive) ; ->E,4,11
+Constraint(s0,amber,s2,olive,s3,coral) ; R,5
+Value(s0,amber) & Value(s2,olive) ; &I,7,12
+Value(s0,amber) & Value(s2,olive) &
+Constraint(s0,amber,s2,olive,s3,coral) ; &I,14,13
+Value(s3,coral) ; ->E,6,15 </proof>
+<answer> amber-ivory-olive-coral </answer>
+\end{verbatim}
+\end{minipage}\hfill
+\begin{minipage}[t]{0.48\linewidth}
+\textbf{Natural-language target}
+\scriptsize
+\begin{verbatim}
+<think>
+s0 has value amber.
+s1 has value ivory.
+The applicable joint constraint maps s0=amber and s1=ivory
+to s2=olive.
+Combine the two prerequisite slot values.
+Therefore s2 has value olive.
+The applicable joint constraint maps s0=amber and s2=olive
+to s3=coral.
+Combine the two prerequisite slot values.
+Therefore s3 has value coral.
+</think>
+<answer> amber-ivory-olive-coral </answer>
+\end{verbatim}
+\end{minipage}
 
 \section{Artifact Control Not Used as Main Evidence}
 \label{sec:excluded-controls}
