@@ -7,6 +7,7 @@ Overleaf should render the official preprint by default:
 - `main.tex` is the official preprint entrypoint.
 - `informal_report/main.tex` is the older generated informal report.
 - `official_preprint/` contains template assets, the bibliography, the reproducible figure script, figures, and an archived placeholder `main.tex`. Do not use `official_preprint/main.tex` as the main document unless it is deliberately refreshed.
+- `latexmkrc` selects XeLaTeX for the root preprint because the heading font is bundled as Poppins Light 300 under `official_preprint/fonts/poppins/`.
 
 Overleaf does not automatically compile whichever `.tex` tab is currently open.
 Use Overleaf's **Menu -> Main document** selector to switch between
