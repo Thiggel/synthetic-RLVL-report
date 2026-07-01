@@ -30,7 +30,7 @@
 
 % ── Fonts ─────────────────────────────────────────────────────────────────────
 % Body: Computer Modern Roman / Latin Modern Roman (serif).
-% All sans-serif content uses bundled Poppins; headings use Poppins SemiBold.
+% All sans-serif content uses bundled Poppins; headings use Poppins Medium.
 \ifPDFTeX
   \renewcommand{\rmdefault}{cmr} % body is Computer Modern Roman (serif)
   \RequirePackage{sourcesanspro}
@@ -41,8 +41,10 @@
     Path=official_preprint/fonts/poppins/,
     UprightFont=Poppins-Regular.ttf,
     ItalicFont=Poppins-Italic.ttf,
-    BoldFont=Poppins-SemiBold.ttf,
-    BoldItalicFont=Poppins-SemiBoldItalic.ttf
+    BoldFont=Poppins-Medium.ttf,
+    BoldItalicFont=Poppins-MediumItalic.ttf,
+    FontFace={sb}{n}{Poppins-SemiBold.ttf},
+    FontFace={sb}{it}{Poppins-SemiBoldItalic.ttf}
   ]{Poppins}
 \fi
 \newcommand{\contentfont}{\sffamily}
@@ -63,7 +65,7 @@
   urlcolor=seedblue,
 }
 
-% ── Section headings (Poppins SemiBold + seedblue) ───────────────────────────
+% ── Section headings (Poppins Medium + seedblue) ─────────────────────────────
 \titleformat{\section}
   {\fontsize{12}{14}\selectfont\headingfont\color{seedblue}}
   {\thesection}{1em}{}
@@ -127,8 +129,8 @@
 \newcommand{\correspondence}[1]{\renewcommand{\@correspondence}{#1}}
 
 % ── Abstract fill toggle ──────────────────────────────────────────────────────
-% \abstractfilledtrue  (default) — solid blue fill, no logo
-% \abstractfilledfalse           — solid blue fill, logo in bottom-right corner
+% \abstractfilledtrue  (default) — pale blue fill, no logo
+% \abstractfilledfalse           — pale blue fill, logo in bottom-right corner
 \newif\ifabstractfilled
 \abstractfilledtrue
 
@@ -137,8 +139,8 @@
   \ifabstractfilled
     \begin{tcolorbox}[
       enhanced,
-      colback=seedblue,
-      colframe=seedblue,
+      colback=seedblue!7,
+      colframe=seedblue!7,
       boxrule=0pt,
       arc=6mm,
       left=8mm, right=8mm, top=6mm, bottom=6mm,
@@ -147,17 +149,17 @@
   \else
     \begin{tcolorbox}[
       enhanced,
-      colback=seedblue,
-      colframe=seedblue,
+      colback=seedblue!7,
+      colframe=seedblue!7,
       boxrule=0pt,
       arc=6mm,
       left=8mm, right=8mm, top=6mm, bottom=3mm,
       before skip=18pt, after skip=12pt,
     ]
   \fi
-  \color{white}
+  \color{black}
   \begin{center}
-    {\fontsize{12}{12}\selectfont\headingfont Abstract}
+    {\fontsize{12}{12}\selectfont\headingfont\color{seedblue} Abstract}
     \vspace{3mm}
   \end{center}
   \setlength{\parindent}{0cm}%
