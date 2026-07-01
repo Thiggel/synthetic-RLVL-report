@@ -157,7 +157,7 @@ def overview_claim():
     ax_curve = fig.add_subplot(gs[0, 1])
 
     ax_design.axis("off")
-    ax_design.set_title("A. Paired trace intervention", loc="left", fontweight="medium")
+    ax_design.set_title("A. Paired trace intervention", loc="left", fontweight="regular")
     rounded_box(
         ax_design,
         (0.03, 0.46),
@@ -235,7 +235,7 @@ def overview_claim():
         - branch[(branch["template"].eq("nl_exact")) & (branch["train_max"].eq(25))]["depth50_correct@16"].mean()
     )
     ax_curve.text(23.6, 73.0, f"+{100 * bp_gap:.1f} pp", fontsize=8.2, color=GRAY)
-    ax_curve.set_title("B. Formal traces extrapolate farther", loc="left", fontweight="medium")
+    ax_curve.set_title("B. Formal traces extrapolate farther", loc="left", fontweight="regular")
     ax_curve.set_xlabel("Maximum training depth")
     clean_axes(ax_curve)
     ax_curve.set_xlim(3.5, 28.5)
@@ -345,7 +345,7 @@ def main():
             "font.family": "Poppins",
             "font.size": 9,
             "axes.titlesize": 10,
-            "axes.titleweight": "medium",
+            "axes.titleweight": "regular",
             "axes.labelsize": 9,
             "legend.fontsize": 9,
             "xtick.labelsize": 8,

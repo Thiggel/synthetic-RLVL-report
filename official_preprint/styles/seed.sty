@@ -30,7 +30,7 @@
 
 % ── Fonts ─────────────────────────────────────────────────────────────────────
 % Body: Computer Modern Roman / Latin Modern Roman (serif).
-% All sans-serif content uses bundled Poppins; headings use Poppins Medium.
+% All sans-serif content uses bundled Poppins; headings use Poppins Regular.
 \ifPDFTeX
   \renewcommand{\rmdefault}{cmr} % body is Computer Modern Roman (serif)
   \RequirePackage{sourcesanspro}
@@ -49,9 +49,9 @@
 \fi
 \newcommand{\contentfont}{\sffamily}
 \ifPDFTeX
-  \newcommand{\headingfont}{\contentfont\bfseries}
+  \newcommand{\headingfont}{\contentfont}
 \else
-  \newcommand{\headingfont}{\contentfont\bfseries}
+  \newcommand{\headingfont}{\contentfont}
 \fi
 
 % ── Brand colour (exact hex from bytedance_seed.cls) ─────────────────────────
@@ -65,7 +65,7 @@
   urlcolor=seedblue,
 }
 
-% ── Section headings (Poppins Medium + seedblue) ─────────────────────────────
+% ── Section headings (Poppins Regular + seedblue) ────────────────────────────
 \titleformat{\section}
   {\fontsize{12}{14}\selectfont\headingfont\color{seedblue}}
   {\thesection}{1em}{}
@@ -143,8 +143,8 @@
       colframe=seedblue!7,
       boxrule=0pt,
       arc=6mm,
-      left=8mm, right=8mm, top=6mm, bottom=6mm,
-      before skip=18pt, after skip=12pt,
+      left=7mm, right=7mm, top=4mm, bottom=4mm,
+      before skip=8pt, after skip=6pt,
     ]
   \else
     \begin{tcolorbox}[
@@ -153,19 +153,19 @@
       colframe=seedblue!7,
       boxrule=0pt,
       arc=6mm,
-      left=8mm, right=8mm, top=6mm, bottom=3mm,
-      before skip=18pt, after skip=12pt,
+      left=7mm, right=7mm, top=4mm, bottom=2mm,
+      before skip=8pt, after skip=6pt,
     ]
   \fi
   \color{black}
   \begin{center}
     {\fontsize{12}{12}\selectfont\headingfont\color{seedblue} Abstract}
-    \vspace{3mm}
+    \vspace{2mm}
   \end{center}
   \setlength{\parindent}{0cm}%
   \setlength{\parskip}{4pt}%
 }{%
-  \par\medskip
+  \par\vspace{2pt}
   \noindent\begin{minipage}[c]{%
     \ifabstractfilled\linewidth%
     \else
@@ -182,7 +182,7 @@
     \ifx\@logopath\empty\else
       \hfill
       \begin{minipage}[c]{0.2\linewidth}
-        \raggedleft\includegraphics[height=3em]{\@logopath}
+        \raggedleft\includegraphics[height=2.5em]{\@logopath}
       \end{minipage}%
     \fi
   \fi
@@ -194,28 +194,28 @@
   \drawwatermark
   % Top rule
   {\color{seedblue}\hrule height 0.5pt}
-  \vspace{6mm}
+  \vspace{4mm}
   % Title
   \begin{center}
     {\fontsize{17}{20}\selectfont\headingfont \@title \par}
   \end{center}
-  \vspace{6mm}
+  \vspace{4mm}
   % Bottom rule
   {\color{seedblue}\hrule height 0.5pt}
-  \vspace{6mm}
+  \vspace{4mm}
   % Authors / affiliations
   \begin{center}
     {\fontsize{12}{14}\selectfont\contentfont \@author \par}
-    \vspace{3mm}
+    \vspace{2mm}
     \ifx\@affiliations\undefined\else
       {\fontsize{10}{12}\selectfont\contentfont\fontseries{l}\selectfont \@affiliations \par}
-      \vspace{3mm}
+      \vspace{2mm}
     \fi
     \ifx\@authornotes\undefined\else
       {\fontsize{10}{12}\selectfont \@authornotes \par}% serif, no sffamily
     \fi
   \end{center}
-  \vspace{6mm}
+  \vspace{3mm}
 }
 
 % ── Affiliation and author-note helpers ───────────────────────────────────────
