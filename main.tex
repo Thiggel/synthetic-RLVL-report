@@ -50,7 +50,8 @@ training data contain shortcut distractors. Ablations show that the gain is not
 recovered by longer traces, word-like predicates, pseudocode, explicit rule
 annotations, or low-capacity dual modality training. A larger OLMo-3-32B
 follow-up changes that picture: conditioned dual training no longer lags the
-single-modality formal run, and slightly exceeds it on long-depth correctness.
+single-modality formal run, and slightly exceeds it on long-depth correctness,
+although the natural-language conditioned mode remains high variance.
 Invalid formal looking traces can still preserve high answer accuracy while
 losing mechanical proof validity. Compact formal traces are a better supervised
 substrate for learning correct symbolic computations in these settings, while
@@ -124,7 +125,8 @@ conditioned-dual follow-up shows that the failure of dual-modality supervision
 at OLMo-7B is not structural: at OLMo-3-32B, the formal conditioned mode closes
 and slightly reverses the single-modality gap. The boundary is just as
 important: formal traces are a correctness substrate here, not a guarantee of
-faithful proof generation.
+faithful proof generation, and mixed-mode training does not reliably improve
+the natural-language mode under the same step budget.
 
 \section{Related Work}
 
@@ -551,20 +553,27 @@ the original negative result. At OLMo-3-32B, the formal conditioned mode closes
 and slightly reverses the single-modality gap on answer correctness, while the
 natural-language conditioned mode remains below its single-modality baseline.
 The 32B hard-tail rows use the evaluator's hard-tail band; comparisons are
-within model and mode.}
+within model and mode. Conditioned-dual runs use the same optimizer-step budget
+as the single-modality runs, so this is a mixed-exposure comparison rather than
+an additive-data control.}
 \label{tab:conditioned-capacity}
 \end{table}
 
 The OLMo-3-32B follow-up changes the interpretation of conditioned dual
-training. The 7B result suggests interference or insufficient capacity, not a
-fundamental mismatch in the conditioned prompts. When the same idea is tested
-with OLMo-3-32B, conditioned formal reasoning matches or slightly exceeds the
-single-modality formal baseline on long-depth answer correctness
-(Table~\ref{tab:conditioned-capacity}). The effect is mode-specific: the
-natural-language conditioned mode still trails single-modality natural-language
-training. We therefore read conditioned dual supervision as a capacity-dependent
-way to let the model use formal reasoning without requiring that every
-generated chain of thought be purely formal.
+training. The 7B result suggests interference or insufficient capacity, rather
+than a fundamental mismatch in the conditioned prompts. When the same idea is
+tested with OLMo-3-32B, conditioned formal reasoning matches or slightly exceeds
+the single-modality formal baseline on long-depth answer correctness
+(Table~\ref{tab:conditioned-capacity}). The effect is mode-specific. The
+natural-language conditioned mode has much higher seed variance and still
+trails single-modality natural-language training on the mean. A matched sample
+audit found no mode leakage: conditioned formal generations stayed in the
+\texttt{<formal>} format, conditioned natural-language generations stayed in
+\texttt{<think>}, and the relevant failures were wrong branch or state
+continuations rather than prompt-format collapse. We therefore read conditioned
+dual supervision as a capacity-dependent way to let the model use formal
+reasoning without requiring that every generated chain of thought be purely
+formal, not as evidence that mixed-mode training improves both modes.
 
 \begin{figure}[t]
   \centering
@@ -595,7 +604,9 @@ explicit rule labels, or a code-like wrapper. It is also not enough to train the
 model on both substrates at once at OLMo-7B. The 32B conditioned-dual follow-up
 shows that this negative result is capacity-dependent: larger models can use the
 formal conditioned mode without giving up the single-modality formal
-correctness advantage. The best representation we tested combines compact
+correctness advantage, while the natural-language conditioned mode remains
+unstable under the same step budget. The best representation we tested combines
+compact
 symbolic atoms, local rule applications, and low discourse load. This suggests
 that formal traces reduce the burden of learning through natural-language
 surface variation and discourse dependencies.
