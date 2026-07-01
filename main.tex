@@ -47,11 +47,13 @@ The direction is consistent across Qwen and Gemma model families, though some
 architecture checks have high seed variance, and it becomes sharper when
 training data contain shortcut distractors. Ablations show that the gain is not
 recovered by longer traces, word-like predicates, pseudocode, explicit rule
-annotations, or dual modality training. Invalid formal looking traces can still
-preserve high answer accuracy while losing mechanical proof validity. Compact
-formal traces are a better supervised substrate for learning correct symbolic
-computations in these settings, but answer correctness and proof faithfulness
-remain distinct objectives.
+annotations, or low-capacity dual modality training. A larger OLMo-3-32B
+follow-up changes that picture: conditioned dual training no longer lags the
+single-modality formal run, and slightly exceeds it on long-depth correctness.
+Invalid formal looking traces can still preserve high answer accuracy while
+losing mechanical proof validity. Compact formal traces are a better supervised
+substrate for learning correct symbolic computations in these settings, while
+using both trace languages appears to be capacity-dependent.
 \end{abstract}
 
 \section{Introduction}
@@ -116,9 +118,12 @@ examples that hold prompts, answers, and latent derivations fixed. Compact
 formal traces improve length extrapolation on \branchproof{} and show a
 positive but noisier mean gap on \attrcon{}. The controls rule out several
 simple explanations, including token budget, rule labels, code-like formatting,
-shortcut markers, tested model family, and simply training both modalities. The
-boundary is just as important: formal traces are a correctness substrate here,
-not a guarantee of faithful proof generation.
+shortcut markers, tested model family, and same-datapoint hybrids. A
+conditioned-dual follow-up shows that the failure of dual-modality supervision
+at OLMo-7B is not structural: at OLMo-3-32B, the formal conditioned mode closes
+and slightly reverses the single-modality gap. The boundary is just as
+important: formal traces are a correctness substrate here, not a guarantee of
+faithful proof generation.
 
 \section{Related Work}
 
@@ -494,7 +499,7 @@ not a valid proof (Table~\ref{tab:integrity}). This does not undo the
 correctness results, but it means that proof faithfulness requires additional
 training objectives, decoding constraints, or verification.
 
-\subsection{Hybrid Traces Do Not Help}
+\subsection{Combining Substrates Is Capacity-Dependent}
 
 \begin{table}[t]
 \centering
@@ -511,18 +516,54 @@ Conditioned dual, formal prompt & 83.3 $\pm$ 13.5 & 67.7 $\pm$ 25.5 \\
 Conditioned dual, natural prompt & 67.5 $\pm$ 8.2 & 53.1 $\pm$ 6.2 \\
 \bottomrule
 \end{tabular}
-\caption{Hybrid and dual modality results at train depth 25. Combining
-modalities is informative, but neither same-target hybrids nor separate
-mode-conditioned training improves on compact formal-only supervision.}
+\caption{OLMo-7B hybrid and conditioned-dual results at train depth 25.
+Same-target hybrids are order-sensitive, and conditioned-dual training
+underperforms the matched single-modality formal run at this model size.}
 \label{tab:hybrid}
 \end{table}
 
-Hybrid traces do not recover the formal-only baseline. Formal-first hybrids are
-much better than natural-language-first hybrids, indicating that order matters,
-but they still fall short of formal-only training on depth-50 correctness
-(Table~\ref{tab:hybrid}). Separate mode-conditioned examples remove the
-same-target length issue and train longer, but still do not recover the
-formal-only baseline.
+Hybrid traces do not recover the formal-only baseline at OLMo-7B. Formal-first
+hybrids are much better than natural-language-first hybrids, indicating that
+order matters, but they still fall short of formal-only training on depth-50
+correctness (Table~\ref{tab:hybrid}). Separate mode-conditioned examples
+remove the same-target length issue and train longer, but still do not recover
+the formal-only baseline at 7B.
+
+\begin{table}[t]
+\centering
+\scriptsize
+\begin{tabular}{llccc}
+\toprule
+Model & Mode & Single modality & Conditioned dual & $\Delta$ dual \\
+\midrule
+OLMo-7B & formal prompt, long-depth corr. & 92.1 $\pm$ 3.4 & 83.3 $\pm$ 13.5 & -8.8 \\
+OLMo-7B & natural prompt, long-depth corr. & 79.4 $\pm$ 7.7 & 67.5 $\pm$ 8.2 & -11.9 \\
+\midrule
+OLMo-3-32B & formal prompt, long-depth corr. & 95.4 $\pm$ 2.8 & \textbf{96.3 $\pm$ 3.3} & +0.8 \\
+OLMo-3-32B & natural prompt, long-depth corr. & \textbf{68.5 $\pm$ 4.6} & 60.8 $\pm$ 24.4 & -7.7 \\
+OLMo-3-32B & formal prompt, hard-tail corr. & 97.5 $\pm$ 1.6 & \textbf{97.9 $\pm$ 1.8} & +0.5 \\
+OLMo-3-32B & natural prompt, hard-tail corr. & \textbf{82.5 $\pm$ 2.6} & 78.2 $\pm$ 13.5 & -4.3 \\
+\bottomrule
+\end{tabular}
+\caption{Capacity follow-up for conditioned-dual supervision. The 7B rows show
+the original negative result. At OLMo-3-32B, the formal conditioned mode closes
+and slightly reverses the single-modality gap on answer correctness, while the
+natural-language conditioned mode remains below its single-modality baseline.
+The 32B hard-tail rows use the evaluator's hard-tail band; comparisons are
+within model and mode.}
+\label{tab:conditioned-capacity}
+\end{table}
+
+The OLMo-3-32B follow-up changes the interpretation of conditioned dual
+training. The 7B result suggests interference or insufficient capacity, not a
+fundamental mismatch in the conditioned prompts. When the same idea is tested
+with OLMo-3-32B, conditioned formal reasoning matches or slightly exceeds the
+single-modality formal baseline on long-depth answer correctness
+(Table~\ref{tab:conditioned-capacity}). The effect is mode-specific: the
+natural-language conditioned mode still trails single-modality natural-language
+training. We therefore read conditioned dual supervision as a capacity-dependent
+way to let the model use formal reasoning without requiring that every
+generated chain of thought be purely formal.
 
 \begin{figure}[t]
   \centering
@@ -530,9 +571,10 @@ formal-only baseline.
     \includegraphics[width=0.48\linewidth]{official_preprint/figures/hybrid_order.pdf} &
     \includegraphics[width=0.42\linewidth]{official_preprint/figures/conditioned_dual.pdf}
   \end{tabular}
-\caption{Two ways of combining substrates fail to beat compact formal-only
-supervision. Same-target hybrids are order-sensitive, and mode-conditioned
-dual training does not recover the corresponding single-modality baselines.
+\caption{OLMo-7B combinations of the two trace substrates. Same-target hybrids
+are order-sensitive, and the 7B mode-conditioned runs trail the corresponding
+single-modality baselines; Table~\ref{tab:conditioned-capacity} shows that the
+formal conditioned mode catches up at 32B.
 Shaded bands are standard deviations over three seeds.}
   \label{fig:hybrids}
 \end{figure}
@@ -549,10 +591,13 @@ where natural-language traces are more fragile.
 The ablations narrow the plausible mechanism without identifying a single
 causal feature. The effect is not recovered by more target-token exposure,
 explicit rule labels, or a code-like wrapper. It is also not enough to train the
-model on both substrates at once. The best representation we tested combines
-compact symbolic atoms, local rule applications, and low discourse load. This
-suggests that formal traces reduce the burden of learning through
-natural-language surface variation and discourse dependencies.
+model on both substrates at once at OLMo-7B. The 32B conditioned-dual follow-up
+shows that this negative result is capacity-dependent: larger models can use the
+formal conditioned mode without giving up the single-modality formal
+correctness advantage. The best representation we tested combines compact
+symbolic atoms, local rule applications, and low discourse load. This suggests
+that formal traces reduce the burden of learning through natural-language
+surface variation and discourse dependencies.
 
 The validity controls are equally important. A model can learn to answer
 correctly from formal looking traces without producing a mechanically valid
