@@ -29,23 +29,27 @@
 \RequirePackage{etoolbox}
 
 % ── Fonts ─────────────────────────────────────────────────────────────────────
-% Body: Computer Modern Roman (LaTeX default)
-% Sans content: Source Sans Pro; headings/title: bundled Poppins Light 300.
-\RequirePackage{sourcesanspro}   % available via \sffamily; does not override body font
+% Body: Computer Modern Roman / Latin Modern Roman (serif).
+% All sans-serif content uses bundled Poppins; headings use Poppins SemiBold.
 \ifPDFTeX
   \renewcommand{\rmdefault}{cmr} % body is Computer Modern Roman (serif)
+  \RequirePackage{sourcesanspro}
+  \PackageWarningNoLine{styles/seed}{Exact bundled Poppins fonts require XeLaTeX or LuaLaTeX; using Source Sans Pro fallback}
 \else
   \setmainfont{Latin Modern Roman}
+  \setsansfont[
+    Path=official_preprint/fonts/poppins/,
+    UprightFont=Poppins-Regular.ttf,
+    ItalicFont=Poppins-Italic.ttf,
+    BoldFont=Poppins-SemiBold.ttf,
+    BoldItalicFont=Poppins-SemiBoldItalic.ttf
+  ]{Poppins}
 \fi
 \newcommand{\contentfont}{\sffamily}
 \ifPDFTeX
-  \PackageWarningNoLine{styles/seed}{Poppins Light headings require XeLaTeX or LuaLaTeX; using the light sans-serif fallback}
-  \newcommand{\headingfont}{\contentfont\fontseries{l}\selectfont}
+  \newcommand{\headingfont}{\contentfont\bfseries}
 \else
-  \newfontfamily\headingfont[
-    Path=official_preprint/fonts/poppins/,
-    UprightFont=Poppins-Light.ttf
-  ]{Poppins}
+  \newcommand{\headingfont}{\contentfont\bfseries}
 \fi
 
 % ── Brand colour (exact hex from bytedance_seed.cls) ─────────────────────────
@@ -59,7 +63,7 @@
   urlcolor=seedblue,
 }
 
-% ── Section headings (Poppins Light 300 + seedblue) ──────────────────────────
+% ── Section headings (Poppins SemiBold + seedblue) ───────────────────────────
 \titleformat{\section}
   {\fontsize{12}{14}\selectfont\headingfont\color{seedblue}}
   {\thesection}{1em}{}
@@ -123,8 +127,8 @@
 \newcommand{\correspondence}[1]{\renewcommand{\@correspondence}{#1}}
 
 % ── Abstract fill toggle ──────────────────────────────────────────────────────
-% \abstractfilledtrue  (default) — pale blue fill, no logo
-% \abstractfilledfalse           — white fill, logo in bottom-right corner
+% \abstractfilledtrue  (default) — solid blue fill, no logo
+% \abstractfilledfalse           — solid blue fill, logo in bottom-right corner
 \newif\ifabstractfilled
 \abstractfilledtrue
 
@@ -133,9 +137,9 @@
   \ifabstractfilled
     \begin{tcolorbox}[
       enhanced,
-      colback=seedblue!5,
+      colback=seedblue,
       colframe=seedblue,
-      boxrule=0.5pt,
+      boxrule=0pt,
       arc=6mm,
       left=8mm, right=8mm, top=6mm, bottom=6mm,
       before skip=18pt, after skip=12pt,
@@ -143,16 +147,17 @@
   \else
     \begin{tcolorbox}[
       enhanced,
-      colback=white,
+      colback=seedblue,
       colframe=seedblue,
-      boxrule=0.5pt,
+      boxrule=0pt,
       arc=6mm,
       left=8mm, right=8mm, top=6mm, bottom=3mm,
       before skip=18pt, after skip=12pt,
     ]
   \fi
+  \color{white}
   \begin{center}
-    {\fontsize{12}{12}\selectfont\headingfont\color{seedblue} Abstract}
+    {\fontsize{12}{12}\selectfont\headingfont Abstract}
     \vspace{3mm}
   \end{center}
   \setlength{\parindent}{0cm}%
