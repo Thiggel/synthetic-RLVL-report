@@ -258,7 +258,12 @@ same 7,168-new-token cap for both trace languages. The final protocol evaluates
 32 prompts per depth and 16 sampled generations per prompt at temperature 1.0,
 with greedy, pass@1, pass@2, pass@4, pass@8, and pass@16 measurements. A
 one-seed gate uses 16 prompts and eight sampled generations per depth before
-the three-seed grid is released. \attrcon{} uses the same depth grid and 16
+the three-seed grid is released. An exhaustive audit under the evaluation
+tokenizer found that all 28,000 corrected gold traces fit these limits: the
+largest formal and natural-language targets contain 6,212 and 6,674 tokens,
+and the largest prompt-plus-target sequences contain 13,123 and 13,596 tokens,
+respectively. Thus the shared cap does not truncate either gold trace language.
+\attrcon{} uses the same depth grid and 16
 generations per prompt, with a family-specific hard-depth band; its existing
 formal and natural evaluations use 12,288- and 8,192-token caps, respectively,
 except one recovered formal row with an 8,192-token cap. All completed tables
@@ -772,7 +777,9 @@ preflight checked 1,000 train and 2,000 evaluation instances, with unique-answer
 rate $1.0$, maximum derived-candidate count 1, no generation failures, and
 balanced answer positions. Replacement evaluation uses a 16,384-token context,
 the same 7,168-new-token cap for both trace languages, greedy decoding, and
-pass@k for $k\in\{1,2,4,8,16\}$. Quantitative claims will be restored only
+pass@k for $k\in\{1,2,4,8,16\}$. Across every corrected validation row and
+depth, the minimum measured headroom is 494 tokens for generation and 2,788
+tokens for the full context. Quantitative claims will be restored only
 after raw generations and validators pass a one-seed pilot and the full
 three-seed rerun completes.
 
