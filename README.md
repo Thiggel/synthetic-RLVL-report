@@ -26,15 +26,15 @@ Build locally when TeX is available:
 make
 ```
 
-This repo mirrors the full generated report bundle from:
+The informal subdirectory mirrors the generated report bundle from:
 
 ```bash
 ../synthetic-RLVL/analysis/logic_cot_report_2026-05-25/
 ```
 
-It should contain:
+The repository should contain:
 
-- `main.tex` for the official preprint
+- `main.tex` for the manually curated official preprint; report generation must not overwrite it
 - `informal_report/main.tex` for the generated informal report
 - `figures/` with all generated PDF/PNG figures referenced by the report
 - `tables/` with all generated CSV result tables

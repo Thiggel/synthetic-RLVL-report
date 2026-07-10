@@ -3,7 +3,7 @@
 \documentclass[11pt]{article}
 \usepackage{official_preprint/styles/seed}
 
-\title{Formal Traces Improve Length Generalization in Symbolic Chain-of-Thought}
+\title{Formal Logic as a Substrate for Symbolic Chain-of-Thought}
 
 \author{
   Filipe Laitenberger\textsuperscript{1}, Dawid Kopiczko\textsuperscript{2}, Patrick Haller\textsuperscript{1}, Yuki Asano\textsuperscript{2}, Alan Akbik\textsuperscript{1}
@@ -14,7 +14,7 @@
 
 \preprintlogo{official_preprint/assets/hu-logo-transparent.png}
 \abstractfilledfalse
-\preprintdate{July 10, 2026}
+\preprintdate{July 11, 2026}
 \correspondence{filipe.laitenberger@hu-berlin.de}
 
 \newcommand{\branchproof}{\textsc{BranchProof}}
@@ -22,6 +22,8 @@
 \newcommand{\logic}{\textsc{Logic}}
 \newcommand{\nl}{\textsc{Natural}}
 \newcommand{\passsixteen}{pass@16}
+\newif\ifshowquarantined
+\showquarantinedfalse
 
 \begin{document}
 
@@ -55,12 +57,12 @@ that formal traces improve reasoning.
   arc=1mm,
   left=2mm,right=2mm,top=1mm,bottom=1mm
 ]
-\small\textbf{Internal audit status (July 10, 2026).}
-All \branchproof{} numbers, tables, and figures below are quarantined historical
-artifacts while corrected unique-answer experiments run. They must not be cited
-or used to support the paper's claims. Section~\ref{sec:uniqueness-audit}
-records the defect, its measured scope, and the acceptance gate for replacement
-results.
+\small\textbf{Internal audit status (July 11, 2026).}
+All performance measurements from the original \branchproof{} construction are
+excluded from the rendered preprint while corrected unique-answer experiments
+run. They must not be cited or used to support the paper's claims.
+Section~\ref{sec:uniqueness-audit} records the defect, its measured scope, and
+the acceptance gate for replacement results.
 \end{tcolorbox}
 
 \section{Introduction}
@@ -73,17 +75,6 @@ the model. Natural language is verbose, underspecified, and entangles the
 underlying computation with discourse style. Symbolic tasks have another
 natural representation: a compact formal derivation with explicit local rule
 applications.
-
-\begin{figure}[t]
-  \centering
-  \includegraphics[width=0.98\linewidth]{official_preprint/figures/overview_claim.pdf}
-\caption{\textbf{Trace language is the intervention, extrapolation is the test.}
-Each example has the same prompt, answer, and latent proof; only the supervised
-target trace changes. On \branchproof{} depth-50 evaluation, formal traces
-extrapolate better as the training-depth range increases. Shaded bands are
-standard deviations over three seeds.}
-  \label{fig:overview}
-\end{figure}
 
 The trace language can be varied without changing the problem. Holding the
 latent proof fixed, should a model be supervised to reason in natural language
@@ -102,36 +93,33 @@ not meant to be broad reasoning benchmarks. They are instruments for testing
 whether a trace substrate helps models learn compositional rule application,
 state tracking, distractor rejection, and extrapolation to longer derivations.
 
-Compact formal traces improve answer correctness most clearly when the proof is
-longer than those seen in training. On \branchproof{}, the formal advantage is
-strongest beyond the training depth range. On \attrcon{}, the same
-answer-correctness pattern appears on a harder constraint-satisfaction surface,
-although long-depth proof validity remains weak for both trace styles. The
-effect persists across model families and under shortcut-rich training. We then
-ask whether the result is explained by trace length, explicit rule labels,
-code-like syntax, or the availability of both natural and formal modalities. The
-controls do not support these simple explanations. Compact formal traces remain
-the strongest representation among the variants we tested.
+The current evidence is deliberately narrower than the motivating hypothesis.
+On \attrcon{}, formal supervision has higher mean answer correctness on the
+hard-depth band and at depth 50, but the endpoint has substantial seed
+variance and both trace styles have weak long-depth proof validity. The
+original \branchproof{} experiments appeared to provide a broader result, but
+a post-hoc closure audit showed that their long-depth examples often admitted
+multiple derivable answers. We therefore exclude those measurements and every
+derived ablation from the evidentiary record. Corrected unique-answer reruns are
+in progress with equal generation budgets and explicit greedy and pass@1
+reporting.
 
-Correctness and faithfulness separate even in formal syntax. A generated trace
-does not become a valid proof merely because it looks formal. Invalid
-formal looking traces can keep high answer accuracy while formal validity
-collapses. We therefore make a narrow claim. Formal traces improve supervised
-learning of the correct symbolic computation in these controlled settings. They
-do not by themselves guarantee that every generated trace is a faithful proof.
+Correctness and faithfulness are separate even when the trace syntax is formal.
+A generated sequence is correct when it yields the designated answer, whereas
+it is valid only when each derivation step is licensed. Formal syntax makes the
+second property mechanically testable; it does not guarantee it. We therefore
+report answer correctness and proof validity separately.
 
-\textbf{Contributions and claims.} We isolate the trace substrate with paired
-examples that hold prompts, answers, and latent derivations fixed. Compact
-formal traces improve length extrapolation on \branchproof{} and show a
-positive but noisier mean gap on \attrcon{}. The controls rule out several
-simple explanations, including token budget, rule labels, code-like formatting,
-shortcut markers, tested model family, and same-datapoint hybrids. A
-conditioned-dual follow-up shows that the failure of dual-modality supervision
-at OLMo-7B is not structural: at OLMo-3-32B, the formal conditioned mode closes
-and slightly reverses the single-modality gap. The boundary is just as
-important: formal traces are a correctness substrate here, not a guarantee of
-faithful proof generation, and mixed-mode training does not reliably improve
-the natural-language mode under the same step budget.
+\textbf{Contributions and scope.} We introduce a paired experimental design
+that holds prompts, answers, and latent derivations fixed while changing only
+the supervised trace language. We provide an independent three-seed
+attribute-constraint result that motivates the formal-substrate hypothesis, but
+does not by itself establish a general advantage. We identify and measure a
+long-depth uniqueness defect in the original branching benchmark, repair the
+generator with fresh constants and closure-based rejection, and specify the
+acceptance gate for replacement experiments. Architecture, shortcut, syntax,
+hybrid, conditioned-dual, and midtraining conclusions remain hypotheses until
+they are rerun on the corrected construction.
 
 \section{Related Work}
 
@@ -199,9 +187,10 @@ distribution shifts~\citep{lake2018generalization,keysers2020measuring}. Our
 tasks use the same philosophy, but the manipulated variable is the supervised
 trace substrate. Recent RLVR critiques likewise emphasize that better pass@1
 can reflect redistribution of existing samples rather than fundamentally new
-reasoning capacity~\citep{yue2025does}. We therefore evaluate with sampled
-\passsixteen{} and interpret gains as supervised sampling/correctness effects,
-not as proof that the model has acquired a general theorem-proving procedure.
+reasoning capacity~\citep{yue2025does}. We therefore report greedy, pass@1, and
+sampled pass@k separately and interpret gains as supervised
+sampling/correctness effects, not as proof that the model has acquired a
+general theorem-proving procedure.
 
 \section{Method}
 \label{sec:method}
@@ -219,19 +208,22 @@ constraints that propagate attributes through a derivation.
 
 The \logic{} trace uses compact symbolic atoms and explicit rule-application
 lines. The \nl{} trace describes the same derivation in short controlled
-sentences. Additional ablations modify this surface: symbol-padded logic,
-wordified logic, pseudocode, rule-annotated natural language, shuffled traces,
-invalid formal traces, same-datapoint hybrids, and mode-conditioned
-dual modality training.
+sentences. The implementation also supports symbol-padded logic, wordified
+logic, pseudocode, rule-annotated natural language, shuffled traces, invalid
+formal traces, same-datapoint hybrids, and mode-conditioned dual-modality
+training. Results from those variants are excluded until selected controls are
+rerun on the corrected benchmark.
 
 \subsection{Evaluation protocol}
 
-We report \passsixteen{}, i.e. whether at least one of 16 sampled generations is
-correct. The primary metric is final-answer correctness. We also report
-correct-plus-valid joint metrics when validators support the trace surface. For
-formal traces, validity is a mechanical proof check. For natural-language
-traces, validity requires translation into the formal checker and is therefore a
-diagnostic rather than a universal measure.
+The corrected main comparison treats greedy and pass@1 final-answer correctness
+as primary and reports pass@2, pass@4, pass@8, and pass@16 as secondary sampling
+curves. The completed \attrcon{} experiment predates this correction and is
+available at pass@16. We also report correct-plus-valid joint metrics when
+validators support the trace surface. For formal traces, validity is a
+mechanical proof check. For natural-language traces, validity requires
+translation into the formal checker and is therefore a diagnostic rather than
+a universal measure.
 
 We use explicit depth terms throughout. The \emph{training range} contains
 depths seen during fine-tuning. The
@@ -245,32 +237,32 @@ the same depth-50 endpoint.
 \section{Experimental Setup}
 \label{sec:setup}
 
-The main sweep fine-tunes OLMo-7B on \branchproof{} with maximum training depth
-in $\{5,10,15,20,25\}$ over three seeds. The principal comparison is between
-matched \logic{} and \nl{} targets. We repeat the train-1-to-25 comparison on
-Qwen-2.5-1.5B, Qwen-2.5-7B, and Gemma-3-4B to check whether the result is
-architecture-specific. Each train-depth subset contains 50k materialized
-training examples. We fine-tune with LoRA rank 16, alpha 32, dropout 0.05, BF16
-weights, batch size 1, learning rate $10^{-4}$, 10k optimizer steps, maximum
-sequence length 8192, and adapters on attention and MLP projection modules.
+The corrected main sweep fine-tunes OLMo-3-7B on \branchproof{} with maximum
+training depth in $\{5,10,15,20,25\}$ over three seeds. The principal
+comparison is between paired \logic{} and \nl{} targets. Each train-depth
+subset contains 50k materialized examples. We fine-tune with LoRA rank 16,
+alpha 32, dropout 0.05, BF16 weights, batch size 1, learning rate $10^{-4}$,
+10k optimizer steps, maximum sequence length 8192, and adapters on attention
+and MLP projection modules. Architecture and mechanism ablations are deferred
+until the corrected main comparison passes its artifact and sample audit.
 
 For \attrcon{}, we use the same paired-rendering principle and report
-three-seed train-1-to-25 results. The \attrcon{} numbers are used as a
-replication of the answer-correctness effect on a different symbolic surface.
-The depth-50 validity metrics are treated as diagnostics, not as evidence of
-solved long-depth proof generation.
+three-seed train-1-to-25 results. This is the only completed quantitative
+formal-versus-natural comparison used as evidence in the present draft. Its
+depth-50 correctness and validity metrics are treated as high-variance
+diagnostics, not as evidence of solved long-depth proof generation.
 
-Post-hoc pass@k evaluation samples 16 generations per prompt at temperature
-1.0 and top-$p=0.95$, stopping at \texttt{</answer>}. Unless otherwise noted,
-each seed is evaluated on 32 examples per depth. \branchproof{} uses depths
-$\{1,2,5,10,12,15,18,20,25,30,35,40,45,50\}$. The long-depth band for a
-train-1-to-25 model is depths 30 to 50, i.e. 160 prompts per seed. \attrcon{} uses
-the same depth grid and generation count, with a harder family-specific
-hard-depth band. \branchproof{} generation caps are 4096 tokens for formal
-traces and 6144 for natural-language traces. \attrcon{} uses 12288 for formal
-traces and 8192 for natural-language traces, except one recovered formal row
-with an 8192 cap. All tables report mean $\pm$ standard deviation across three
-seeds unless a row explicitly states otherwise.
+The corrected \branchproof{} evaluation uses depths
+$\{1,2,5,10,12,15,18,20,25,30,35,40,45,50\}$, a 16,384-token context, and the
+same 7,168-new-token cap for both trace languages. The final protocol evaluates
+32 prompts per depth and 16 sampled generations per prompt at temperature 1.0,
+with greedy, pass@1, pass@2, pass@4, pass@8, and pass@16 measurements. A
+one-seed gate uses 16 prompts and eight sampled generations per depth before
+the three-seed grid is released. \attrcon{} uses the same depth grid and 16
+generations per prompt, with a family-specific hard-depth band; its existing
+formal and natural evaluations use 12,288- and 8,192-token caps, respectively,
+except one recovered formal row with an 8,192-token cap. All completed tables
+report mean $\pm$ standard deviation across three seeds.
 
 \passsixteen{} is computed per prompt: a prompt is correct if any of its 16
 sampled generations yields the right final answer after extracting the
@@ -282,6 +274,96 @@ correctness and successful task-specific translation of the generated natural
 trace into a valid formal proof.
 
 \section{Results}
+\label{sec:results}
+
+\subsection{Independent Attribute-Constraint Signal}
+
+\begin{table}[t]
+\centering
+\small
+\begin{tabular}{lcccc}
+\toprule
+Trace & Hard-depth corr. & Depth-50 corr. & Hard-depth joint & Depth-50 joint \\
+\midrule
+\logic{} & \textbf{89.6 $\pm$ 9.0} & \textbf{45.8 $\pm$ 31.6} & 73.6 $\pm$ 5.3 & 0.0 $\pm$ 0.0 \\
+\nl{} & 80.8 $\pm$ 4.9 & 8.3 $\pm$ 14.4 & \textbf{79.5 $\pm$ 3.0} & \textbf{7.3 $\pm$ 12.6} \\
+\bottomrule
+\end{tabular}
+\caption{Three-seed \attrcon{} train-1-to-25 results. Formal supervision has
+higher mean answer correctness, but the depth-50 estimate has substantial seed
+variance and neither trace style reliably produces valid depth-50 proofs.}
+\label{tab:attrcon-current}
+\end{table}
+
+The completed \attrcon{} comparison supports the formal-substrate hypothesis
+on answer correctness, but it does not establish a general result. Formal
+supervision improves mean hard-depth correctness by 8.8 percentage points and
+mean depth-50 correctness by 37.5 points. The latter estimate is unstable: the
+three formal seeds score 65.6\%, 9.4\%, and 62.5\%, while the natural-language
+seeds score 0\%, 0\%, and 25.0\%. Moreover, natural-language supervision has
+the higher joint-validity mean. We therefore treat \attrcon{} as a motivating
+signal about correctness, not as evidence that formal traces uniformly improve
+correctness and validity.
+
+\begin{figure}[t]
+  \centering
+  \includegraphics[width=0.84\linewidth]{official_preprint/figures/attribute_correctness.pdf}
+\caption{\attrcon{} answer correctness on a distinct constraint surface. The
+formal mean is higher, but the depth-50 variance prevents a strong endpoint
+claim. Shaded bands are standard deviations over three seeds.}
+  \label{fig:attribute-current}
+\end{figure}
+
+\subsection{The Original Branching Benchmark Is Not Valid Evidence}
+
+Independent Horn closure shows that the original \branchproof{} construction
+ceases to be a unique-answer benchmark once its 18 constants wrap. The labeled
+answer remains derivable, but additional candidate answers are also derivable
+in most long-depth examples (Table~\ref{tab:uniqueness-main}). This invalidates
+the single-label correctness comparison rather than merely adding noise.
+
+\begin{table}[t]
+\centering
+\small
+\begin{tabular}{rcc}
+\toprule
+Depth & Multiple-answer examples & Mean derived candidates \\
+\midrule
+5, 10, 15 & 0/96 & 1.000 \\
+20 & 73/96 & 2.562 \\
+25, 30, 35 & 74/96 & 2.417 \\
+40, 45, 50 & 92/96 & 3.562 \\
+\bottomrule
+\end{tabular}
+\caption{Closure audit of the original \branchproof{} generator. Each question
+has four candidate final states; every row uses 96 examples.}
+\label{tab:uniqueness-main}
+\end{table}
+
+The defect also interacts with sampling. Under the invalid construction,
+formal supervision was below natural-language supervision at long-depth
+pass@1 but above it at pass@16. A model that samples several derivable branches
+can therefore appear stronger under pass@k even when a random sample is not
+more likely to match the designated label. This is why no old architecture,
+shortcut, syntax, hybrid, conditioned-dual, or proof-mixture result is used as
+evidence here.
+
+\subsection{Corrected Evaluation Gate}
+
+The repaired generator assigns a fresh constant to every layer and rejects an
+instance unless closure derives exactly one candidate answer. Its production
+preflight accepted all 3,000 audited examples, with maximum derived-candidate
+count one. Corrected training and evaluation use materialized paired data,
+equal 7,168-token generation budgets, and both greedy and pass@k metrics. A
+one-seed pilot must pass an automated artifact audit and manual inspection of
+train-range, held-out, and depth-50 successes and failures before the full
+three-seed grid can run. Quantitative \branchproof{} claims will be added only
+after that protocol completes.
+
+% Historical quantitative sections are retained in source for provenance but
+% are excluded from the rendered preprint after the uniqueness audit.
+\ifshowquarantined
+\section{Quarantined Historical Results}
 \label{sec:results}
 
 \subsection{Formal Traces Improve Length Extrapolation}
@@ -594,55 +676,55 @@ Shaded bands are standard deviations over three seeds.}
   \label{fig:hybrids}
 \end{figure}
 
+\fi
+
 \section{Discussion}
 \label{sec:discussion}
 
-The trace substrate matters when the latent task is symbolic and the supervision
-can be rendered from the same proof. Compact formal traces make the answer
-computation easier to learn than natural-language traces in our controlled
-settings. The effect is clearest under length extrapolation and shortcut shift,
-where natural-language traces are more fragile.
+The completed \attrcon{} experiment makes formal supervision a credible
+hypothesis for improving symbolic answer correctness, but the evidence is not
+yet broad enough for a general substrate claim. Its mean gap is positive, its
+hardest endpoint is noisy, and its joint-validity result does not favor formal
+traces. The corrected \branchproof{} experiment is designed to determine
+whether the correctness effect replicates under controlled length
+extrapolation once every question has exactly one derivable answer.
 
-The ablations narrow the plausible mechanism without identifying a single
-causal feature. The effect is not recovered by more target-token exposure,
-explicit rule labels, or a code-like wrapper. It is also not enough to train the
-model on both substrates at once at OLMo-7B. The 32B conditioned-dual follow-up
-shows that this negative result is capacity-dependent: larger models can use the
-formal conditioned mode without giving up the single-modality formal
-correctness advantage, while the natural-language conditioned mode remains
-unstable under the same step budget. The best representation we tested combines
-compact
-symbolic atoms, local rule applications, and low discourse load. This suggests
-that formal traces reduce the burden of learning through natural-language
-surface variation and discourse dependencies.
+The uniqueness failure illustrates why the distinction between correctness,
+validity, and sampling budget is substantive. Pass@k can reward coverage of
+several derivable branches even when pass@1 does not improve. A mechanically
+valid trace can also disagree with a single designated label when the benchmark
+is ambiguous. We therefore require unique-answer closure, greedy and pass@1
+results, equal generation budgets, and raw-generation inspection before using
+pass@k as evidence.
 
-The validity controls are equally important. A model can learn to answer
-correctly from formal looking traces without producing a mechanically valid
-proof. The current evidence therefore argues for formal traces as a better
-\emph{training substrate for correctness}, not as a complete solution to
-faithful reasoning. A natural next research direction is to combine compact
-formal supervision with objectives or decoders that directly optimize trace
-validity.
+The old mechanism and mixed-modality experiments remain useful for choosing
+follow-ups, but not for supporting claims. If the corrected three-seed result
+shows a formal advantage at greedy or pass@1, the next experiments should
+selectively rerun one syntax control, one shortcut intervention, one
+conditioned-dual comparison, and one independent architecture. If it does not,
+the appropriate conclusion is that the original broad narrative was an
+artifact of benchmark ambiguity rather than evidence for a better substrate.
 
 \section{Limitations}
 
 The tasks are synthetic. This is necessary for a paired substrate comparison,
-but it limits claims about open-domain reasoning. The main evidence comes from
-supervised fine-tuning, not inference-time prompting or full-parameter
-continued pretraining. The architecture checks are robustness tests rather than
-a scaling law. Natural-language validity depends on task-specific translation
-coverage, while formal validity does not imply causal faithfulness. Finally, the
-current control set is extensive but not exhaustive. Other formal languages,
-different proof granularities, and different decoding constraints may change the
-tradeoffs.
+but it limits claims about open-domain reasoning. The only completed comparison
+currently retained as evidence is \attrcon{}, whose depth-50 estimate has high
+seed variance. Corrected \branchproof{} results and downstream midtraining
+transfer are still pending. Natural-language validity depends on task-specific
+translation coverage, while formal validity does not imply causal faithfulness.
+Other formal languages, proof granularities, and decoding constraints may
+change the tradeoffs.
 
 \section{Conclusion}
 
-The target language of reasoning supervision matters. In paired symbolic tasks,
-compact formal traces improve extrapolative answer accuracy and resist shortcut
-shift, while natural-language traces are more fragile. Formal syntax still does
-not make a proof faithful, so correctness and validity must be trained or
-decoded as separate objectives.
+Paired trace supervision provides a direct way to test whether formal logic is
+a better training substrate than natural language. The current
+attribute-constraint result motivates that hypothesis, while the uniqueness
+audit invalidates the original branching-proof evidence and its derived
+ablations. The decisive claim therefore remains open pending the corrected
+unique-answer rerun. Regardless of its outcome, correctness and proof validity
+must be evaluated separately.
 
 \clearpage
 \appendix
@@ -1015,6 +1097,7 @@ Therefore s3 has value coral.
 \end{verbatim}
 \end{minipage}
 
+\ifshowquarantined
 \section{Artifact Control Not Used as Main Evidence}
 \label{sec:excluded-controls}
 
@@ -1051,6 +1134,7 @@ should be interpreted as distribution-specific rather than a general shortcut
 benefit. Rows are mean $\pm$ standard deviation over three seeds.}
 \label{tab:shortcut-kind}
 \end{table}
+\fi
 
 \section{Metric Definitions}
 
