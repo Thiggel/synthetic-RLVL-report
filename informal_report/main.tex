@@ -6,9 +6,24 @@
 \usepackage{float}
 \usepackage{hyperref}
 \title{Formal Logic CoT Synthetic Results Update}
-\date{2026-05-30}
+\date{2026-07-10}
 \begin{document}
 \maketitle
+
+\section{Critical BranchProof audit status}
+All pre-2026-07-10 HFSA/BranchProof results above depth 17 in this report are
+quarantined historical artifacts. A forward-closure audit found that the old
+generator wrapped constants after 18 layers, creating multiple derivable
+candidate answers in 73/96 audited depth-20 examples and 92/96 audited
+depth-40/45/50 examples. The defect affects the main depth-scaling result and
+every architecture, syntax, shortcut, hybrid, conditioned-dual, batch-size,
+tiny-pretraining, downstream-transfer, and midtraining artifact trained from
+that construction. Do not cite these numbers. The corrected generator uses
+fresh constants at every layer, passes a unique-answer closure gate, and is
+being rerun with equal logic/NL generation caps plus greedy and pass@1 metrics.
+The independent AttrCon results are not affected. Full evidence and recovery
+jobs are recorded in the experiment repository at
+\texttt{docs/branchproof\_uniqueness\_audit\_2026-07-10.md}.
 
 \section{Executive insights}
 \begin{itemize}

@@ -14,7 +14,7 @@
 
 \preprintlogo{official_preprint/assets/hu-logo-transparent.png}
 \abstractfilledfalse
-\preprintdate{June 24, 2026}
+\preprintdate{July 10, 2026}
 \correspondence{filipe.laitenberger@hu-berlin.de}
 
 \newcommand{\branchproof}{\textsc{BranchProof}}
@@ -34,25 +34,34 @@ models learn more reliable symbolic reasoning when the same derivation is
 written instead as a compact formal trace. To isolate the trace substrate, we
 construct paired synthetic tasks in which each instance has the same prompt,
 answer, and latent proof, but two target traces: a formal derivation and a
-natural language derivation. On branching proof chains, OLMo-7B trained on
-depths up to 25 reaches 92.1\% \passsixteen{} correctness averaged over depths
-30 to 50 and 83.3\% at depth 50 with formal traces, compared with 79.4\% and
-51.0\% with natural language traces. On attribute constraints, formal traces
-show a positive mean gap in answer correctness, but with high seed variance at
-depth 50.
-The direction is consistent across Qwen and Gemma model families, though some
-architecture checks have high seed variance, and it becomes sharper when
-training data contain shortcut distractors. Ablations show that the gain is not
-recovered by longer traces, word-like predicates, pseudocode, explicit rule
-annotations, or low-capacity dual modality training. A larger OLMo-3-32B
-follow-up changes that picture: conditioned dual training no longer lags the
-single-modality formal run, and slightly exceeds it on long-depth correctness,
-although the natural-language conditioned mode remains high variance.
-Invalid formal looking traces can still preserve high answer accuracy while
-losing mechanical proof validity. Compact formal traces are a better supervised
-substrate for learning correct symbolic computations in these settings, while
-using both trace languages appears to be capacity-dependent.
+natural language derivation. Attribute-constraint experiments show a positive
+mean formal-trace gap in answer correctness, with substantial seed variance at
+the longest depth. A post-hoc closure audit, however, found that the original
+long-depth branching-proof generator reused constants and admitted multiple
+derivable answers. We therefore quarantine every quantitative result based on
+that construction, including its architecture, shortcut, syntax, hybrid, and
+midtraining derivatives. A corrected generator now assigns a fresh constant to
+each layer and rejects any instance without exactly one derivable candidate;
+three-seed reruns with equal generation budgets and greedy, pass@1, and pass@k
+evaluation are in progress. Until those reruns complete, this draft provides a
+method and an independent constraint-task signal, not a validated general claim
+that formal traces improve reasoning.
 \end{abstract}
+
+\begin{tcolorbox}[
+  colback=seedblue!7,
+  colframe=seedblue!45!black,
+  boxrule=0.5pt,
+  arc=1mm,
+  left=2mm,right=2mm,top=1mm,bottom=1mm
+]
+\small\textbf{Internal audit status (July 10, 2026).}
+All \branchproof{} numbers, tables, and figures below are quarantined historical
+artifacts while corrected unique-answer experiments run. They must not be cited
+or used to support the paper's claims. Section~\ref{sec:uniqueness-audit}
+records the defect, its measured scope, and the acceptance gate for replacement
+results.
+\end{tcolorbox}
 
 \section{Introduction}
 
@@ -637,6 +646,53 @@ decoded as separate objectives.
 
 \clearpage
 \appendix
+
+\section{Post-hoc Branching-Proof Uniqueness Audit}
+\label{sec:uniqueness-audit}
+
+The original generator selected from 18 one-letter constants and wrapped the
+constant sequence after depth 17. Reusing state predicates at reused constants
+allowed distinct branches to derive the same atoms. Independent Horn closure
+over 96 examples per depth found the labeled answer derivable in every case,
+but found additional derivable candidate answers in most long-depth cases
+(Table~\ref{tab:uniqueness-audit}).
+
+\begin{table}[h]
+\centering
+\small
+\begin{tabular}{rcc}
+\toprule
+Depth & Examples with multiple answers & Mean derived candidates \\
+\midrule
+5, 10, 15 & 0/96 & 1.000 \\
+20 & 73/96 & 2.562 \\
+25, 30, 35 & 74/96 & 2.417 \\
+40, 45, 50 & 92/96 & 3.562 \\
+\bottomrule
+\end{tabular}
+\caption{Closure audit of the quarantined branching-proof construction. Each
+question has four candidate final states.}
+\label{tab:uniqueness-audit}
+\end{table}
+
+This defect also changes the interpretation of the old sample-budget curves.
+For the OLMo-7B train-1-to-25 runs, mean long-depth pass@1 was $0.513$ for
+formal traces and $0.574$ for natural-language traces; pass@16 was $0.921$ and
+$0.794$, respectively. At depth 50, pass@1 was $0.241$ versus $0.147$, while
+pass@16 was $0.833$ versus $0.510$. One stored formal generation answered a
+non-labeled candidate that the citation-free proof checker accepted as valid,
+directly confirming that the single-label correctness metric penalized a valid
+answer under the old premises.
+
+The corrected construction uses fresh constants \texttt{c0} through
+\texttt{c\{depth\}} and explicit atoms such as \texttt{A(c18)}. Its production
+preflight checked 1,000 train and 2,000 evaluation instances, with unique-answer
+rate $1.0$, maximum derived-candidate count 1, no generation failures, and
+balanced answer positions. Replacement evaluation uses a 16,384-token context,
+the same 7,168-new-token cap for both trace languages, greedy decoding, and
+pass@k for $k\in\{1,2,4,8,16\}$. Quantitative claims will be restored only
+after raw generations and validators pass a one-seed pilot and the full
+three-seed rerun completes.
 
 \section{Task Details}
 \label{sec:task-details}
