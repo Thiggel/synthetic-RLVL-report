@@ -42,10 +42,10 @@ the longest depth. A post-hoc closure audit, however, found that the original
 long-depth branching-proof generator reused constants and admitted multiple
 derivable answers. We therefore quarantine every quantitative result based on
 that construction, including its architecture, shortcut, syntax, hybrid, and
-midtraining derivatives. A corrected generator now assigns a fresh constant to
+continual-pretraining derivatives. A corrected generator now assigns a fresh constant to
 each layer and rejects any instance without exactly one derivable candidate;
 three-seed reruns with equal generation budgets and greedy, pass@1, and pass@k
-evaluation are in progress. A matched one-run Qwen2.5 continuation-midtraining
+evaluation are in progress. A matched one-run Qwen2.5 continual-pretraining
 pilot is null or mixed on conventional downstream suites, and its apparent
 context-QA gains largely collapse after generated continuation is removed.
 Until the corrected branching reruns complete, this draft provides a method,
@@ -123,7 +123,7 @@ generator with fresh constants and closure-based rejection, and specify the
 acceptance gate for replacement experiments. Architecture, shortcut, syntax,
 hybrid, and conditioned-dual conclusions remain hypotheses until they are
 rerun on the corrected construction. We additionally report a matched
-one-run Qwen2.5 continuation-midtraining pilot whose conventional and
+one-run Qwen2.5 continual-pretraining pilot whose conventional and
 context-QA results do not provide clean evidence of modality transfer.
 
 \section{Related Work}
@@ -274,7 +274,7 @@ formal and natural evaluations use 12,288- and 8,192-token caps, respectively,
 except one recovered formal row with an 8,192-token cap. All completed tables
 report mean $\pm$ standard deviation across three seeds.
 
-The continuation-midtraining pilot compares one Qwen2.5-7B control run with
+The continual-pretraining pilot compares one Qwen2.5-7B control run with
 matched runs containing 15\% corrected unique-answer \branchproof{} tokens in
 either formal or natural-language form. Each checkpoint is evaluated directly
 and after the same native-Qwen-chat instruction SFT. Conventional downstream
@@ -406,9 +406,9 @@ Formal 15\% & Post-instruction & 0.5010 & 0.3090 & 0.1626 \\
 Natural 15\% & Post-instruction & 0.5019 & 0.3147 & 0.1618 \\
 \bottomrule
 \end{tabular}
-\caption{Corrected matched Qwen2.5-7B continuation-midtraining pilot. Entries
+\caption{Corrected matched Qwen2.5-7B continual-pretraining pilot. Entries
 are unweighted task macros from one run per condition, not seed means. Formal
-midtraining changes direct all-primary/reasoning scores by only
+Formal-data injection changes direct all-primary/reasoning scores by only
 $+0.0033/+0.0071$ and reduces the targeted-logic macro by $0.0116$. The
 post-instruction BBH cells have an extraction floor and are retained as a
 diagnostic rather than modality evidence.}
@@ -780,7 +780,7 @@ conditioned-dual comparison, and one independent architecture. If it does not,
 the appropriate conclusion is that the original broad narrative was an
 artifact of benchmark ambiguity rather than evidence for a better substrate.
 
-The corrected continuation-midtraining pilot provides a separate negative
+The corrected continual-pretraining pilot provides a separate negative
 constraint. Small aggregate differences, next-document continuation, tagged
 trace-surface triggering, and cap-sensitive context-QA scores make it unsafe to
 claim downstream modality transfer from the current one-run comparison. This
@@ -794,7 +794,7 @@ but it limits claims about open-domain reasoning. The only completed three-seed
 comparison currently retained as positive evidence is \attrcon{}, whose
 depth-50 estimate has high seed variance. Corrected \branchproof{} results are
 still pending. The
-completed midtraining comparison has one run per condition, small mixed deltas,
+completed continual-pretraining comparison has one run per condition, small mixed deltas,
 and response-format artifacts, so it cannot estimate seed variance or establish
 a transfer effect. Natural-language validity depends on task-specific
 translation coverage, while formal validity does not imply causal faithfulness.
@@ -807,7 +807,7 @@ Paired trace supervision provides a direct way to test whether formal logic is
 a better training substrate than natural language. The current
 attribute-constraint result motivates that hypothesis, while the uniqueness
 audit invalidates the original branching-proof evidence and its derived
-ablations. A corrected continuation-midtraining pilot is null or mixed and
+ablations. A corrected continual-pretraining pilot is null or mixed and
 shows that response control can masquerade as context-QA transfer. The decisive
 supervised claim therefore remains open pending the corrected unique-answer
 rerun. Regardless of its outcome, correctness and proof validity must be
