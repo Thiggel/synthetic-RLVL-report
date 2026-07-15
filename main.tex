@@ -284,6 +284,14 @@ HotpotQA, 2WikiMultiHopQA, and MuSiQue splits with a 32,768-token window. These
 are single training runs, so their macro differences have no training-seed
 uncertainty estimate.
 
+An implementation audit found ordinary randomized mixing in the two 15\%
+conditions: global updates contained 6--35 proof chunks out of 128, with a mean
+of 19.2 and variance close to binomial expectation; no update was proof-empty.
+All three runs shared a scheduler-resume rescaling error at the midpoint
+checkpoint and a cosine span that ended above its nominal floor. These defects
+alter the absolute trajectory but are matched across conditions; we corrected
+both before any future continuation-training run.
+
 \passsixteen{} is computed per prompt: a prompt is correct if any of its 16
 sampled generations yields the right final answer after extracting the
 \texttt{<answer>} field. Depth-level metrics average prompts within a depth,
