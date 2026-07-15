@@ -14,7 +14,7 @@
 
 \preprintlogo{official_preprint/assets/hu-logo-transparent.png}
 \abstractfilledfalse
-\preprintdate{July 11, 2026}
+\preprintdate{July 15, 2026}
 \correspondence{filipe.laitenberger@hu-berlin.de}
 
 \newcommand{\branchproof}{\textsc{BranchProof}}
@@ -45,9 +45,12 @@ that construction, including its architecture, shortcut, syntax, hybrid, and
 midtraining derivatives. A corrected generator now assigns a fresh constant to
 each layer and rejects any instance without exactly one derivable candidate;
 three-seed reruns with equal generation budgets and greedy, pass@1, and pass@k
-evaluation are in progress. Until those reruns complete, this draft provides a
-method and an independent constraint-task signal, not a validated general claim
-that formal traces improve reasoning.
+evaluation are in progress. A matched one-run Qwen2.5 continuation-midtraining
+pilot is null or mixed on conventional downstream suites, and its apparent
+context-QA gains largely collapse after generated continuation is removed.
+Until the corrected branching reruns complete, this draft provides a method,
+an independent constraint-task signal, and a negative transfer pilot, not a
+validated general claim that formal traces improve reasoning.
 \end{abstract}
 
 \begin{tcolorbox}[
@@ -57,7 +60,7 @@ that formal traces improve reasoning.
   arc=1mm,
   left=2mm,right=2mm,top=1mm,bottom=1mm
 ]
-\small\textbf{Internal audit status (July 11, 2026).}
+\small\textbf{Internal audit status (July 15, 2026).}
 All performance measurements from the original \branchproof{} construction are
 excluded from the rendered preprint while corrected unique-answer experiments
 run. They must not be cited or used to support the paper's claims.
@@ -118,8 +121,10 @@ does not by itself establish a general advantage. We identify and measure a
 long-depth uniqueness defect in the original branching benchmark, repair the
 generator with fresh constants and closure-based rejection, and specify the
 acceptance gate for replacement experiments. Architecture, shortcut, syntax,
-hybrid, conditioned-dual, and midtraining conclusions remain hypotheses until
-they are rerun on the corrected construction.
+hybrid, and conditioned-dual conclusions remain hypotheses until they are
+rerun on the corrected construction. We additionally report a matched
+one-run Qwen2.5 continuation-midtraining pilot whose conventional and
+context-QA results do not provide clean evidence of modality transfer.
 
 \section{Related Work}
 
@@ -269,6 +274,16 @@ formal and natural evaluations use 12,288- and 8,192-token caps, respectively,
 except one recovered formal row with an 8,192-token cap. All completed tables
 report mean $\pm$ standard deviation across three seeds.
 
+The continuation-midtraining pilot compares one Qwen2.5-7B control run with
+matched runs containing 15\% corrected unique-answer \branchproof{} tokens in
+either formal or natural-language form. Each checkpoint is evaluated directly
+and after the same native-Qwen-chat instruction SFT. Conventional downstream
+scores use ten reviewer tasks and an audited answer-prefix MATH-500 sidecar.
+The supplemental context-QA suite uses the full 200-example LongBench
+HotpotQA, 2WikiMultiHopQA, and MuSiQue splits with a 32,768-token window. These
+are single training runs, so their macro differences have no training-seed
+uncertainty estimate.
+
 \passsixteen{} is computed per prompt: a prompt is correct if any of its 16
 sampled generations yields the right final answer after extracting the
 \texttt{<answer>} field. Depth-level metrics average prompts within a depth,
@@ -364,6 +379,53 @@ one-seed pilot must pass an automated artifact audit and manual inspection of
 train-range, held-out, and depth-50 successes and failures before the full
 three-seed grid can run. Quantitative \branchproof{} claims will be added only
 after that protocol completes.
+
+\subsection{Continuation Midtraining Is Null or Mixed}
+
+\begin{table}[t]
+\centering
+\small
+\begin{tabular}{llccc}
+\toprule
+Condition & Branch & All primary & Reasoning core & Targeted logic \\
+\midrule
+Control & Direct & 0.6052 & 0.4946 & 0.5316 \\
+Formal 15\% & Direct & 0.6085 & 0.5017 & 0.5200 \\
+Natural 15\% & Direct & 0.6041 & 0.4935 & 0.5247 \\
+\midrule
+Control & Post-instruction & 0.4992 & 0.3051 & 0.1631 \\
+Formal 15\% & Post-instruction & 0.5010 & 0.3090 & 0.1626 \\
+Natural 15\% & Post-instruction & 0.5019 & 0.3147 & 0.1618 \\
+\bottomrule
+\end{tabular}
+\caption{Corrected matched Qwen2.5-7B continuation-midtraining pilot. Entries
+are unweighted task macros from one run per condition, not seed means. Formal
+midtraining changes direct all-primary/reasoning scores by only
+$+0.0033/+0.0071$ and reduces the targeted-logic macro by $0.0116$. The
+post-instruction BBH cells have an extraction floor and are retained as a
+diagnostic rather than modality evidence.}
+\label{tab:nanotron-p15}
+\end{table}
+
+The conventional downstream comparison does not show a consistent formal or
+natural-language transfer benefit (Table~\ref{tab:nanotron-p15}). Raw review
+also weakens a purely capability-based reading. Direct formal and natural
+mixtures continue into a generated next-document preamble more often than the
+control on BBH and MMLU-Pro. Instruction SFT removes that literal marker, but
+introduces long repetition and an answer-extraction floor on BBH. We therefore
+do not expand the mixture grid from this result.
+
+The corrected context-provided multi-hop suite reaches the same conclusion for
+a different reason. Under stock 32-token short-answer scoring, direct
+control/formal/natural mean QA-F1 is $0.189/0.250/0.238$. A sensitivity check
+that removes only obvious generated continuation after the first answer span
+gives $0.349/0.361/0.367$, reducing the apparent formal and natural gains to
+$0.012$ and $0.018$. Under the strict tagged prompt, 98.5--99.0\% of formal
+mixture rows begin the learned \texttt{<formal>} surface and 97.0--99.0\% of
+natural-mixture rows begin \texttt{<think>}; most exhaust the 64-token
+diagnostic before a usable answer. Post-instruction stock QA-F1 is
+$0.097/0.100/0.085$. These results diagnose response-manifold and stopping
+behavior, not clean multi-hop reasoning transfer.
 
 % Historical quantitative sections are retained in source for provenance but
 % are excluded from the rendered preprint after the uniqueness audit.
@@ -710,13 +772,23 @@ conditioned-dual comparison, and one independent architecture. If it does not,
 the appropriate conclusion is that the original broad narrative was an
 artifact of benchmark ambiguity rather than evidence for a better substrate.
 
+The corrected continuation-midtraining pilot provides a separate negative
+constraint. Small aggregate differences, next-document continuation, tagged
+trace-surface triggering, and cap-sensitive context-QA scores make it unsafe to
+claim downstream modality transfer from the current one-run comparison. This
+does not determine the supervised \branchproof{} result, but it rejects the
+planned broader mixture expansion under the positive-and-clean gate.
+
 \section{Limitations}
 
 The tasks are synthetic. This is necessary for a paired substrate comparison,
-but it limits claims about open-domain reasoning. The only completed comparison
-currently retained as evidence is \attrcon{}, whose depth-50 estimate has high
-seed variance. Corrected \branchproof{} results and downstream midtraining
-transfer are still pending. Natural-language validity depends on task-specific
+but it limits claims about open-domain reasoning. The only completed three-seed
+comparison currently retained as positive evidence is \attrcon{}, whose
+depth-50 estimate has high seed variance. Corrected \branchproof{} results are
+still pending. The
+completed midtraining comparison has one run per condition, small mixed deltas,
+and response-format artifacts, so it cannot estimate seed variance or establish
+a transfer effect. Natural-language validity depends on task-specific
 translation coverage, while formal validity does not imply causal faithfulness.
 Other formal languages, proof granularities, and decoding constraints may
 change the tradeoffs.
@@ -727,9 +799,11 @@ Paired trace supervision provides a direct way to test whether formal logic is
 a better training substrate than natural language. The current
 attribute-constraint result motivates that hypothesis, while the uniqueness
 audit invalidates the original branching-proof evidence and its derived
-ablations. The decisive claim therefore remains open pending the corrected
-unique-answer rerun. Regardless of its outcome, correctness and proof validity
-must be evaluated separately.
+ablations. A corrected continuation-midtraining pilot is null or mixed and
+shows that response control can masquerade as context-QA transfer. The decisive
+supervised claim therefore remains open pending the corrected unique-answer
+rerun. Regardless of its outcome, correctness and proof validity must be
+evaluated separately.
 
 \clearpage
 \appendix
