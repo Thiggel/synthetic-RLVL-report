@@ -1,27 +1,27 @@
 condition,template,depth,description,sequence
 main_logic,logic,2,Normal compact formal-logic baseline.,"<question>
-1. a is violet.
-2. a is south.
-3. If a is north and a is violet, then b is ivory.
-4. If b is ivory, then b is south.
-5. If a is south and a is violet, then b is willow.
-6. If b is willow, then b is east.
-7. If a is east and a is violet, then b is teal.
-8. If b is teal, then b is north.
-9. If b is east and b is willow, then c is ivory.
-10. If c is ivory, then c is east.
-11. If b is north and b is teal, then c is teal.
-12. If c is teal, then c is south.
-13. If b is south and b is ivory, then c is willow.
-14. If c is willow, then c is north.
-Which state applies to c?
+1. c0 is violet.
+2. c0 is south.
+3. If c0 is north and c0 is violet, then c1 is ivory.
+4. If c1 is ivory, then c1 is south.
+5. If c0 is south and c0 is violet, then c1 is willow.
+6. If c1 is willow, then c1 is east.
+7. If c0 is east and c0 is violet, then c1 is teal.
+8. If c1 is teal, then c1 is north.
+9. If c1 is east and c1 is willow, then c2 is ivory.
+10. If c2 is ivory, then c2 is east.
+11. If c1 is north and c1 is teal, then c2 is teal.
+12. If c2 is teal, then c2 is south.
+13. If c1 is south and c1 is ivory, then c2 is willow.
+14. If c2 is willow, then c2 is north.
+Which state applies to c2?
 </question>
 
 <formal>
 <constants>
-a = a
-b = b
-c = c
+c0 = c0
+c1 = c1
+c2 = c2
 </constants>
 <predicates>
 Ax: x is willow
@@ -33,254 +33,254 @@ Fx: x is south
 Gx: x is east
 </predicates>
 <premises>
-Da
-Fa
-Ea & Da -> Bb
-Bb -> Fb
-Fa & Da -> Ab
-Ab -> Gb
-Ga & Da -> Cb
-Cb -> Eb
-Gb & Ab -> Bc
-Bc -> Gc
-Eb & Cb -> Cc
-Cc -> Fc
-Fb & Bb -> Ac
-Ac -> Ec
+D(c0)
+F(c0)
+E(c0) & D(c0) -> B(c1)
+B(c1) -> F(c1)
+F(c0) & D(c0) -> A(c1)
+A(c1) -> G(c1)
+G(c0) & D(c0) -> C(c1)
+C(c1) -> E(c1)
+G(c1) & A(c1) -> B(c2)
+B(c2) -> G(c2)
+E(c1) & C(c1) -> C(c2)
+C(c2) -> F(c2)
+F(c1) & B(c1) -> A(c2)
+A(c2) -> E(c2)
 </premises>
 <proof>
-Da ; R
-Fa ; R
-Ab ; ->E
-Gb ; ->E
-Bc ; ->E
+D(c0) ; R
+F(c0) ; R
+A(c1) ; ->E
+G(c1) ; ->E
+B(c2) ; ->E
 </proof>
 <conclusion>
-Bc
+B(c2)
 </conclusion>
 </formal>
 <answer>
 ivory
 </answer>"
 main_nl_exact,nl_exact,2,Normal exact natural-language baseline.,"<question>
-1. a is violet.
-2. a is south.
-3. If a is north and a is violet, then b is ivory.
-4. If b is ivory, then b is south.
-5. If a is south and a is violet, then b is willow.
-6. If b is willow, then b is east.
-7. If a is east and a is violet, then b is teal.
-8. If b is teal, then b is north.
-9. If b is east and b is willow, then c is ivory.
-10. If c is ivory, then c is east.
-11. If b is north and b is teal, then c is teal.
-12. If c is teal, then c is south.
-13. If b is south and b is ivory, then c is willow.
-14. If c is willow, then c is north.
-Which state applies to c?
+1. c0 is violet.
+2. c0 is south.
+3. If c0 is north and c0 is violet, then c1 is ivory.
+4. If c1 is ivory, then c1 is south.
+5. If c0 is south and c0 is violet, then c1 is willow.
+6. If c1 is willow, then c1 is east.
+7. If c0 is east and c0 is violet, then c1 is teal.
+8. If c1 is teal, then c1 is north.
+9. If c1 is east and c1 is willow, then c2 is ivory.
+10. If c2 is ivory, then c2 is east.
+11. If c1 is north and c1 is teal, then c2 is teal.
+12. If c2 is teal, then c2 is south.
+13. If c1 is south and c1 is ivory, then c2 is willow.
+14. If c2 is willow, then c2 is north.
+Which state applies to c2?
 </question>
 
 <think>
 <premises>
-a is violet.
-a is south.
-If a is north and a is violet, then b is ivory.
-If b is ivory, then b is south.
-If a is south and a is violet, then b is willow.
-If b is willow, then b is east.
-If a is east and a is violet, then b is teal.
-If b is teal, then b is north.
-If b is east and b is willow, then c is ivory.
-If c is ivory, then c is east.
-If b is north and b is teal, then c is teal.
-If c is teal, then c is south.
-If b is south and b is ivory, then c is willow.
-If c is willow, then c is north.
+c0 is violet.
+c0 is south.
+If c0 is north and c0 is violet, then c1 is ivory.
+If c1 is ivory, then c1 is south.
+If c0 is south and c0 is violet, then c1 is willow.
+If c1 is willow, then c1 is east.
+If c0 is east and c0 is violet, then c1 is teal.
+If c1 is teal, then c1 is north.
+If c1 is east and c1 is willow, then c2 is ivory.
+If c2 is ivory, then c2 is east.
+If c1 is north and c1 is teal, then c2 is teal.
+If c2 is teal, then c2 is south.
+If c1 is south and c1 is ivory, then c2 is willow.
+If c2 is willow, then c2 is north.
 </premises>
 <proof>
-a is violet.
-a is south.
-b is willow.
-b is east.
-c is ivory.
+c0 is violet.
+c0 is south.
+c1 is willow.
+c1 is east.
+c2 is ivory.
 </proof>
 <conclusion>
-c is ivory.
+c2 is ivory.
 </conclusion>
 </think>
 <answer>
 ivory
 </answer>"
 terse_nl,terse_nl,2,Natural-language trace with shorter proof wording.,"<question>
-1. a is violet.
-2. a is south.
-3. If a is north and a is violet, then b is ivory.
-4. If b is ivory, then b is south.
-5. If a is south and a is violet, then b is willow.
-6. If b is willow, then b is east.
-7. If a is east and a is violet, then b is teal.
-8. If b is teal, then b is north.
-9. If b is east and b is willow, then c is ivory.
-10. If c is ivory, then c is east.
-11. If b is north and b is teal, then c is teal.
-12. If c is teal, then c is south.
-13. If b is south and b is ivory, then c is willow.
-14. If c is willow, then c is north.
-Which state applies to c?
+1. c0 is violet.
+2. c0 is south.
+3. If c0 is north and c0 is violet, then c1 is ivory.
+4. If c1 is ivory, then c1 is south.
+5. If c0 is south and c0 is violet, then c1 is willow.
+6. If c1 is willow, then c1 is east.
+7. If c0 is east and c0 is violet, then c1 is teal.
+8. If c1 is teal, then c1 is north.
+9. If c1 is east and c1 is willow, then c2 is ivory.
+10. If c2 is ivory, then c2 is east.
+11. If c1 is north and c1 is teal, then c2 is teal.
+12. If c2 is teal, then c2 is south.
+13. If c1 is south and c1 is ivory, then c2 is willow.
+14. If c2 is willow, then c2 is north.
+Which state applies to c2?
 </question>
 
 <think>
 <premises>
-a is violet.
-a is south.
-If a is north and a is violet, then b is ivory.
-If b is ivory, then b is south.
-If a is south and a is violet, then b is willow.
-If b is willow, then b is east.
-If a is east and a is violet, then b is teal.
-If b is teal, then b is north.
-If b is east and b is willow, then c is ivory.
-If c is ivory, then c is east.
-If b is north and b is teal, then c is teal.
-If c is teal, then c is south.
-If b is south and b is ivory, then c is willow.
-If c is willow, then c is north.
+c0 is violet.
+c0 is south.
+If c0 is north and c0 is violet, then c1 is ivory.
+If c1 is ivory, then c1 is south.
+If c0 is south and c0 is violet, then c1 is willow.
+If c1 is willow, then c1 is east.
+If c0 is east and c0 is violet, then c1 is teal.
+If c1 is teal, then c1 is north.
+If c1 is east and c1 is willow, then c2 is ivory.
+If c2 is ivory, then c2 is east.
+If c1 is north and c1 is teal, then c2 is teal.
+If c2 is teal, then c2 is south.
+If c1 is south and c1 is ivory, then c2 is willow.
+If c2 is willow, then c2 is north.
 </premises>
 <proof>
-a is violet.
-a is south.
-b is willow.
-b is east.
-c is ivory.
+c0 is violet.
+c0 is south.
+c1 is willow.
+c1 is east.
+c2 is ivory.
 </proof>
 <conclusion>
-c is ivory.
+c2 is ivory.
 </conclusion>
 </think>
 <answer>
 ivory
 </answer>"
 rule_annotated_nl,rule_annotated_nl,2,Natural-language trace with explicit rule labels.,"<question>
-1. a is violet.
-2. a is south.
-3. If a is north and a is violet, then b is ivory.
-4. If b is ivory, then b is south.
-5. If a is south and a is violet, then b is willow.
-6. If b is willow, then b is east.
-7. If a is east and a is violet, then b is teal.
-8. If b is teal, then b is north.
-9. If b is east and b is willow, then c is ivory.
-10. If c is ivory, then c is east.
-11. If b is north and b is teal, then c is teal.
-12. If c is teal, then c is south.
-13. If b is south and b is ivory, then c is willow.
-14. If c is willow, then c is north.
-Which state applies to c?
+1. c0 is violet.
+2. c0 is south.
+3. If c0 is north and c0 is violet, then c1 is ivory.
+4. If c1 is ivory, then c1 is south.
+5. If c0 is south and c0 is violet, then c1 is willow.
+6. If c1 is willow, then c1 is east.
+7. If c0 is east and c0 is violet, then c1 is teal.
+8. If c1 is teal, then c1 is north.
+9. If c1 is east and c1 is willow, then c2 is ivory.
+10. If c2 is ivory, then c2 is east.
+11. If c1 is north and c1 is teal, then c2 is teal.
+12. If c2 is teal, then c2 is south.
+13. If c1 is south and c1 is ivory, then c2 is willow.
+14. If c2 is willow, then c2 is north.
+Which state applies to c2?
 </question>
 
 <think>
 <premises>
-a is violet.
-a is south.
-If a is north and a is violet, then b is ivory.
-If b is ivory, then b is south.
-If a is south and a is violet, then b is willow.
-If b is willow, then b is east.
-If a is east and a is violet, then b is teal.
-If b is teal, then b is north.
-If b is east and b is willow, then c is ivory.
-If c is ivory, then c is east.
-If b is north and b is teal, then c is teal.
-If c is teal, then c is south.
-If b is south and b is ivory, then c is willow.
-If c is willow, then c is north.
+c0 is violet.
+c0 is south.
+If c0 is north and c0 is violet, then c1 is ivory.
+If c1 is ivory, then c1 is south.
+If c0 is south and c0 is violet, then c1 is willow.
+If c1 is willow, then c1 is east.
+If c0 is east and c0 is violet, then c1 is teal.
+If c1 is teal, then c1 is north.
+If c1 is east and c1 is willow, then c2 is ivory.
+If c2 is ivory, then c2 is east.
+If c1 is north and c1 is teal, then c2 is teal.
+If c2 is teal, then c2 is south.
+If c1 is south and c1 is ivory, then c2 is willow.
+If c2 is willow, then c2 is north.
 </premises>
 <proof>
-a is violet. [rule: R]
-a is south. [rule: R]
-b is willow. [rule: ->E]
-b is east. [rule: ->E]
-c is ivory. [rule: ->E]
+c0 is violet. [rule: R]
+c0 is south. [rule: R]
+c1 is willow. [rule: ->E]
+c1 is east. [rule: ->E]
+c2 is ivory. [rule: ->E]
 </proof>
 <conclusion>
-c is ivory.
+c2 is ivory.
 </conclusion>
 </think>
 <answer>
 ivory
 </answer>"
 pseudocode,pseudocode,2,Algorithm-like natural-language derivation trace.,"<question>
-1. a is violet.
-2. a is south.
-3. If a is north and a is violet, then b is ivory.
-4. If b is ivory, then b is south.
-5. If a is south and a is violet, then b is willow.
-6. If b is willow, then b is east.
-7. If a is east and a is violet, then b is teal.
-8. If b is teal, then b is north.
-9. If b is east and b is willow, then c is ivory.
-10. If c is ivory, then c is east.
-11. If b is north and b is teal, then c is teal.
-12. If c is teal, then c is south.
-13. If b is south and b is ivory, then c is willow.
-14. If c is willow, then c is north.
-Which state applies to c?
+1. c0 is violet.
+2. c0 is south.
+3. If c0 is north and c0 is violet, then c1 is ivory.
+4. If c1 is ivory, then c1 is south.
+5. If c0 is south and c0 is violet, then c1 is willow.
+6. If c1 is willow, then c1 is east.
+7. If c0 is east and c0 is violet, then c1 is teal.
+8. If c1 is teal, then c1 is north.
+9. If c1 is east and c1 is willow, then c2 is ivory.
+10. If c2 is ivory, then c2 is east.
+11. If c1 is north and c1 is teal, then c2 is teal.
+12. If c2 is teal, then c2 is south.
+13. If c1 is south and c1 is ivory, then c2 is willow.
+14. If c2 is willow, then c2 is north.
+Which state applies to c2?
 </question>
 
 <think>
 <premises>
-a is violet.
-a is south.
-If a is north and a is violet, then b is ivory.
-If b is ivory, then b is south.
-If a is south and a is violet, then b is willow.
-If b is willow, then b is east.
-If a is east and a is violet, then b is teal.
-If b is teal, then b is north.
-If b is east and b is willow, then c is ivory.
-If c is ivory, then c is east.
-If b is north and b is teal, then c is teal.
-If c is teal, then c is south.
-If b is south and b is ivory, then c is willow.
-If c is willow, then c is north.
+c0 is violet.
+c0 is south.
+If c0 is north and c0 is violet, then c1 is ivory.
+If c1 is ivory, then c1 is south.
+If c0 is south and c0 is violet, then c1 is willow.
+If c1 is willow, then c1 is east.
+If c0 is east and c0 is violet, then c1 is teal.
+If c1 is teal, then c1 is north.
+If c1 is east and c1 is willow, then c2 is ivory.
+If c2 is ivory, then c2 is east.
+If c1 is north and c1 is teal, then c2 is teal.
+If c2 is teal, then c2 is south.
+If c1 is south and c1 is ivory, then c2 is willow.
+If c2 is willow, then c2 is north.
 </premises>
 <proof>
-step_1: derive ""a is violet"" using R.
-step_2: derive ""a is south"" using R.
-step_3: derive ""b is willow"" using ->E.
-step_4: derive ""b is east"" using ->E.
-step_5: derive ""c is ivory"" using ->E.
+step_1: derive ""c0 is violet"" using R.
+step_2: derive ""c0 is south"" using R.
+step_3: derive ""c1 is willow"" using ->E.
+step_4: derive ""c1 is east"" using ->E.
+step_5: derive ""c2 is ivory"" using ->E.
 </proof>
 <conclusion>
-c is ivory.
+c2 is ivory.
 </conclusion>
 </think>
 <answer>
 ivory
 </answer>"
 shuffled_logic,shuffled_logic,2,Formal proof lines shuffled as an order negative control.,"<question>
-1. a is violet.
-2. a is south.
-3. If a is north and a is violet, then b is ivory.
-4. If b is ivory, then b is south.
-5. If a is south and a is violet, then b is willow.
-6. If b is willow, then b is east.
-7. If a is east and a is violet, then b is teal.
-8. If b is teal, then b is north.
-9. If b is east and b is willow, then c is ivory.
-10. If c is ivory, then c is east.
-11. If b is north and b is teal, then c is teal.
-12. If c is teal, then c is south.
-13. If b is south and b is ivory, then c is willow.
-14. If c is willow, then c is north.
-Which state applies to c?
+1. c0 is violet.
+2. c0 is south.
+3. If c0 is north and c0 is violet, then c1 is ivory.
+4. If c1 is ivory, then c1 is south.
+5. If c0 is south and c0 is violet, then c1 is willow.
+6. If c1 is willow, then c1 is east.
+7. If c0 is east and c0 is violet, then c1 is teal.
+8. If c1 is teal, then c1 is north.
+9. If c1 is east and c1 is willow, then c2 is ivory.
+10. If c2 is ivory, then c2 is east.
+11. If c1 is north and c1 is teal, then c2 is teal.
+12. If c2 is teal, then c2 is south.
+13. If c1 is south and c1 is ivory, then c2 is willow.
+14. If c2 is willow, then c2 is north.
+Which state applies to c2?
 </question>
 
 <formal>
 <constants>
-a = a
-b = b
-c = c
+c0 = c0
+c1 = c1
+c2 = c2
 </constants>
 <predicates>
 Ax: x is willow
@@ -292,58 +292,58 @@ Fx: x is south
 Gx: x is east
 </predicates>
 <premises>
-Da
-Fa
-Ea & Da -> Bb
-Bb -> Fb
-Fa & Da -> Ab
-Ab -> Gb
-Ga & Da -> Cb
-Cb -> Eb
-Gb & Ab -> Bc
-Bc -> Gc
-Eb & Cb -> Cc
-Cc -> Fc
-Fb & Bb -> Ac
-Ac -> Ec
+D(c0)
+F(c0)
+E(c0) & D(c0) -> B(c1)
+B(c1) -> F(c1)
+F(c0) & D(c0) -> A(c1)
+A(c1) -> G(c1)
+G(c0) & D(c0) -> C(c1)
+C(c1) -> E(c1)
+G(c1) & A(c1) -> B(c2)
+B(c2) -> G(c2)
+E(c1) & C(c1) -> C(c2)
+C(c2) -> F(c2)
+F(c1) & B(c1) -> A(c2)
+A(c2) -> E(c2)
 </premises>
 <proof>
-Bc ; ->E
-Fa ; R
-Da ; R
-Ab ; ->E
-Gb ; ->E
+A(c1) ; ->E
+F(c0) ; R
+D(c0) ; R
+B(c2) ; ->E
+G(c1) ; ->E
 </proof>
 <conclusion>
-Bc
+B(c2)
 </conclusion>
 </formal>
 <answer>
 ivory
 </answer>"
 invalid_logic,invalid_logic,2,Formal-looking trace with invalid rule citations.,"<question>
-1. a is violet.
-2. a is south.
-3. If a is north and a is violet, then b is ivory.
-4. If b is ivory, then b is south.
-5. If a is south and a is violet, then b is willow.
-6. If b is willow, then b is east.
-7. If a is east and a is violet, then b is teal.
-8. If b is teal, then b is north.
-9. If b is east and b is willow, then c is ivory.
-10. If c is ivory, then c is east.
-11. If b is north and b is teal, then c is teal.
-12. If c is teal, then c is south.
-13. If b is south and b is ivory, then c is willow.
-14. If c is willow, then c is north.
-Which state applies to c?
+1. c0 is violet.
+2. c0 is south.
+3. If c0 is north and c0 is violet, then c1 is ivory.
+4. If c1 is ivory, then c1 is south.
+5. If c0 is south and c0 is violet, then c1 is willow.
+6. If c1 is willow, then c1 is east.
+7. If c0 is east and c0 is violet, then c1 is teal.
+8. If c1 is teal, then c1 is north.
+9. If c1 is east and c1 is willow, then c2 is ivory.
+10. If c2 is ivory, then c2 is east.
+11. If c1 is north and c1 is teal, then c2 is teal.
+12. If c2 is teal, then c2 is south.
+13. If c1 is south and c1 is ivory, then c2 is willow.
+14. If c2 is willow, then c2 is north.
+Which state applies to c2?
 </question>
 
 <formal>
 <constants>
-a = a
-b = b
-c = c
+c0 = c0
+c1 = c1
+c2 = c2
 </constants>
 <predicates>
 Ax: x is willow
@@ -355,107 +355,107 @@ Fx: x is south
 Gx: x is east
 </predicates>
 <premises>
-Da
-Fa
-Ea & Da -> Bb
-Bb -> Fb
-Fa & Da -> Ab
-Ab -> Gb
-Ga & Da -> Cb
-Cb -> Eb
-Gb & Ab -> Bc
-Bc -> Gc
-Eb & Cb -> Cc
-Cc -> Fc
-Fb & Bb -> Ac
-Ac -> Ec
+D(c0)
+F(c0)
+E(c0) & D(c0) -> B(c1)
+B(c1) -> F(c1)
+F(c0) & D(c0) -> A(c1)
+A(c1) -> G(c1)
+G(c0) & D(c0) -> C(c1)
+C(c1) -> E(c1)
+G(c1) & A(c1) -> B(c2)
+B(c2) -> G(c2)
+E(c1) & C(c1) -> C(c2)
+C(c2) -> F(c2)
+F(c1) & B(c1) -> A(c2)
+A(c2) -> E(c2)
 </premises>
 <proof>
-Da ; R
-Fa ; R
-Ab ; R
-Gb ; R
-Bc ; R
+D(c0) ; R
+F(c0) ; R
+A(c1) ; R
+G(c1) ; R
+B(c2) ; R
 </proof>
 <conclusion>
-Bc
+B(c2)
 </conclusion>
 </formal>
 <answer>
 ivory
 </answer>"
 shuffled_nl,shuffled_nl,2,Natural-language proof lines shuffled as an order negative control.,"<question>
-1. a is violet.
-2. a is south.
-3. If a is north and a is violet, then b is ivory.
-4. If b is ivory, then b is south.
-5. If a is south and a is violet, then b is willow.
-6. If b is willow, then b is east.
-7. If a is east and a is violet, then b is teal.
-8. If b is teal, then b is north.
-9. If b is east and b is willow, then c is ivory.
-10. If c is ivory, then c is east.
-11. If b is north and b is teal, then c is teal.
-12. If c is teal, then c is south.
-13. If b is south and b is ivory, then c is willow.
-14. If c is willow, then c is north.
-Which state applies to c?
+1. c0 is violet.
+2. c0 is south.
+3. If c0 is north and c0 is violet, then c1 is ivory.
+4. If c1 is ivory, then c1 is south.
+5. If c0 is south and c0 is violet, then c1 is willow.
+6. If c1 is willow, then c1 is east.
+7. If c0 is east and c0 is violet, then c1 is teal.
+8. If c1 is teal, then c1 is north.
+9. If c1 is east and c1 is willow, then c2 is ivory.
+10. If c2 is ivory, then c2 is east.
+11. If c1 is north and c1 is teal, then c2 is teal.
+12. If c2 is teal, then c2 is south.
+13. If c1 is south and c1 is ivory, then c2 is willow.
+14. If c2 is willow, then c2 is north.
+Which state applies to c2?
 </question>
 
 <think>
 <premises>
-a is violet.
-a is south.
-If a is north and a is violet, then b is ivory.
-If b is ivory, then b is south.
-If a is south and a is violet, then b is willow.
-If b is willow, then b is east.
-If a is east and a is violet, then b is teal.
-If b is teal, then b is north.
-If b is east and b is willow, then c is ivory.
-If c is ivory, then c is east.
-If b is north and b is teal, then c is teal.
-If c is teal, then c is south.
-If b is south and b is ivory, then c is willow.
-If c is willow, then c is north.
+c0 is violet.
+c0 is south.
+If c0 is north and c0 is violet, then c1 is ivory.
+If c1 is ivory, then c1 is south.
+If c0 is south and c0 is violet, then c1 is willow.
+If c1 is willow, then c1 is east.
+If c0 is east and c0 is violet, then c1 is teal.
+If c1 is teal, then c1 is north.
+If c1 is east and c1 is willow, then c2 is ivory.
+If c2 is ivory, then c2 is east.
+If c1 is north and c1 is teal, then c2 is teal.
+If c2 is teal, then c2 is south.
+If c1 is south and c1 is ivory, then c2 is willow.
+If c2 is willow, then c2 is north.
 </premises>
 <proof>
-b is willow.
-a is south.
-c is ivory.
-a is violet.
-b is east.
+c1 is willow.
+c0 is violet.
+c0 is south.
+c2 is ivory.
+c1 is east.
 </proof>
 <conclusion>
-c is ivory.
+c2 is ivory.
 </conclusion>
 </think>
 <answer>
 ivory
 </answer>"
 symbol_padded_logic,logic_symbol_padded,2,Formal atoms expanded into predicate-call syntax.,"<question>
-1. a is violet.
-2. a is south.
-3. If a is north and a is violet, then b is ivory.
-4. If b is ivory, then b is south.
-5. If a is south and a is violet, then b is willow.
-6. If b is willow, then b is east.
-7. If a is east and a is violet, then b is teal.
-8. If b is teal, then b is north.
-9. If b is east and b is willow, then c is ivory.
-10. If c is ivory, then c is east.
-11. If b is north and b is teal, then c is teal.
-12. If c is teal, then c is south.
-13. If b is south and b is ivory, then c is willow.
-14. If c is willow, then c is north.
-Which state applies to c?
+1. c0 is violet.
+2. c0 is south.
+3. If c0 is north and c0 is violet, then c1 is ivory.
+4. If c1 is ivory, then c1 is south.
+5. If c0 is south and c0 is violet, then c1 is willow.
+6. If c1 is willow, then c1 is east.
+7. If c0 is east and c0 is violet, then c1 is teal.
+8. If c1 is teal, then c1 is north.
+9. If c1 is east and c1 is willow, then c2 is ivory.
+10. If c2 is ivory, then c2 is east.
+11. If c1 is north and c1 is teal, then c2 is teal.
+12. If c2 is teal, then c2 is south.
+13. If c1 is south and c1 is ivory, then c2 is willow.
+14. If c2 is willow, then c2 is north.
+Which state applies to c2?
 </question>
 
 <formal>
 <constants>
-ca = a
-cb = b
-cc = c
+cc0 = c0
+cc1 = c1
+cc2 = c2
 </constants>
 <predicates>
 PA(x): x is willow
@@ -467,58 +467,58 @@ PF(x): x is south
 PG(x): x is east
 </predicates>
 <premises>
-PD(ca)
-PF(ca)
-PE(ca) & PD(ca) -> PB(cb)
-PB(cb) -> PF(cb)
-PF(ca) & PD(ca) -> PA(cb)
-PA(cb) -> PG(cb)
-PG(ca) & PD(ca) -> PC(cb)
-PC(cb) -> PE(cb)
-PG(cb) & PA(cb) -> PB(cc)
-PB(cc) -> PG(cc)
-PE(cb) & PC(cb) -> PC(cc)
-PC(cc) -> PF(cc)
-PF(cb) & PB(cb) -> PA(cc)
-PA(cc) -> PE(cc)
+PD(cc0)
+PF(cc0)
+PE(cc0) & PD(cc0) -> PB(cc1)
+PB(cc1) -> PF(cc1)
+PF(cc0) & PD(cc0) -> PA(cc1)
+PA(cc1) -> PG(cc1)
+PG(cc0) & PD(cc0) -> PC(cc1)
+PC(cc1) -> PE(cc1)
+PG(cc1) & PA(cc1) -> PB(cc2)
+PB(cc2) -> PG(cc2)
+PE(cc1) & PC(cc1) -> PC(cc2)
+PC(cc2) -> PF(cc2)
+PF(cc1) & PB(cc1) -> PA(cc2)
+PA(cc2) -> PE(cc2)
 </premises>
 <proof>
-PD(ca) ; R
-PF(ca) ; R
-PA(cb) ; ->E
-PG(cb) ; ->E
-PB(cc) ; ->E
+PD(cc0) ; R
+PF(cc0) ; R
+PA(cc1) ; ->E
+PG(cc1) ; ->E
+PB(cc2) ; ->E
 </proof>
 <conclusion>
-PB(cc)
+PB(cc2)
 </conclusion>
 </formal>
 <answer>
 ivory
 </answer>"
 wordified_logic,logic_wordified,2,Formal atoms expanded with natural-word predicate names.,"<question>
-1. a is violet.
-2. a is south.
-3. If a is north and a is violet, then b is ivory.
-4. If b is ivory, then b is south.
-5. If a is south and a is violet, then b is willow.
-6. If b is willow, then b is east.
-7. If a is east and a is violet, then b is teal.
-8. If b is teal, then b is north.
-9. If b is east and b is willow, then c is ivory.
-10. If c is ivory, then c is east.
-11. If b is north and b is teal, then c is teal.
-12. If c is teal, then c is south.
-13. If b is south and b is ivory, then c is willow.
-14. If c is willow, then c is north.
-Which state applies to c?
+1. c0 is violet.
+2. c0 is south.
+3. If c0 is north and c0 is violet, then c1 is ivory.
+4. If c1 is ivory, then c1 is south.
+5. If c0 is south and c0 is violet, then c1 is willow.
+6. If c1 is willow, then c1 is east.
+7. If c0 is east and c0 is violet, then c1 is teal.
+8. If c1 is teal, then c1 is north.
+9. If c1 is east and c1 is willow, then c2 is ivory.
+10. If c2 is ivory, then c2 is east.
+11. If c1 is north and c1 is teal, then c2 is teal.
+12. If c2 is teal, then c2 is south.
+13. If c1 is south and c1 is ivory, then c2 is willow.
+14. If c2 is willow, then c2 is north.
+Which state applies to c2?
 </question>
 
 <formal>
 <constants>
-a = a
-b = b
-c = c
+c0 = c0
+c1 = c1
+c2 = c2
 </constants>
 <predicates>
 Willow(x): x is willow
@@ -530,30 +530,30 @@ South(x): x is south
 East(x): x is east
 </predicates>
 <premises>
-Violet(a)
-South(a)
-North(a) & Violet(a) -> Ivory(b)
-Ivory(b) -> South(b)
-South(a) & Violet(a) -> Willow(b)
-Willow(b) -> East(b)
-East(a) & Violet(a) -> Teal(b)
-Teal(b) -> North(b)
-East(b) & Willow(b) -> Ivory(c)
-Ivory(c) -> East(c)
-North(b) & Teal(b) -> Teal(c)
-Teal(c) -> South(c)
-South(b) & Ivory(b) -> Willow(c)
-Willow(c) -> North(c)
+Violet(c0)
+South(c0)
+North(c0) & Violet(c0) -> Ivory(c1)
+Ivory(c1) -> South(c1)
+South(c0) & Violet(c0) -> Willow(c1)
+Willow(c1) -> East(c1)
+East(c0) & Violet(c0) -> Teal(c1)
+Teal(c1) -> North(c1)
+East(c1) & Willow(c1) -> Ivory(c2)
+Ivory(c2) -> East(c2)
+North(c1) & Teal(c1) -> Teal(c2)
+Teal(c2) -> South(c2)
+South(c1) & Ivory(c1) -> Willow(c2)
+Willow(c2) -> North(c2)
 </premises>
 <proof>
-Violet(a) ; R
-South(a) ; R
-Willow(b) ; ->E
-East(b) ; ->E
-Ivory(c) ; ->E
+Violet(c0) ; R
+South(c0) ; R
+Willow(c1) ; ->E
+East(c1) ; ->E
+Ivory(c2) ; ->E
 </proof>
 <conclusion>
-Ivory(c)
+Ivory(c2)
 </conclusion>
 </formal>
 <answer>

@@ -14,7 +14,7 @@
 
 \preprintlogo{official_preprint/assets/hu-logo-transparent.png}
 \abstractfilledfalse
-\preprintdate{July 15, 2026}
+\preprintdate{July 22, 2026}
 \correspondence{filipe.laitenberger@hu-berlin.de}
 
 \newcommand{\branchproof}{\textsc{BranchProof}}
@@ -36,21 +36,21 @@ models learn more reliable symbolic reasoning when the same derivation is
 written instead as a compact formal trace. To isolate the trace substrate, we
 construct paired synthetic tasks in which each instance has the same prompt,
 answer, and latent proof, but two target traces: a formal derivation and a
-natural language derivation. Attribute-constraint experiments show a positive
-mean formal-trace gap in answer correctness, with substantial seed variance at
-the longest depth. A post-hoc closure audit, however, found that the original
+natural language derivation. A post-hoc closure audit found that the original
 long-depth branching-proof generator reused constants and admitted multiple
-derivable answers. We therefore quarantine every quantitative result based on
-that construction, including its architecture, shortcut, syntax, hybrid, and
-continual-pretraining derivatives. A corrected generator now assigns a fresh constant to
-each layer and rejects any instance without exactly one derivable candidate;
-three-seed reruns with equal generation budgets and greedy, pass@1, and pass@k
-evaluation are in progress. A matched one-run Qwen2.5 continual-pretraining
-pilot is null or mixed on conventional downstream suites, and its apparent
-context-QA gains largely collapse after generated continuation is removed.
-Until the corrected branching reruns complete, this draft provides a method,
-an independent constraint-task signal, and a negative transfer pilot, not a
-validated general claim that formal traces improve reasoning.
+derivable answers, so every quantitative result from that construction remains
+quarantined. On a repaired unique-answer benchmark, a 30-run three-seed grid
+shows a depth-dependent reversal: natural-language supervision is stronger at
+greedy and pass@1 for maximum training depths 5--20, but formal supervision is
+substantially stronger after training through depth 25. In that setting,
+formal versus natural OOD pass@1 correctness is $75.0\pm9.5$ versus
+$17.8\pm4.7$ percent, and correct-and-valid pass@1 is $68.5\pm10.2$ versus
+$17.5\pm4.5$ percent. Attribute constraints provide an independent positive
+but mixed signal. A matched one-run Qwen2.5 continual-pretraining pilot is null
+or mixed, and its apparent context-QA gains largely collapse after generated
+continuation is removed. The evidence supports a depth-dependent supervised
+formal-trace advantage on the corrected symbolic task, not uniform superiority
+or demonstrated downstream transfer.
 \end{abstract}
 
 \begin{tcolorbox}[
@@ -60,12 +60,13 @@ validated general claim that formal traces improve reasoning.
   arc=1mm,
   left=2mm,right=2mm,top=1mm,bottom=1mm
 ]
-\small\textbf{Internal audit status (July 15, 2026).}
+\small\textbf{Internal audit status (July 22, 2026).}
 All performance measurements from the original \branchproof{} construction are
-excluded from the rendered preprint while corrected unique-answer experiments
-run. They must not be cited or used to support the paper's claims.
-Section~\ref{sec:uniqueness-audit} records the defect, its measured scope, and
-the acceptance gate for replacement results.
+excluded from the rendered preprint and must not be cited. The corrected
+30-run main grid passed its row-level and cross-grid qualitative gates and is
+reported below. Selected corrected mechanism and architecture controls are
+still running and are not yet evidence. Section~\ref{sec:uniqueness-audit}
+records the defect and replacement acceptance gate.
 \end{tcolorbox}
 
 \section{Introduction}
@@ -96,16 +97,18 @@ not meant to be broad reasoning benchmarks. They are instruments for testing
 whether a trace substrate helps models learn compositional rule application,
 state tracking, distractor rejection, and extrapolation to longer derivations.
 
-The current evidence is deliberately narrower than the motivating hypothesis.
+The current evidence is narrower than the motivating hypothesis.
 On \attrcon{}, formal supervision has higher mean answer correctness on the
 hard-depth band and at depth 50, but the endpoint has substantial seed
 variance and both trace styles have weak long-depth proof validity. The
 original \branchproof{} experiments appeared to provide a broader result, but
 a post-hoc closure audit showed that their long-depth examples often admitted
 multiple derivable answers. We therefore exclude those measurements and every
-derived ablation from the evidentiary record. Corrected unique-answer reruns are
-in progress with equal generation budgets and explicit greedy and pass@1
-reporting.
+derived ablation from the evidentiary record. The corrected unique-answer grid
+passes its complete artifact and raw-generation gate. Natural supervision is
+stronger with shallower training ranges, whereas formal supervision becomes
+substantially stronger at greedy, pass@1, and pass@k after training through
+depth 25.
 
 Correctness and faithfulness are separate even when the trace syntax is formal.
 A generated sequence is correct when it yields the designated answer, whereas
@@ -119,10 +122,11 @@ the supervised trace language. We provide an independent three-seed
 attribute-constraint result that motivates the formal-substrate hypothesis, but
 does not by itself establish a general advantage. We identify and measure a
 long-depth uniqueness defect in the original branching benchmark, repair the
-generator with fresh constants and closure-based rejection, and specify the
-acceptance gate for replacement experiments. Architecture, shortcut, syntax,
-hybrid, and conditioned-dual conclusions remain hypotheses until they are
-rerun on the corrected construction. We additionally report a matched
+generator with fresh constants and closure-based rejection, and report the
+accepted 30-run replacement grid. Its result is depth dependent rather than a
+uniform formal advantage. Architecture, shortcut, syntax, hybrid, and
+conditioned-dual conclusions remain hypotheses until their selected corrected
+reruns pass the same gates. We additionally report a matched
 one-run Qwen2.5 continual-pretraining pilot whose conventional and
 context-QA results do not provide clean evidence of modality transfer.
 
@@ -216,8 +220,9 @@ lines. The \nl{} trace describes the same derivation in short controlled
 sentences. The implementation also supports symbol-padded logic, wordified
 logic, pseudocode, rule-annotated natural language, shuffled traces, invalid
 formal traces, same-datapoint hybrids, and mode-conditioned dual-modality
-training. Results from those variants are excluded until selected controls are
-rerun on the corrected benchmark.
+training. Results from the old construction are excluded; selected corrected
+controls are running and will be reported only after the same artifact and
+sample audits.
 
 \subsection{Evaluation protocol}
 
@@ -248,14 +253,15 @@ comparison is between paired \logic{} and \nl{} targets. Each train-depth
 subset contains 50k materialized examples. We fine-tune with LoRA rank 16,
 alpha 32, dropout 0.05, BF16 weights, batch size 1, learning rate $10^{-4}$,
 10k optimizer steps, maximum sequence length 8192, and adapters on attention
-and MLP projection modules. Architecture and mechanism ablations are deferred
-until the corrected main comparison passes its artifact and sample audit.
+and MLP projection modules. The corrected main comparison has passed its
+artifact and sample audit; selected architecture and mechanism controls are now
+running but remain outside the evidentiary record.
 
 For \attrcon{}, we use the same paired-rendering principle and report
-three-seed train-1-to-25 results. This is the only completed quantitative
-formal-versus-natural comparison used as evidence in the present draft. Its
-depth-50 correctness and validity metrics are treated as high-variance
-diagnostics, not as evidence of solved long-depth proof generation.
+three-seed train-1-to-25 results. It provides evidence independent of the
+corrected \branchproof{} grid. Its depth-50 correctness and validity metrics
+are treated as high-variance diagnostics, not as evidence of solved long-depth
+proof generation.
 
 The corrected \branchproof{} evaluation uses depths
 $\{1,2,5,10,12,15,18,20,25,30,35,40,45,50\}$, a 16,384-token context, and the
@@ -376,17 +382,67 @@ more likely to match the designated label. This is why no old architecture,
 shortcut, syntax, hybrid, conditioned-dual, or proof-mixture result is used as
 evidence here.
 
-\subsection{Corrected Evaluation Gate}
+\subsection{Corrected BranchProof Shows a Depth-Dependent Reversal}
 
 The repaired generator assigns a fresh constant to every layer and rejects an
 instance unless closure derives exactly one candidate answer. Its production
 preflight accepted all 3,000 audited examples, with maximum derived-candidate
-count one. Corrected training and evaluation use materialized paired data,
-equal 7,168-token generation budgets, and both greedy and pass@k metrics. A
-one-seed pilot must pass an automated artifact audit and manual inspection of
-train-range, held-out, and depth-50 successes and failures before the full
-three-seed grid can run. Quantitative \branchproof{} claims will be added only
-after that protocol completes.
+count one. All 30 corrected runs passed the row-level artifact audit and the
+cross-grid qualitative audit. The latter covers both trace languages, all
+training ranges and seeds, shallow, train-edge, first-OOD, and depth-50 cases,
+correct and incorrect generations, valid and invalid traces, and cap-hit
+diagnostics.
+
+\begin{table}[t]
+\centering
+\scriptsize
+\begin{tabular}{rccccc}
+\toprule
+Train max & Greedy OOD & OOD corr.@1 & OOD joint@1 & OOD corr.@16 & OOD joint@16 \\
+\midrule
+5  & $10.8\pm5.9$ / $56.3\pm8.0$ & $9.8\pm4.8$ / $52.4\pm6.7$ & $3.3\pm2.0$ / $51.0\pm6.5$ & $50.0\pm15.7$ / $73.5\pm9.6$ & $17.9\pm8.6$ / $68.6\pm10.3$ \\
+10 & $33.1\pm2.2$ / $60.0\pm8.4$ & $30.8\pm1.7$ / $58.0\pm8.1$ & $23.7\pm0.5$ / $54.9\pm9.4$ & $67.8\pm2.9$ / $71.1\pm10.8$ & $35.9\pm2.8$ / $63.4\pm13.1$ \\
+15 & $28.1\pm3.5$ / $57.4\pm5.0$ & $26.1\pm2.9$ / $49.5\pm1.0$ & $12.8\pm0.6$ / $49.1\pm0.7$ & $69.9\pm6.6$ / $56.9\pm5.9$ & $21.0\pm3.4$ / $53.5\pm2.0$ \\
+20 & $22.0\pm11.3$ / $68.4\pm19.8$ & $23.2\pm11.3$ / $31.2\pm5.4$ & $2.5\pm1.4$ / $31.2\pm5.4$ & $80.4\pm12.5$ / $45.3\pm16.6$ & $15.8\pm11.2$ / $45.3\pm16.6$ \\
+25 & $82.1\pm7.0$ / $48.8\pm21.7$ & $75.0\pm9.5$ / $17.8\pm4.7$ & $68.5\pm10.2$ / $17.5\pm4.5$ & $99.6\pm0.3$ / $42.5\pm5.8$ & $98.1\pm0.5$ / $40.2\pm4.2$ \\
+\bottomrule
+\end{tabular}
+\caption{Corrected unique-answer \branchproof{} results in percent mean
+$\pm$ population standard deviation across three seeds. Each cell is
+Logic / Natural. OOD contains evaluation depths above the run's maximum
+training depth. Joint uses citation-free formal validity for Logic and
+translated citation-free validity for Natural.}
+\label{tab:branchproof-corrected}
+\end{table}
+
+\begin{figure}[t]
+  \centering
+  \includegraphics[width=0.92\linewidth]{official_preprint/figures/branchproof_corrected_primary.pdf}
+  \caption{Corrected \branchproof{} greedy and sampled pass@1 OOD
+  correctness. Natural supervision leads for maximum training depths 5--20;
+  formal supervision reverses the comparison after training through depth 25.
+  Error bars are standard deviations over three seeds.}
+  \label{fig:branchproof-corrected}
+\end{figure}
+
+The primary result is therefore not a uniform formal advantage. Natural
+supervision is better at greedy and sampled pass@1 for train maxima 5--20.
+Formal answer coverage begins to overtake Natural only at larger sample budgets
+for train maxima 15 and 20, while its joint validity remains lower. At
+train-1-to-25, the comparison reverses decisively: paired-seed formal-minus-
+natural OOD pass@1 correctness is $+57.1\pm14.0$ points and joint pass@1 is
+$+51.0\pm14.4$ points. The pass@1 correctness delta is positive in all three
+paired seeds. At depth 50, formal versus natural pass@1 correctness is
+$57.2\pm15.1$ versus $1.9\pm0.7$ percent, and joint pass@1 is
+$48.0\pm16.5$ versus $1.7\pm1.0$ percent. Pass@16 reaches
+$99.0\pm1.5$ versus $21.9\pm6.8$ percent correctness at depth 50.
+
+Raw generations support the metric interpretation. Credited examples contain
+the intended fresh constants and complete wrappers; citation-free-valid traces
+have no retained validation error and line-valid fraction one. Long failures
+in both modalities frequently copy premises until the shared cap without an
+answer. Formal generations also include answer-correct but proof-invalid cases,
+which is why correctness and validity remain separate outcomes.
 
 \subsection{Continuation Midtraining Is Null or Mixed}
 
@@ -757,12 +813,13 @@ Shaded bands are standard deviations over three seeds.}
 \label{sec:discussion}
 
 The completed \attrcon{} experiment makes formal supervision a credible
-hypothesis for improving symbolic answer correctness, but the evidence is not
-yet broad enough for a general substrate claim. Its mean gap is positive, its
-hardest endpoint is noisy, and its joint-validity result does not favor formal
-traces. The corrected \branchproof{} experiment is designed to determine
-whether the correctness effect replicates under controlled length
-extrapolation once every question has exactly one derivable answer.
+hypothesis for improving symbolic answer correctness, while the corrected
+\branchproof{} grid shows when that advantage emerges under controlled length
+extrapolation. The result is not monotone in training depth: Natural is better
+at low and intermediate train maxima, and Logic reverses the comparison only
+after exposure through depth 25. This pattern is consistent with formal traces
+requiring enough compositional-depth coverage before their compact structure
+pays off, but the present experiment does not isolate the mechanism.
 
 The uniqueness failure illustrates why the distinction between correctness,
 validity, and sampling budget is substantive. Pass@k can reward coverage of
@@ -773,12 +830,11 @@ results, equal generation budgets, and raw-generation inspection before using
 pass@k as evidence.
 
 The old mechanism and mixed-modality experiments remain useful for choosing
-follow-ups, but not for supporting claims. If the corrected three-seed result
-shows a formal advantage at greedy or pass@1, the next experiments should
-selectively rerun one syntax control, one shortcut intervention, one
-conditioned-dual comparison, and one independent architecture. If it does not,
-the appropriate conclusion is that the original broad narrative was an
-artifact of benchmark ambiguity rather than evidence for a better substrate.
+follow-ups, but not for supporting claims. The corrected train-1-to-25 result
+triggered selected reruns of length/syntax, shortcut, hybrid,
+conditioned-dual, and independent-architecture controls. Until those pass the
+same structural and qualitative gates, the accepted claim is limited to the
+corrected OLMo-3-7B main grid.
 
 The corrected continual-pretraining pilot provides a separate negative
 constraint. Small aggregate differences, next-document continuation, tagged
@@ -790,11 +846,11 @@ planned broader mixture expansion under the positive-and-clean gate.
 \section{Limitations}
 
 The tasks are synthetic. This is necessary for a paired substrate comparison,
-but it limits claims about open-domain reasoning. The only completed three-seed
-comparison currently retained as positive evidence is \attrcon{}, whose
-depth-50 estimate has high seed variance. Corrected \branchproof{} results are
-still pending. The
-completed continual-pretraining comparison has one run per condition, small mixed deltas,
+but it limits claims about open-domain reasoning. The corrected \branchproof{}
+result uses one model family and shows a sharp train-depth interaction; the
+selected architecture and mechanism controls are still running. The
+\attrcon{} depth-50 estimate also has high seed variance. The completed
+continual-pretraining comparison has one run per condition, small mixed deltas,
 and response-format artifacts, so it cannot estimate seed variance or establish
 a transfer effect. Natural-language validity depends on task-specific
 translation coverage, while formal validity does not imply causal faithfulness.
@@ -807,11 +863,14 @@ Paired trace supervision provides a direct way to test whether formal logic is
 a better training substrate than natural language. The current
 attribute-constraint result motivates that hypothesis, while the uniqueness
 audit invalidates the original branching-proof evidence and its derived
-ablations. A corrected continual-pretraining pilot is null or mixed and
-shows that response control can masquerade as context-QA transfer. The decisive
-supervised claim therefore remains open pending the corrected unique-answer
-rerun. Regardless of its outcome, correctness and proof validity must be
-evaluated separately.
+ablations. On the repaired unique-answer benchmark, Natural leads at shallow
+and intermediate training ranges, but Logic has a large, three-seed pass@1 and
+correct-and-valid advantage after training through depth 25. A corrected
+continual-pretraining pilot remains null or mixed and shows that response
+control can masquerade as context-QA transfer. The current evidence therefore
+supports a depth-dependent synthetic SFT effect, not uniform substrate
+superiority or downstream transfer. Correctness and proof validity must remain
+separate outcomes.
 
 \clearpage
 \appendix
@@ -861,9 +920,9 @@ balanced answer positions. Replacement evaluation uses a 16,384-token context,
 the same 7,168-new-token cap for both trace languages, greedy decoding, and
 pass@k for $k\in\{1,2,4,8,16\}$. Across every corrected validation row and
 depth, the minimum measured headroom is 494 tokens for generation and 2,788
-tokens for the full context. Quantitative claims will be restored only
-after raw generations and validators pass a one-seed pilot and the full
-three-seed rerun completes.
+tokens for the full context. The full three-seed rerun subsequently passed all
+30 row audits and the cross-grid qualitative audit; its accepted replacement
+results are reported in Table~\ref{tab:branchproof-corrected}.
 
 \section{Task Details}
 \label{sec:task-details}

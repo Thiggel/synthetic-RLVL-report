@@ -6,7 +6,7 @@
 \usepackage{float}
 \usepackage{hyperref}
 \title{Formal Logic CoT Synthetic Results Update}
-\date{2026-07-10}
+\date{2026-07-22}
 \begin{document}
 \maketitle
 
@@ -19,22 +19,77 @@ depth-40/45/50 examples. The defect affects the main depth-scaling result and
 every architecture, syntax, shortcut, hybrid, conditioned-dual, batch-size,
 tiny-pretraining, downstream-transfer, and midtraining artifact trained from
 that construction. Do not cite these numbers. The corrected generator uses
-fresh constants at every layer, passes a unique-answer closure gate, and is
-being rerun with equal logic/NL generation caps plus greedy and pass@1 metrics.
-The independent AttrCon results are not affected. Full evidence and recovery
-jobs are recorded in the experiment repository at
+fresh constants at every layer, passes a unique-answer closure gate, and uses
+equal logic/NL generation caps plus greedy and pass@1 metrics.
+The corrected 30-run grid has passed its artifact and qualitative gates; replacement evidence is reported in the next section. The independent AttrCon results are not affected.
+Full evidence and recovery jobs are recorded in
 \texttt{docs/branchproof\_uniqueness\_audit\_2026-07-10.md}.
+
+
+\section{Corrected BranchProof result}
+The replacement grid contains 30 three-seed runs and passed every row-level artifact gate plus
+the cross-grid qualitative audit. Every retained prompt uses fresh constants through its requested
+depth, and no citation-free-valid retained sample carries a validation error or a line-valid
+fraction below one. The table reports percentage mean $\pm$ population standard deviation across
+three seeds. OOD means evaluation depths above the run's maximum training depth.
+
+\begin{table}[H]
+\centering
+\scriptsize
+\begin{tabular}{llrrrrr}
+\toprule
+Train & Trace & Greedy OOD & OOD c@1 & OOD joint@1 & OOD c@16 & OOD joint@16 \\
+\midrule
+1--5 & Logic & 10.8 $\pm$ 5.9 & 9.8 $\pm$ 4.8 & 3.3 $\pm$ 2.0 & 50.0 $\pm$ 15.7 & 17.9 $\pm$ 8.6 \\
+1--5 & Natural & 56.3 $\pm$ 8.0 & 52.4 $\pm$ 6.7 & 51.0 $\pm$ 6.5 & 73.5 $\pm$ 9.6 & 68.6 $\pm$ 10.3 \\
+1--10 & Logic & 33.1 $\pm$ 2.2 & 30.8 $\pm$ 1.7 & 23.7 $\pm$ 0.5 & 67.8 $\pm$ 2.9 & 35.9 $\pm$ 2.8 \\
+1--10 & Natural & 60.0 $\pm$ 8.4 & 58.0 $\pm$ 8.1 & 54.9 $\pm$ 9.4 & 71.1 $\pm$ 10.8 & 63.4 $\pm$ 13.1 \\
+1--15 & Logic & 28.1 $\pm$ 3.5 & 26.1 $\pm$ 2.9 & 12.8 $\pm$ 0.6 & 69.9 $\pm$ 6.6 & 21.0 $\pm$ 3.4 \\
+1--15 & Natural & 57.4 $\pm$ 5.0 & 49.5 $\pm$ 1.0 & 49.1 $\pm$ 0.7 & 56.9 $\pm$ 5.9 & 53.5 $\pm$ 2.0 \\
+1--20 & Logic & 22.0 $\pm$ 11.3 & 23.2 $\pm$ 11.3 & 2.5 $\pm$ 1.4 & 80.4 $\pm$ 12.5 & 15.8 $\pm$ 11.2 \\
+1--20 & Natural & 68.4 $\pm$ 19.8 & 31.2 $\pm$ 5.4 & 31.2 $\pm$ 5.4 & 45.3 $\pm$ 16.6 & 45.3 $\pm$ 16.6 \\
+1--25 & Logic & 82.1 $\pm$ 7.0 & 75.0 $\pm$ 9.5 & 68.5 $\pm$ 10.2 & 99.6 $\pm$ 0.3 & 98.1 $\pm$ 0.5 \\
+1--25 & Natural & 48.8 $\pm$ 21.7 & 17.8 $\pm$ 4.7 & 17.5 $\pm$ 4.5 & 42.5 $\pm$ 5.8 & 40.2 $\pm$ 4.2 \\
+\bottomrule
+\end{tabular}
+\caption{Corrected unique-answer BranchProof primary results. Joint validity is citation-free
+formal validity for Logic and translated citation-free validity for Natural.}
+\end{table}
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.96\linewidth]{figures/corrected_branchproof_primary_ood_correctness.pdf}
+\caption{Greedy and sampled pass@1 OOD correctness. Natural-language supervision is stronger
+for train maxima 5--20, but logic reverses the comparison at train-1-to-25.}
+\end{figure}
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.96\linewidth]{figures/corrected_branchproof_train25_sampling_efficiency.pdf}
+\caption{Train-1-to-25 OOD correctness and modality-appropriate correct-and-valid pass@k.
+The formal advantage is already present at pass@1 and is not only a large-sample-budget effect.}
+\end{figure}
+
+At train-1-to-25, formal supervision reaches greedy OOD correctness
+82.1$\pm$7.0
+versus 48.8$\pm$21.7
+for natural supervision. Sampled OOD pass@1 correctness is
+75.0$\pm$9.5 versus
+17.8$\pm$4.7; the corresponding
+correct-and-valid values are 68.5$\pm$10.2
+and 17.5$\pm$4.5.
+Representative failures explain why correctness and validity remain separate: long formal
+generations can reach the right answer through an invalid branch, while many natural-language
+failures copy premises until the shared cap and never emit an answer. Selected length, shortcut,
+hybrid, conditioned-dual, and architecture controls remain in progress and are not used here.
+
 
 \section{Executive insights}
 \begin{itemize}
-\item The main OLMo-7B HFSA grid is complete over three seeds. Logic is more sample- and depth-efficient at intermediate train ranges; NL exact catches up at train-1-to-25 on strict joint validity. At train-1-to-25, depth-50 joint@16 is logic 0.417 versus NL 0.427.
-\item The downstream OOD picture is split. NL transfers much better to GSM8K numeric EM, while logic transfers much better to context-provided HotpotQA, 2WikiMultiHopQA, and MuSiQue EM/F1. Treat the QA result as context-QA robustness, not proof-chain evidence.
-\item Token length is a real confound: NL targets are longer than logic targets at every train range. Both equal-length logic controls underperform compact logic; symbol padding disrupts atom tokenization, and the cleaner wordified logic control is also weaker than compact logic and NL at train-1-to-25.
-\item Tiny random-init Llama pretraining is a mechanism smoke test. Logic is stronger than matched NL on answer-only synthetic OOD pass@8, but strict depth-50 joint validity is essentially absent.
-\item Architecture ablations show that the phenomenon is not OLMo-only: Qwen and Gemma runs also show strong formal-trace transfer, with model-specific variation in joint validity.
-\item Shortcut-rich training hurts NL more clearly than logic in the completed 0.3/0.5/0.8 shortcut-rate runs, supporting the hypothesis that NL relies more on brittle shortcut associations. The shortcut-kind eval is complete at 24/24 JSONs.
-\item Conditioned dual-modality at 10k underperforms the best single-modality baselines, especially for conditioned logic at larger train ranges. The implementation trains separate mode-conditioned examples, not both modalities inside one datapoint; likely confounds are per-modality underexposure at fixed optimizer steps, mode-conditioning overhead, and cross-modality interference. The 50k continuation is running to test whether this is undertraining.
-\item Trace controls are complete at 18/18 rows. The repaired \texttt{rule\_annotated\_nl} rows now show nonzero translated validity, \texttt{invalid\_logic} keeps high answer accuracy but zero grounded validity, and shuffled NL parses while losing translated joint validity. The token audit shows current \texttt{terse\_nl} is not actually shorter than \texttt{nl\_exact} on HFSA because the default NL proof text is already terse.
+\item The corrected 30-run BranchProof grid passed all row and cross-grid gates. At train-1-to-25, logic leads natural-language supervision on OOD greedy correctness (82.1 versus 48.8) and sampled pass@1 correctness (75.0 versus 17.8), with a similarly large joint-validity gap. The reversal is specific to the deepest training range: natural language is stronger at greedy/pass@1 for train maxima 5--20, so the result supports a depth-dependent formal advantage rather than uniform superiority.
+\item AttrCon remains independent positive-but-mixed evidence: formal traces improve mean answer correctness, while natural traces have the higher joint-validity mean.
+\item The corrected Qwen2.5 continual-pretraining pilot remains null or mixed after raw-generation and truncation audits, so the broader mixture grid is rejected.
+\item All later sections based on the wrapped-constant BranchProof construction are retained only as quarantined provenance. Selected corrected surface, shortcut, hybrid, conditioned-dual, and architecture controls are pending and are not evidence yet.
 \end{itemize}
 
 \section{Metric note for OOD benchmarks}
@@ -83,16 +138,16 @@ main NL exact & 512 & 1453.990 & 2668 & 2975.701 & 5490.500 & 1.000 & 1.000 & 0.
 \toprule
 condition & n & prompt & target & target p95 & total & total p95 & proof/body & syntax occ. & syntax tok. & tok/syntax & syntax share \\
 \midrule
-main\_logic & 512 & 1201.779 & 921.080 & 1678 & 2123.859 & 3866 & 156.248 & 215.459 & 251.459 & 1.167 & 0.273 \\
-main\_nl\_exact & 512 & 1201.779 & 1183.354 & 2118 & 2386.133 & 4303 & 117.164 & 10 & 35 & 3.500 & 0.030 \\
-terse\_nl & 512 & 1201.779 & 1183.354 & 2118 & 2386.133 & 4303 & 117.164 & 10 & 35 & 3.500 & 0.030 \\
-rule\_annotated\_nl & 512 & 1201.779 & 1349.119 & 2422 & 2551.898 & 4607 & 282.930 & 93.883 & 174.805 & 1.862 & 0.130 \\
-pseudocode & 512 & 1201.779 & 1460.963 & 2626 & 2663.742 & 4811 & 394.773 & 121.844 & 174.805 & 1.435 & 0.120 \\
-shuffled\_logic & 512 & 1201.779 & 921.080 & 1678 & 2123.859 & 3866 & 156.248 & 215.459 & 251.459 & 1.167 & 0.273 \\
-invalid\_logic & 512 & 1201.779 & 895.119 & 1631 & 2097.898 & 3817 & 130.287 & 215.459 & 251.459 & 1.167 & 0.281 \\
-shuffled\_nl & 512 & 1201.779 & 1183.354 & 2118 & 2386.133 & 4303 & 117.164 & 10 & 35 & 3.500 & 0.030 \\
-symbol\_padded\_logic & 512 & 1201.779 & 1245.162 & 2257 & 2447.941 & 4443 & 203.133 & 700.920 & 736.920 & 1.051 & 0.592 \\
-wordified\_logic & 512 & 1201.779 & 1272.768 & 2259 & 2475.547 & 4445 & 211.252 & 698.936 & 734.936 & 1.052 & 0.577 \\
+main\_logic & 512 & 1406.867 & 1432.061 & 2596 & 2839.928 & 5159 & 221.830 & 666.303 & 702.303 & 1.054 & 0.490 \\
+main\_nl\_exact & 512 & 1406.867 & 1416.428 & 2544 & 2824.295 & 5105 & 145.141 & 10 & 35 & 3.500 & 0.025 \\
+terse\_nl & 512 & 1406.867 & 1416.428 & 2544 & 2824.295 & 5105 & 145.141 & 10 & 35 & 3.500 & 0.025 \\
+rule\_annotated\_nl & 512 & 1406.867 & 1582.193 & 2848 & 2990.061 & 5409 & 310.906 & 93.883 & 174.805 & 1.862 & 0.110 \\
+pseudocode & 512 & 1406.867 & 1694.037 & 3052 & 3101.904 & 5613 & 422.750 & 121.844 & 174.805 & 1.435 & 0.103 \\
+shuffled\_logic & 512 & 1406.867 & 1432.061 & 2596 & 2839.928 & 5159 & 221.830 & 666.303 & 702.303 & 1.054 & 0.490 \\
+invalid\_logic & 512 & 1406.867 & 1406.100 & 2547 & 2813.967 & 5110 & 195.869 & 666.303 & 702.303 & 1.054 & 0.499 \\
+shuffled\_nl & 512 & 1406.867 & 1416.428 & 2544 & 2824.295 & 5105 & 145.141 & 10 & 35 & 3.500 & 0.025 \\
+symbol\_padded\_logic & 512 & 1406.867 & 1453.494 & 2668 & 2861.361 & 5230 & 224.121 & 700.955 & 736.955 & 1.051 & 0.507 \\
+wordified\_logic & 512 & 1406.867 & 1541.535 & 2772 & 2949.402 & 5333 & 239.238 & 698.920 & 734.920 & 1.052 & 0.477 \\
 \bottomrule
 \end{tabular}
 \caption{Ablation token audit on 512 deterministic train-1-to-25 examples with the OLMo tokenizer. The syntax/operator columns count occurrences and tokenized length of a fixed audit lexeme set: proof tags, formal operators, rule labels, pseudocode markers, and common derivation words. They are diagnostics, not a model-internal category. In this generator, \texttt{terse\_nl} currently matches \texttt{nl\_exact} token-for-token because default HFSA NL proof lines are already short.}
@@ -469,36 +524,14 @@ The tiny downstream OOD evals completed with the 8192-context fallback. LongBenc
 \begin{table}[H]
 \centering
 \small
-\begin{tabular}{llllllll}
-\toprule
-size & template & n & GSM8K EM & GSM8K tag & Hotpot EM & 2Wiki EM & MuSiQue EM \\
-\midrule
-50m & logic & 3 & 0.000 & 0.004 & 0.000 & 0.000 & 0.000 \\
-50m & nl\_exact & 3 & 0.000 & 0.029 & 0.000 & 0.000 & 0.000 \\
-100m & logic & 3 & 0.000 & 0.010 & 0.000 & 0.000 & 0.000 \\
-100m & nl\_exact & 3 & 0.000 & 0.055 & 0.000 & 0.000 & 0.000 \\
-200m & logic & 3 & 0.000 & 0.215 & 0.000 & 0.000 & 0.000 \\
-200m & nl\_exact & 3 & 0.000 & \textbf{0.403} & 0.000 & 0.000 & 0.000 \\
-\bottomrule
-\end{tabular}
+No rows available.
 \caption{Tiny Llama OOD exact-match metrics after strict answer extraction.}
 \end{table}
 
 \begin{table}[H]
 \centering
 \small
-\begin{tabular}{llllll}
-\toprule
-size & template & n & Hotpot F1 & 2Wiki F1 & MuSiQue F1 \\
-\midrule
-50m & logic & 3 & 0.000 & 0.000 & 0.000 \\
-50m & nl\_exact & 3 & 0.000 & 0.000 & 0.000 \\
-100m & logic & 3 & 0.000 & 0.000 & 0.000 \\
-100m & nl\_exact & 3 & 0.000 & 0.000 & 0.000 \\
-200m & logic & 3 & 0.000 & 0.000 & 0.000 \\
-200m & nl\_exact & 3 & 0.000 & 0.000 & 0.000 \\
-\bottomrule
-\end{tabular}
+No rows available.
 \caption{Tiny Llama OOD F1 metrics after strict answer extraction. GSM8K is omitted because it is scored by numeric exact match.}
 \end{table}
 
@@ -508,36 +541,14 @@ Both the 20k and 100k tiny bare-format OOD arrays completed. All strict EM/F1 va
 \begin{table}[H]
 \centering
 \small
-\begin{tabular}{llllllll}
-\toprule
-size & template & n & GSM8K EM & GSM8K tag & Hotpot EM & 2Wiki EM & MuSiQue EM \\
-\midrule
-50m & logic & 3 & 0.000 & 0.026 & 0.000 & 0.000 & 0.000 \\
-50m & nl\_exact & 3 & 0.000 & 0.174 & 0.000 & 0.000 & 0.000 \\
-100m & logic & 3 & 0.000 & 0.084 & 0.000 & 0.000 & 0.000 \\
-100m & nl\_exact & 3 & 0.000 & 0.102 & 0.000 & 0.000 & 0.000 \\
-200m & logic & 3 & 0.000 & \textbf{0.822} & 0.000 & 0.000 & 0.000 \\
-200m & nl\_exact & 3 & 0.000 & 0.461 & 0.000 & 0.000 & 0.000 \\
-\bottomrule
-\end{tabular}
+No rows available.
 \caption{Tiny Llama 20k bare-format OOD exact-match metrics.}
 \end{table}
 
 \begin{table}[H]
 \centering
 \small
-\begin{tabular}{llllllll}
-\toprule
-size & template & n & GSM8K EM & GSM8K tag & Hotpot EM & 2Wiki EM & MuSiQue EM \\
-\midrule
-50m & logic & 3 & 0.000 & 0.017 & 0.000 & 0.000 & 0.000 \\
-50m & nl\_exact & 3 & 0.000 & 0.100 & 0.000 & 0.000 & 0.000 \\
-100m & logic & 3 & 0.000 & 0.069 & 0.000 & 0.000 & 0.000 \\
-100m & nl\_exact & 3 & 0.000 & 0.046 & 0.000 & 0.000 & 0.000 \\
-200m & logic & 3 & 0.000 & \textbf{0.675} & 0.000 & 0.000 & 0.000 \\
-200m & nl\_exact & 3 & 0.000 & 0.357 & 0.000 & 0.000 & 0.000 \\
-\bottomrule
-\end{tabular}
+No rows available.
 \caption{Tiny Llama 100k bare-format OOD exact-match metrics.}
 \end{table}
 
@@ -844,17 +855,17 @@ Dx: x is violet
 Ex: x is north
 
 premises:
-Da
-Fa
-Ea & Da -> Bb
-Bb -> Fb
+D(c0)
+F(c0)
+E(c0) & D(c0) -> B(c1)
+B(c1) -> F(c1)
 
 proof:
-Da ; R
-Fa ; R
-Ab ; ->E
-Gb ; ->E
-Bc ; ->E
+D(c0) ; R
+F(c0) ; R
+A(c1) ; ->E
+G(c1) ; ->E
+B(c2) ; ->E
 \end{verbatim}
 
 \paragraph{symbol\_padded\_logic.} Predicate-call symbols with padded constants.
@@ -867,17 +878,17 @@ PD(x): x is violet
 PE(x): x is north
 
 premises:
-PD(ca)
-PF(ca)
-PE(ca) & PD(ca) -> PB(cb)
-PB(cb) -> PF(cb)
+PD(cc0)
+PF(cc0)
+PE(cc0) & PD(cc0) -> PB(cc1)
+PB(cc1) -> PF(cc1)
 
 proof:
-PD(ca) ; R
-PF(ca) ; R
-PA(cb) ; ->E
-PG(cb) ; ->E
-PB(cc) ; ->E
+PD(cc0) ; R
+PF(cc0) ; R
+PA(cc1) ; ->E
+PG(cc1) ; ->E
+PB(cc2) ; ->E
 \end{verbatim}
 
 \paragraph{wordified\_logic.} Predicate-call symbols using semantic attribute words.
@@ -890,17 +901,17 @@ Violet(x): x is violet
 North(x): x is north
 
 premises:
-Violet(a)
-South(a)
-North(a) & Violet(a) -> Ivory(b)
-Ivory(b) -> South(b)
+Violet(c0)
+South(c0)
+North(c0) & Violet(c0) -> Ivory(c1)
+Ivory(c1) -> South(c1)
 
 proof:
-Violet(a) ; R
-South(a) ; R
-Willow(b) ; ->E
-East(b) ; ->E
-Ivory(c) ; ->E
+Violet(c0) ; R
+South(c0) ; R
+Willow(c1) ; ->E
+East(c1) ; ->E
+Ivory(c2) ; ->E
 \end{verbatim}
 
 \begin{figure}[H]
@@ -1018,28 +1029,28 @@ Each block below is a complete depth-2 SFT training sequence: prompt followed by
 \paragraph{main\_logic.} Normal compact formal-logic baseline.
 \begin{verbatim}
 <question>
-1. a is violet.
-2. a is south.
-3. If a is north and a is violet, then b is ivory.
-4. If b is ivory, then b is south.
-5. If a is south and a is violet, then b is willow.
-6. If b is willow, then b is east.
-7. If a is east and a is violet, then b is teal.
-8. If b is teal, then b is north.
-9. If b is east and b is willow, then c is ivory.
-10. If c is ivory, then c is east.
-11. If b is north and b is teal, then c is teal.
-12. If c is teal, then c is south.
-13. If b is south and b is ivory, then c is willow.
-14. If c is willow, then c is north.
-Which state applies to c?
+1. c0 is violet.
+2. c0 is south.
+3. If c0 is north and c0 is violet, then c1 is ivory.
+4. If c1 is ivory, then c1 is south.
+5. If c0 is south and c0 is violet, then c1 is willow.
+6. If c1 is willow, then c1 is east.
+7. If c0 is east and c0 is violet, then c1 is teal.
+8. If c1 is teal, then c1 is north.
+9. If c1 is east and c1 is willow, then c2 is ivory.
+10. If c2 is ivory, then c2 is east.
+11. If c1 is north and c1 is teal, then c2 is teal.
+12. If c2 is teal, then c2 is south.
+13. If c1 is south and c1 is ivory, then c2 is willow.
+14. If c2 is willow, then c2 is north.
+Which state applies to c2?
 </question>
 
 <formal>
 <constants>
-a = a
-b = b
-c = c
+c0 = c0
+c1 = c1
+c2 = c2
 </constants>
 <predicates>
 Ax: x is willow
@@ -1051,30 +1062,30 @@ Fx: x is south
 Gx: x is east
 </predicates>
 <premises>
-Da
-Fa
-Ea & Da -> Bb
-Bb -> Fb
-Fa & Da -> Ab
-Ab -> Gb
-Ga & Da -> Cb
-Cb -> Eb
-Gb & Ab -> Bc
-Bc -> Gc
-Eb & Cb -> Cc
-Cc -> Fc
-Fb & Bb -> Ac
-Ac -> Ec
+D(c0)
+F(c0)
+E(c0) & D(c0) -> B(c1)
+B(c1) -> F(c1)
+F(c0) & D(c0) -> A(c1)
+A(c1) -> G(c1)
+G(c0) & D(c0) -> C(c1)
+C(c1) -> E(c1)
+G(c1) & A(c1) -> B(c2)
+B(c2) -> G(c2)
+E(c1) & C(c1) -> C(c2)
+C(c2) -> F(c2)
+F(c1) & B(c1) -> A(c2)
+A(c2) -> E(c2)
 </premises>
 <proof>
-Da ; R
-Fa ; R
-Ab ; ->E
-Gb ; ->E
-Bc ; ->E
+D(c0) ; R
+F(c0) ; R
+A(c1) ; ->E
+G(c1) ; ->E
+B(c2) ; ->E
 </proof>
 <conclusion>
-Bc
+B(c2)
 </conclusion>
 </formal>
 <answer>
@@ -1085,49 +1096,49 @@ ivory
 \paragraph{main\_nl\_exact.} Normal exact natural-language baseline.
 \begin{verbatim}
 <question>
-1. a is violet.
-2. a is south.
-3. If a is north and a is violet, then b is ivory.
-4. If b is ivory, then b is south.
-5. If a is south and a is violet, then b is willow.
-6. If b is willow, then b is east.
-7. If a is east and a is violet, then b is teal.
-8. If b is teal, then b is north.
-9. If b is east and b is willow, then c is ivory.
-10. If c is ivory, then c is east.
-11. If b is north and b is teal, then c is teal.
-12. If c is teal, then c is south.
-13. If b is south and b is ivory, then c is willow.
-14. If c is willow, then c is north.
-Which state applies to c?
+1. c0 is violet.
+2. c0 is south.
+3. If c0 is north and c0 is violet, then c1 is ivory.
+4. If c1 is ivory, then c1 is south.
+5. If c0 is south and c0 is violet, then c1 is willow.
+6. If c1 is willow, then c1 is east.
+7. If c0 is east and c0 is violet, then c1 is teal.
+8. If c1 is teal, then c1 is north.
+9. If c1 is east and c1 is willow, then c2 is ivory.
+10. If c2 is ivory, then c2 is east.
+11. If c1 is north and c1 is teal, then c2 is teal.
+12. If c2 is teal, then c2 is south.
+13. If c1 is south and c1 is ivory, then c2 is willow.
+14. If c2 is willow, then c2 is north.
+Which state applies to c2?
 </question>
 
 <think>
 <premises>
-a is violet.
-a is south.
-If a is north and a is violet, then b is ivory.
-If b is ivory, then b is south.
-If a is south and a is violet, then b is willow.
-If b is willow, then b is east.
-If a is east and a is violet, then b is teal.
-If b is teal, then b is north.
-If b is east and b is willow, then c is ivory.
-If c is ivory, then c is east.
-If b is north and b is teal, then c is teal.
-If c is teal, then c is south.
-If b is south and b is ivory, then c is willow.
-If c is willow, then c is north.
+c0 is violet.
+c0 is south.
+If c0 is north and c0 is violet, then c1 is ivory.
+If c1 is ivory, then c1 is south.
+If c0 is south and c0 is violet, then c1 is willow.
+If c1 is willow, then c1 is east.
+If c0 is east and c0 is violet, then c1 is teal.
+If c1 is teal, then c1 is north.
+If c1 is east and c1 is willow, then c2 is ivory.
+If c2 is ivory, then c2 is east.
+If c1 is north and c1 is teal, then c2 is teal.
+If c2 is teal, then c2 is south.
+If c1 is south and c1 is ivory, then c2 is willow.
+If c2 is willow, then c2 is north.
 </premises>
 <proof>
-a is violet.
-a is south.
-b is willow.
-b is east.
-c is ivory.
+c0 is violet.
+c0 is south.
+c1 is willow.
+c1 is east.
+c2 is ivory.
 </proof>
 <conclusion>
-c is ivory.
+c2 is ivory.
 </conclusion>
 </think>
 <answer>
@@ -1138,49 +1149,49 @@ ivory
 \paragraph{terse\_nl.} Natural-language trace with shorter proof wording.
 \begin{verbatim}
 <question>
-1. a is violet.
-2. a is south.
-3. If a is north and a is violet, then b is ivory.
-4. If b is ivory, then b is south.
-5. If a is south and a is violet, then b is willow.
-6. If b is willow, then b is east.
-7. If a is east and a is violet, then b is teal.
-8. If b is teal, then b is north.
-9. If b is east and b is willow, then c is ivory.
-10. If c is ivory, then c is east.
-11. If b is north and b is teal, then c is teal.
-12. If c is teal, then c is south.
-13. If b is south and b is ivory, then c is willow.
-14. If c is willow, then c is north.
-Which state applies to c?
+1. c0 is violet.
+2. c0 is south.
+3. If c0 is north and c0 is violet, then c1 is ivory.
+4. If c1 is ivory, then c1 is south.
+5. If c0 is south and c0 is violet, then c1 is willow.
+6. If c1 is willow, then c1 is east.
+7. If c0 is east and c0 is violet, then c1 is teal.
+8. If c1 is teal, then c1 is north.
+9. If c1 is east and c1 is willow, then c2 is ivory.
+10. If c2 is ivory, then c2 is east.
+11. If c1 is north and c1 is teal, then c2 is teal.
+12. If c2 is teal, then c2 is south.
+13. If c1 is south and c1 is ivory, then c2 is willow.
+14. If c2 is willow, then c2 is north.
+Which state applies to c2?
 </question>
 
 <think>
 <premises>
-a is violet.
-a is south.
-If a is north and a is violet, then b is ivory.
-If b is ivory, then b is south.
-If a is south and a is violet, then b is willow.
-If b is willow, then b is east.
-If a is east and a is violet, then b is teal.
-If b is teal, then b is north.
-If b is east and b is willow, then c is ivory.
-If c is ivory, then c is east.
-If b is north and b is teal, then c is teal.
-If c is teal, then c is south.
-If b is south and b is ivory, then c is willow.
-If c is willow, then c is north.
+c0 is violet.
+c0 is south.
+If c0 is north and c0 is violet, then c1 is ivory.
+If c1 is ivory, then c1 is south.
+If c0 is south and c0 is violet, then c1 is willow.
+If c1 is willow, then c1 is east.
+If c0 is east and c0 is violet, then c1 is teal.
+If c1 is teal, then c1 is north.
+If c1 is east and c1 is willow, then c2 is ivory.
+If c2 is ivory, then c2 is east.
+If c1 is north and c1 is teal, then c2 is teal.
+If c2 is teal, then c2 is south.
+If c1 is south and c1 is ivory, then c2 is willow.
+If c2 is willow, then c2 is north.
 </premises>
 <proof>
-a is violet.
-a is south.
-b is willow.
-b is east.
-c is ivory.
+c0 is violet.
+c0 is south.
+c1 is willow.
+c1 is east.
+c2 is ivory.
 </proof>
 <conclusion>
-c is ivory.
+c2 is ivory.
 </conclusion>
 </think>
 <answer>
@@ -1191,49 +1202,49 @@ ivory
 \paragraph{rule\_annotated\_nl.} Natural-language trace with explicit rule labels.
 \begin{verbatim}
 <question>
-1. a is violet.
-2. a is south.
-3. If a is north and a is violet, then b is ivory.
-4. If b is ivory, then b is south.
-5. If a is south and a is violet, then b is willow.
-6. If b is willow, then b is east.
-7. If a is east and a is violet, then b is teal.
-8. If b is teal, then b is north.
-9. If b is east and b is willow, then c is ivory.
-10. If c is ivory, then c is east.
-11. If b is north and b is teal, then c is teal.
-12. If c is teal, then c is south.
-13. If b is south and b is ivory, then c is willow.
-14. If c is willow, then c is north.
-Which state applies to c?
+1. c0 is violet.
+2. c0 is south.
+3. If c0 is north and c0 is violet, then c1 is ivory.
+4. If c1 is ivory, then c1 is south.
+5. If c0 is south and c0 is violet, then c1 is willow.
+6. If c1 is willow, then c1 is east.
+7. If c0 is east and c0 is violet, then c1 is teal.
+8. If c1 is teal, then c1 is north.
+9. If c1 is east and c1 is willow, then c2 is ivory.
+10. If c2 is ivory, then c2 is east.
+11. If c1 is north and c1 is teal, then c2 is teal.
+12. If c2 is teal, then c2 is south.
+13. If c1 is south and c1 is ivory, then c2 is willow.
+14. If c2 is willow, then c2 is north.
+Which state applies to c2?
 </question>
 
 <think>
 <premises>
-a is violet.
-a is south.
-If a is north and a is violet, then b is ivory.
-If b is ivory, then b is south.
-If a is south and a is violet, then b is willow.
-If b is willow, then b is east.
-If a is east and a is violet, then b is teal.
-If b is teal, then b is north.
-If b is east and b is willow, then c is ivory.
-If c is ivory, then c is east.
-If b is north and b is teal, then c is teal.
-If c is teal, then c is south.
-If b is south and b is ivory, then c is willow.
-If c is willow, then c is north.
+c0 is violet.
+c0 is south.
+If c0 is north and c0 is violet, then c1 is ivory.
+If c1 is ivory, then c1 is south.
+If c0 is south and c0 is violet, then c1 is willow.
+If c1 is willow, then c1 is east.
+If c0 is east and c0 is violet, then c1 is teal.
+If c1 is teal, then c1 is north.
+If c1 is east and c1 is willow, then c2 is ivory.
+If c2 is ivory, then c2 is east.
+If c1 is north and c1 is teal, then c2 is teal.
+If c2 is teal, then c2 is south.
+If c1 is south and c1 is ivory, then c2 is willow.
+If c2 is willow, then c2 is north.
 </premises>
 <proof>
-a is violet. [rule: R]
-a is south. [rule: R]
-b is willow. [rule: ->E]
-b is east. [rule: ->E]
-c is ivory. [rule: ->E]
+c0 is violet. [rule: R]
+c0 is south. [rule: R]
+c1 is willow. [rule: ->E]
+c1 is east. [rule: ->E]
+c2 is ivory. [rule: ->E]
 </proof>
 <conclusion>
-c is ivory.
+c2 is ivory.
 </conclusion>
 </think>
 <answer>
@@ -1244,49 +1255,49 @@ ivory
 \paragraph{pseudocode.} Algorithm-like natural-language derivation trace.
 \begin{verbatim}
 <question>
-1. a is violet.
-2. a is south.
-3. If a is north and a is violet, then b is ivory.
-4. If b is ivory, then b is south.
-5. If a is south and a is violet, then b is willow.
-6. If b is willow, then b is east.
-7. If a is east and a is violet, then b is teal.
-8. If b is teal, then b is north.
-9. If b is east and b is willow, then c is ivory.
-10. If c is ivory, then c is east.
-11. If b is north and b is teal, then c is teal.
-12. If c is teal, then c is south.
-13. If b is south and b is ivory, then c is willow.
-14. If c is willow, then c is north.
-Which state applies to c?
+1. c0 is violet.
+2. c0 is south.
+3. If c0 is north and c0 is violet, then c1 is ivory.
+4. If c1 is ivory, then c1 is south.
+5. If c0 is south and c0 is violet, then c1 is willow.
+6. If c1 is willow, then c1 is east.
+7. If c0 is east and c0 is violet, then c1 is teal.
+8. If c1 is teal, then c1 is north.
+9. If c1 is east and c1 is willow, then c2 is ivory.
+10. If c2 is ivory, then c2 is east.
+11. If c1 is north and c1 is teal, then c2 is teal.
+12. If c2 is teal, then c2 is south.
+13. If c1 is south and c1 is ivory, then c2 is willow.
+14. If c2 is willow, then c2 is north.
+Which state applies to c2?
 </question>
 
 <think>
 <premises>
-a is violet.
-a is south.
-If a is north and a is violet, then b is ivory.
-If b is ivory, then b is south.
-If a is south and a is violet, then b is willow.
-If b is willow, then b is east.
-If a is east and a is violet, then b is teal.
-If b is teal, then b is north.
-If b is east and b is willow, then c is ivory.
-If c is ivory, then c is east.
-If b is north and b is teal, then c is teal.
-If c is teal, then c is south.
-If b is south and b is ivory, then c is willow.
-If c is willow, then c is north.
+c0 is violet.
+c0 is south.
+If c0 is north and c0 is violet, then c1 is ivory.
+If c1 is ivory, then c1 is south.
+If c0 is south and c0 is violet, then c1 is willow.
+If c1 is willow, then c1 is east.
+If c0 is east and c0 is violet, then c1 is teal.
+If c1 is teal, then c1 is north.
+If c1 is east and c1 is willow, then c2 is ivory.
+If c2 is ivory, then c2 is east.
+If c1 is north and c1 is teal, then c2 is teal.
+If c2 is teal, then c2 is south.
+If c1 is south and c1 is ivory, then c2 is willow.
+If c2 is willow, then c2 is north.
 </premises>
 <proof>
-step_1: derive "a is violet" using R.
-step_2: derive "a is south" using R.
-step_3: derive "b is willow" using ->E.
-step_4: derive "b is east" using ->E.
-step_5: derive "c is ivory" using ->E.
+step_1: derive "c0 is violet" using R.
+step_2: derive "c0 is south" using R.
+step_3: derive "c1 is willow" using ->E.
+step_4: derive "c1 is east" using ->E.
+step_5: derive "c2 is ivory" using ->E.
 </proof>
 <conclusion>
-c is ivory.
+c2 is ivory.
 </conclusion>
 </think>
 <answer>
@@ -1297,28 +1308,28 @@ ivory
 \paragraph{shuffled\_logic.} Formal proof lines shuffled as an order negative control.
 \begin{verbatim}
 <question>
-1. a is violet.
-2. a is south.
-3. If a is north and a is violet, then b is ivory.
-4. If b is ivory, then b is south.
-5. If a is south and a is violet, then b is willow.
-6. If b is willow, then b is east.
-7. If a is east and a is violet, then b is teal.
-8. If b is teal, then b is north.
-9. If b is east and b is willow, then c is ivory.
-10. If c is ivory, then c is east.
-11. If b is north and b is teal, then c is teal.
-12. If c is teal, then c is south.
-13. If b is south and b is ivory, then c is willow.
-14. If c is willow, then c is north.
-Which state applies to c?
+1. c0 is violet.
+2. c0 is south.
+3. If c0 is north and c0 is violet, then c1 is ivory.
+4. If c1 is ivory, then c1 is south.
+5. If c0 is south and c0 is violet, then c1 is willow.
+6. If c1 is willow, then c1 is east.
+7. If c0 is east and c0 is violet, then c1 is teal.
+8. If c1 is teal, then c1 is north.
+9. If c1 is east and c1 is willow, then c2 is ivory.
+10. If c2 is ivory, then c2 is east.
+11. If c1 is north and c1 is teal, then c2 is teal.
+12. If c2 is teal, then c2 is south.
+13. If c1 is south and c1 is ivory, then c2 is willow.
+14. If c2 is willow, then c2 is north.
+Which state applies to c2?
 </question>
 
 <formal>
 <constants>
-a = a
-b = b
-c = c
+c0 = c0
+c1 = c1
+c2 = c2
 </constants>
 <predicates>
 Ax: x is willow
@@ -1330,30 +1341,30 @@ Fx: x is south
 Gx: x is east
 </predicates>
 <premises>
-Da
-Fa
-Ea & Da -> Bb
-Bb -> Fb
-Fa & Da -> Ab
-Ab -> Gb
-Ga & Da -> Cb
-Cb -> Eb
-Gb & Ab -> Bc
-Bc -> Gc
-Eb & Cb -> Cc
-Cc -> Fc
-Fb & Bb -> Ac
-Ac -> Ec
+D(c0)
+F(c0)
+E(c0) & D(c0) -> B(c1)
+B(c1) -> F(c1)
+F(c0) & D(c0) -> A(c1)
+A(c1) -> G(c1)
+G(c0) & D(c0) -> C(c1)
+C(c1) -> E(c1)
+G(c1) & A(c1) -> B(c2)
+B(c2) -> G(c2)
+E(c1) & C(c1) -> C(c2)
+C(c2) -> F(c2)
+F(c1) & B(c1) -> A(c2)
+A(c2) -> E(c2)
 </premises>
 <proof>
-Bc ; ->E
-Fa ; R
-Da ; R
-Ab ; ->E
-Gb ; ->E
+A(c1) ; ->E
+F(c0) ; R
+D(c0) ; R
+B(c2) ; ->E
+G(c1) ; ->E
 </proof>
 <conclusion>
-Bc
+B(c2)
 </conclusion>
 </formal>
 <answer>
@@ -1364,28 +1375,28 @@ ivory
 \paragraph{invalid\_logic.} Formal-looking trace with invalid rule citations.
 \begin{verbatim}
 <question>
-1. a is violet.
-2. a is south.
-3. If a is north and a is violet, then b is ivory.
-4. If b is ivory, then b is south.
-5. If a is south and a is violet, then b is willow.
-6. If b is willow, then b is east.
-7. If a is east and a is violet, then b is teal.
-8. If b is teal, then b is north.
-9. If b is east and b is willow, then c is ivory.
-10. If c is ivory, then c is east.
-11. If b is north and b is teal, then c is teal.
-12. If c is teal, then c is south.
-13. If b is south and b is ivory, then c is willow.
-14. If c is willow, then c is north.
-Which state applies to c?
+1. c0 is violet.
+2. c0 is south.
+3. If c0 is north and c0 is violet, then c1 is ivory.
+4. If c1 is ivory, then c1 is south.
+5. If c0 is south and c0 is violet, then c1 is willow.
+6. If c1 is willow, then c1 is east.
+7. If c0 is east and c0 is violet, then c1 is teal.
+8. If c1 is teal, then c1 is north.
+9. If c1 is east and c1 is willow, then c2 is ivory.
+10. If c2 is ivory, then c2 is east.
+11. If c1 is north and c1 is teal, then c2 is teal.
+12. If c2 is teal, then c2 is south.
+13. If c1 is south and c1 is ivory, then c2 is willow.
+14. If c2 is willow, then c2 is north.
+Which state applies to c2?
 </question>
 
 <formal>
 <constants>
-a = a
-b = b
-c = c
+c0 = c0
+c1 = c1
+c2 = c2
 </constants>
 <predicates>
 Ax: x is willow
@@ -1397,30 +1408,30 @@ Fx: x is south
 Gx: x is east
 </predicates>
 <premises>
-Da
-Fa
-Ea & Da -> Bb
-Bb -> Fb
-Fa & Da -> Ab
-Ab -> Gb
-Ga & Da -> Cb
-Cb -> Eb
-Gb & Ab -> Bc
-Bc -> Gc
-Eb & Cb -> Cc
-Cc -> Fc
-Fb & Bb -> Ac
-Ac -> Ec
+D(c0)
+F(c0)
+E(c0) & D(c0) -> B(c1)
+B(c1) -> F(c1)
+F(c0) & D(c0) -> A(c1)
+A(c1) -> G(c1)
+G(c0) & D(c0) -> C(c1)
+C(c1) -> E(c1)
+G(c1) & A(c1) -> B(c2)
+B(c2) -> G(c2)
+E(c1) & C(c1) -> C(c2)
+C(c2) -> F(c2)
+F(c1) & B(c1) -> A(c2)
+A(c2) -> E(c2)
 </premises>
 <proof>
-Da ; R
-Fa ; R
-Ab ; R
-Gb ; R
-Bc ; R
+D(c0) ; R
+F(c0) ; R
+A(c1) ; R
+G(c1) ; R
+B(c2) ; R
 </proof>
 <conclusion>
-Bc
+B(c2)
 </conclusion>
 </formal>
 <answer>
@@ -1431,49 +1442,49 @@ ivory
 \paragraph{shuffled\_nl.} Natural-language proof lines shuffled as an order negative control.
 \begin{verbatim}
 <question>
-1. a is violet.
-2. a is south.
-3. If a is north and a is violet, then b is ivory.
-4. If b is ivory, then b is south.
-5. If a is south and a is violet, then b is willow.
-6. If b is willow, then b is east.
-7. If a is east and a is violet, then b is teal.
-8. If b is teal, then b is north.
-9. If b is east and b is willow, then c is ivory.
-10. If c is ivory, then c is east.
-11. If b is north and b is teal, then c is teal.
-12. If c is teal, then c is south.
-13. If b is south and b is ivory, then c is willow.
-14. If c is willow, then c is north.
-Which state applies to c?
+1. c0 is violet.
+2. c0 is south.
+3. If c0 is north and c0 is violet, then c1 is ivory.
+4. If c1 is ivory, then c1 is south.
+5. If c0 is south and c0 is violet, then c1 is willow.
+6. If c1 is willow, then c1 is east.
+7. If c0 is east and c0 is violet, then c1 is teal.
+8. If c1 is teal, then c1 is north.
+9. If c1 is east and c1 is willow, then c2 is ivory.
+10. If c2 is ivory, then c2 is east.
+11. If c1 is north and c1 is teal, then c2 is teal.
+12. If c2 is teal, then c2 is south.
+13. If c1 is south and c1 is ivory, then c2 is willow.
+14. If c2 is willow, then c2 is north.
+Which state applies to c2?
 </question>
 
 <think>
 <premises>
-a is violet.
-a is south.
-If a is north and a is violet, then b is ivory.
-If b is ivory, then b is south.
-If a is south and a is violet, then b is willow.
-If b is willow, then b is east.
-If a is east and a is violet, then b is teal.
-If b is teal, then b is north.
-If b is east and b is willow, then c is ivory.
-If c is ivory, then c is east.
-If b is north and b is teal, then c is teal.
-If c is teal, then c is south.
-If b is south and b is ivory, then c is willow.
-If c is willow, then c is north.
+c0 is violet.
+c0 is south.
+If c0 is north and c0 is violet, then c1 is ivory.
+If c1 is ivory, then c1 is south.
+If c0 is south and c0 is violet, then c1 is willow.
+If c1 is willow, then c1 is east.
+If c0 is east and c0 is violet, then c1 is teal.
+If c1 is teal, then c1 is north.
+If c1 is east and c1 is willow, then c2 is ivory.
+If c2 is ivory, then c2 is east.
+If c1 is north and c1 is teal, then c2 is teal.
+If c2 is teal, then c2 is south.
+If c1 is south and c1 is ivory, then c2 is willow.
+If c2 is willow, then c2 is north.
 </premises>
 <proof>
-b is willow.
-a is south.
-c is ivory.
-a is violet.
-b is east.
+c1 is willow.
+c0 is violet.
+c0 is south.
+c2 is ivory.
+c1 is east.
 </proof>
 <conclusion>
-c is ivory.
+c2 is ivory.
 </conclusion>
 </think>
 <answer>
@@ -1484,28 +1495,28 @@ ivory
 \paragraph{symbol\_padded\_logic.} Formal atoms expanded into predicate-call syntax.
 \begin{verbatim}
 <question>
-1. a is violet.
-2. a is south.
-3. If a is north and a is violet, then b is ivory.
-4. If b is ivory, then b is south.
-5. If a is south and a is violet, then b is willow.
-6. If b is willow, then b is east.
-7. If a is east and a is violet, then b is teal.
-8. If b is teal, then b is north.
-9. If b is east and b is willow, then c is ivory.
-10. If c is ivory, then c is east.
-11. If b is north and b is teal, then c is teal.
-12. If c is teal, then c is south.
-13. If b is south and b is ivory, then c is willow.
-14. If c is willow, then c is north.
-Which state applies to c?
+1. c0 is violet.
+2. c0 is south.
+3. If c0 is north and c0 is violet, then c1 is ivory.
+4. If c1 is ivory, then c1 is south.
+5. If c0 is south and c0 is violet, then c1 is willow.
+6. If c1 is willow, then c1 is east.
+7. If c0 is east and c0 is violet, then c1 is teal.
+8. If c1 is teal, then c1 is north.
+9. If c1 is east and c1 is willow, then c2 is ivory.
+10. If c2 is ivory, then c2 is east.
+11. If c1 is north and c1 is teal, then c2 is teal.
+12. If c2 is teal, then c2 is south.
+13. If c1 is south and c1 is ivory, then c2 is willow.
+14. If c2 is willow, then c2 is north.
+Which state applies to c2?
 </question>
 
 <formal>
 <constants>
-ca = a
-cb = b
-cc = c
+cc0 = c0
+cc1 = c1
+cc2 = c2
 </constants>
 <predicates>
 PA(x): x is willow
@@ -1517,30 +1528,30 @@ PF(x): x is south
 PG(x): x is east
 </predicates>
 <premises>
-PD(ca)
-PF(ca)
-PE(ca) & PD(ca) -> PB(cb)
-PB(cb) -> PF(cb)
-PF(ca) & PD(ca) -> PA(cb)
-PA(cb) -> PG(cb)
-PG(ca) & PD(ca) -> PC(cb)
-PC(cb) -> PE(cb)
-PG(cb) & PA(cb) -> PB(cc)
-PB(cc) -> PG(cc)
-PE(cb) & PC(cb) -> PC(cc)
-PC(cc) -> PF(cc)
-PF(cb) & PB(cb) -> PA(cc)
-PA(cc) -> PE(cc)
+PD(cc0)
+PF(cc0)
+PE(cc0) & PD(cc0) -> PB(cc1)
+PB(cc1) -> PF(cc1)
+PF(cc0) & PD(cc0) -> PA(cc1)
+PA(cc1) -> PG(cc1)
+PG(cc0) & PD(cc0) -> PC(cc1)
+PC(cc1) -> PE(cc1)
+PG(cc1) & PA(cc1) -> PB(cc2)
+PB(cc2) -> PG(cc2)
+PE(cc1) & PC(cc1) -> PC(cc2)
+PC(cc2) -> PF(cc2)
+PF(cc1) & PB(cc1) -> PA(cc2)
+PA(cc2) -> PE(cc2)
 </premises>
 <proof>
-PD(ca) ; R
-PF(ca) ; R
-PA(cb) ; ->E
-PG(cb) ; ->E
-PB(cc) ; ->E
+PD(cc0) ; R
+PF(cc0) ; R
+PA(cc1) ; ->E
+PG(cc1) ; ->E
+PB(cc2) ; ->E
 </proof>
 <conclusion>
-PB(cc)
+PB(cc2)
 </conclusion>
 </formal>
 <answer>
@@ -1551,28 +1562,28 @@ ivory
 \paragraph{wordified\_logic.} Formal atoms expanded with natural-word predicate names.
 \begin{verbatim}
 <question>
-1. a is violet.
-2. a is south.
-3. If a is north and a is violet, then b is ivory.
-4. If b is ivory, then b is south.
-5. If a is south and a is violet, then b is willow.
-6. If b is willow, then b is east.
-7. If a is east and a is violet, then b is teal.
-8. If b is teal, then b is north.
-9. If b is east and b is willow, then c is ivory.
-10. If c is ivory, then c is east.
-11. If b is north and b is teal, then c is teal.
-12. If c is teal, then c is south.
-13. If b is south and b is ivory, then c is willow.
-14. If c is willow, then c is north.
-Which state applies to c?
+1. c0 is violet.
+2. c0 is south.
+3. If c0 is north and c0 is violet, then c1 is ivory.
+4. If c1 is ivory, then c1 is south.
+5. If c0 is south and c0 is violet, then c1 is willow.
+6. If c1 is willow, then c1 is east.
+7. If c0 is east and c0 is violet, then c1 is teal.
+8. If c1 is teal, then c1 is north.
+9. If c1 is east and c1 is willow, then c2 is ivory.
+10. If c2 is ivory, then c2 is east.
+11. If c1 is north and c1 is teal, then c2 is teal.
+12. If c2 is teal, then c2 is south.
+13. If c1 is south and c1 is ivory, then c2 is willow.
+14. If c2 is willow, then c2 is north.
+Which state applies to c2?
 </question>
 
 <formal>
 <constants>
-a = a
-b = b
-c = c
+c0 = c0
+c1 = c1
+c2 = c2
 </constants>
 <predicates>
 Willow(x): x is willow
@@ -1584,30 +1595,30 @@ South(x): x is south
 East(x): x is east
 </predicates>
 <premises>
-Violet(a)
-South(a)
-North(a) & Violet(a) -> Ivory(b)
-Ivory(b) -> South(b)
-South(a) & Violet(a) -> Willow(b)
-Willow(b) -> East(b)
-East(a) & Violet(a) -> Teal(b)
-Teal(b) -> North(b)
-East(b) & Willow(b) -> Ivory(c)
-Ivory(c) -> East(c)
-North(b) & Teal(b) -> Teal(c)
-Teal(c) -> South(c)
-South(b) & Ivory(b) -> Willow(c)
-Willow(c) -> North(c)
+Violet(c0)
+South(c0)
+North(c0) & Violet(c0) -> Ivory(c1)
+Ivory(c1) -> South(c1)
+South(c0) & Violet(c0) -> Willow(c1)
+Willow(c1) -> East(c1)
+East(c0) & Violet(c0) -> Teal(c1)
+Teal(c1) -> North(c1)
+East(c1) & Willow(c1) -> Ivory(c2)
+Ivory(c2) -> East(c2)
+North(c1) & Teal(c1) -> Teal(c2)
+Teal(c2) -> South(c2)
+South(c1) & Ivory(c1) -> Willow(c2)
+Willow(c2) -> North(c2)
 </premises>
 <proof>
-Violet(a) ; R
-South(a) ; R
-Willow(b) ; ->E
-East(b) ; ->E
-Ivory(c) ; ->E
+Violet(c0) ; R
+South(c0) ; R
+Willow(c1) ; ->E
+East(c1) ; ->E
+Ivory(c2) ; ->E
 </proof>
 <conclusion>
-Ivory(c)
+Ivory(c2)
 </conclusion>
 </formal>
 <answer>
@@ -2202,11 +2213,14 @@ conditioned_dual_partial_by_seed.csv
 conditioned_dual_partial_summary.csv
 conditioned_dual_summary.csv
 conditioned_dual_vs_main_by_train_depth.csv
+corrected_branchproof_final_group_summary.csv
+corrected_branchproof_paired_delta_summary.csv
 cot_bare_ood_generation_examples.csv
 group_summary_all.csv
 hfsa_batch_size_ablation_diagnostics.csv
 hfsa_batch_size_ablation_partial_by_seed.csv
 hfsa_batch_size_ablation_partial_summary.csv
+hfsa_model_ablation_32b_train25_summary.csv
 hybrid_order_ablation_by_seed.csv
 hybrid_order_ablation_summary.csv
 hybrid_order_with_main_baselines.csv
@@ -2277,6 +2291,8 @@ ablation_trace_controls_summary.pdf
 active_paired_partial_summary.pdf
 architecture_depth30_50_correct16_by_train_depth.pdf
 architecture_ood_correct16_by_train_depth.pdf
+corrected_branchproof_primary_ood_correctness.pdf
+corrected_branchproof_train25_sampling_efficiency.pdf
 hfsa_batch_size_ablation_partial.pdf
 hfsa_batch_size_conditioned_delta.pdf
 olmo7b_checkpoint_correct_k8_k16.pdf
@@ -2341,6 +2357,7 @@ tiny_llama_final_bands_correct_joint.pdf
 
 \paragraph{Markdown sample supplements.}
 \begin{verbatim}
+conditioned_dual_32b_sample_audit_2026-07-01.md
 full_generation_sequences_olmo7b_olmo32b_2026-05-28.md
 ood_cot_bare_generation_examples_olmo7b_train1to25_seed3407.md
 ood_generation_examples_olmo7b_train1to25_seed3407.md
