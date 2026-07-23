@@ -1,0 +1,4 @@
+template,seed,ood_correct@16,ood_joint@16,depth50_correct@16,depth50_joint@16
+logic_wordified,3407,0.5625,0.36875,0.40625,0.15625
+logic_wordified,3408,0.375,0.1875,0.21875,0.0
+logic_wordified,3409,0.5875,0.4125,0.40625,0.125

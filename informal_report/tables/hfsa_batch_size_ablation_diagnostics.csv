@@ -1,0 +1,5 @@
+train_condition,eval_condition,best_ood_joint_bsz,best_ood_joint@16,best_depth50_joint_bsz,best_depth50_joint@16,ood_joint_range,depth50_joint_range,mean_ood_joint_delta_vs_single,best_ood_joint_delta_vs_single
+conditioned_dual,conditioned_logic,2,0.6180555555555556,16,0.125,0.23958333333333337,0.125,0.0034722222222222238,0.21180555555555558
+conditioned_dual,conditioned_nl,2,0.78125,2,0.34375,0.3368055555555556,0.34375,-0.05295138888888891,0.2777777777777778
+logic,logic,16,0.5833333333333334,4,0.1875,0.18055555555555558,0.1875,nan,nan
+nl_exact,nl_exact,8,0.7708333333333334,8,0.3125,0.2916666666666667,0.3125,nan,nan

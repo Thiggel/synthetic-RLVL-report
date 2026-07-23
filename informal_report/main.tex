@@ -2,11 +2,10 @@
 \usepackage[margin=0.7in]{geometry}
 \usepackage{booktabs}
 \usepackage{graphicx}
-\graphicspath{{../}}
 \usepackage{float}
 \usepackage{hyperref}
 \title{Formal Logic CoT Synthetic Results Update}
-\date{2026-07-22}
+\date{2026-07-23}
 \begin{document}
 \maketitle
 
@@ -84,12 +83,44 @@ failures copy premises until the shared cap and never emit an answer. Selected l
 hybrid, conditioned-dual, and architecture controls remain in progress and are not used here.
 
 
+\subsection{Accepted corrected BranchProof controls}
+The symbol-padded formal and NL-then-formal same-example hybrid controls are each complete across
+three seeds and pass the same 448-prompt, 16-generation, 14-depth artifact and qualitative gates
+as the corrected main grid. OOD contains depths 30--50. Joint uses citation-free formal validity;
+the hybrid's translated-NL joint is also zero in this OOD aggregate.
+
+\begin{table}[H]
+\centering
+\scriptsize
+\begin{tabular}{lrrrrr}
+\toprule
+Condition & Greedy OOD & OOD c@1 & OOD joint@1 & OOD c@16 & OOD joint@16 \\
+\midrule
+Symbol-padded formal & 78.1 $\pm$ 17.4 & 67.3 $\pm$ 17.5 & 62.6 $\pm$ 17.6 & 92.7 $\pm$ 9.4 & 89.0 $\pm$ 13.0 \\
+NL-then-formal hybrid & 0.0 $\pm$ 0.0 & 0.2 $\pm$ 0.1 & 0.0 $\pm$ 0.0 & 2.3 $\pm$ 1.6 & 0.0 $\pm$ 0.0 \\
+\bottomrule
+\end{tabular}
+\caption{Accepted corrected train-1-to-25 controls, percentage mean $\pm$ population standard
+deviation over three seeds.}
+\end{table}
+
+Symbol padding leaves the formal result direction intact, although its OOD pass@1 correctness
+(67.3$\pm$17.5)
+is below compact formal supervision. The NL-then-formal hybrid is perfect at the training edge in
+the inspected samples but collapses beyond it: long generations copy the NL premises and proof
+before starting or completing the formal trace, then truncate without an answer. Its OOD answer
+pass@16 is only 2.3$\pm$
+1.6. Shortcut, conditioned-dual, and architecture
+comparisons remain incomplete and are not used as family-level evidence.
+
+
 \section{Executive insights}
 \begin{itemize}
 \item The corrected 30-run BranchProof grid passed all row and cross-grid gates. At train-1-to-25, logic leads natural-language supervision on OOD greedy correctness (82.1 versus 48.8) and sampled pass@1 correctness (75.0 versus 17.8), with a similarly large joint-validity gap. The reversal is specific to the deepest training range: natural language is stronger at greedy/pass@1 for train maxima 5--20, so the result supports a depth-dependent formal advantage rather than uniform superiority.
+\item Two corrected train-1-to-25 controls now pass complete three-seed row and raw-generation gates. Symbol padding preserves most of the formal OOD advantage (67.3% answer pass@1), while the NL-then-formal same-example hybrid collapses under extrapolation (0.2% answer pass@1) because the combined trace copies both long surfaces and usually reaches the shared cap before an answer.
 \item AttrCon remains independent positive-but-mixed evidence: formal traces improve mean answer correctness, while natural traces have the higher joint-validity mean.
 \item The corrected Qwen2.5 continual-pretraining pilot remains null or mixed after raw-generation and truncation audits, so the broader mixture grid is rejected.
-\item All later sections based on the wrapped-constant BranchProof construction are retained only as quarantined provenance. Selected corrected surface, shortcut, hybrid, conditioned-dual, and architecture controls are pending and are not evidence yet.
+\item All later sections based on the wrapped-constant BranchProof construction are retained only as quarantined provenance. Corrected shortcut, conditioned-dual, and architecture controls are still pending and are not evidence yet.
 \end{itemize}
 
 \section{Metric note for OOD benchmarks}
@@ -2215,6 +2246,7 @@ conditioned_dual_summary.csv
 conditioned_dual_vs_main_by_train_depth.csv
 corrected_branchproof_final_group_summary.csv
 corrected_branchproof_paired_delta_summary.csv
+corrected_branchproof_selected_controls.csv
 cot_bare_ood_generation_examples.csv
 group_summary_all.csv
 hfsa_batch_size_ablation_diagnostics.csv

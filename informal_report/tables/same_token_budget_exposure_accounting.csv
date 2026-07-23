@@ -1,0 +1,6 @@
+condition,status,steps,target_tok_per_ex,total_tok_per_ex,target_exposure_vs_logic,total_exposure_vs_logic
+main logic baseline,result exists,10000,1038,2587,1.0,1.0
+main NL baseline,result exists,10000,1454,3008,1.4007707129094413,1.1627367607267105
+same-target logic control,result exists,10000,1038,2587,1.0,1.0
+same-target NL,result exists,7140,1454,3008,1.000150289017341,0.8301940471588712
+total-token NL match,not run,8600,1454,3008,1.2046628131021195,0.999953614224971
