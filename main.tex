@@ -47,7 +47,8 @@ formal versus natural OOD pass@1 correctness is $75.0\pm9.5$ versus
 $17.8\pm4.7$ percent, and correct-and-valid pass@1 is $68.5\pm10.2$ versus
 $17.5\pm4.5$ percent. A corrected symbol-padded control preserves most of this
 direction, whereas an NL-then-formal same-example hybrid collapses under
-length extrapolation. Attribute constraints provide an independent positive
+length extrapolation. A corrected conditioned-dual checkpoint also favors
+formal prompting OOD. Attribute constraints provide an independent positive
 but mixed signal. A matched one-run Qwen2.5 continual-pretraining pilot is
 null or mixed, and its apparent context-QA gains largely collapse after
 generated continuation is removed. The evidence supports a depth-dependent
@@ -62,12 +63,12 @@ superiority or demonstrated downstream transfer.
   arc=1mm,
   left=2mm,right=2mm,top=1mm,bottom=1mm
 ]
-\small\textbf{Internal audit status (July 23, 2026).}
+\small\textbf{Internal audit status (July 24, 2026).}
 All performance measurements from the original \branchproof{} construction are
 excluded from the rendered preprint and must not be cited. The corrected
 30-run main grid passed its row-level and cross-grid qualitative gates and is
-reported below. Corrected three-seed symbol-padded and NL-then-formal hybrid
-controls also passed; shortcut, conditioned-dual, and architecture controls
+reported below. Corrected three-seed symbol-padded, NL-then-formal hybrid, and
+conditioned-dual controls also passed; shortcut and architecture controls
 remain incomplete. Section~\ref{sec:uniqueness-audit} records the defect and
 replacement acceptance gate.
 \end{tcolorbox}
@@ -129,7 +130,8 @@ generator with fresh constants and closure-based rejection, and report the
 accepted 30-run replacement grid. Its result is depth dependent rather than a
 uniform formal advantage. A corrected syntax control preserves the result
 direction, while a corrected NL-then-formal hybrid fails under extrapolation;
-architecture, shortcut, and conditioned-dual conclusions remain hypotheses
+the corrected conditioned-dual checkpoint also favors formal prompting, while
+architecture and shortcut conclusions remain hypotheses
 until their selected reruns pass the same gates. We additionally report a matched
 one-run Qwen2.5 continual-pretraining pilot whose conventional and
 context-QA results do not provide clean evidence of modality transfer.
@@ -448,11 +450,12 @@ in both modalities frequently copy premises until the shared cap without an
 answer. Formal generations also include answer-correct but proof-invalid cases,
 which is why correctness and validity remain separate outcomes.
 
-\subsection{Corrected Controls: Syntax Is Robust, the Hybrid Is Not}
+\subsection{Corrected Controls: Syntax and Conditioning Favor Formal Outputs}
 
-Two selected train-1-to-25 controls are now complete across three seeds and
-pass the same 448-prompt, 16-generation, 14-depth row audits and representative
-raw-generation review as the main grid. OOD includes depths 30--50.
+Four selected train-1-to-25 control surfaces are now complete across three
+seeds and pass the same 448-prompt, 16-generation, 14-depth row audits and
+representative raw-generation review as the main grid. OOD includes depths
+30--50.
 
 \begin{table}[t]
 \centering
@@ -463,11 +466,14 @@ Condition & Greedy OOD & OOD corr.@1 & OOD joint@1 & OOD corr.@16 & OOD joint@16
 \midrule
 Symbol-padded formal & $78.1\pm17.4$ & $67.3\pm17.5$ & $62.6\pm17.6$ & $92.7\pm9.4$ & $89.0\pm13.0$ \\
 NL-then-formal hybrid & $0.0\pm0.0$ & $0.2\pm0.1$ & $0.0\pm0.0$ & $2.3\pm1.6$ & $0.0\pm0.0$ \\
+Conditioned-dual formal & $54.8\pm6.0$ & $50.3\pm6.4$ & $44.9\pm6.0$ & $87.1\pm3.9$ & $80.8\pm4.6$ \\
+Conditioned-dual natural & $49.2\pm30.4$ & $18.1\pm2.0$ & $17.8\pm2.3$ & $24.8\pm3.7$ & $20.6\pm0.9$ \\
 \bottomrule
 \end{tabular}
 \caption{Accepted corrected \branchproof{} controls in percent mean
 $\pm$ population standard deviation across three seeds. Joint uses
-citation-free formal validity; translated-NL hybrid joint is also zero OOD.}
+citation-free formal validity for formal outputs and translated
+citation-free validity for conditioned natural-language outputs.}
 \label{tab:branchproof-controls}
 \end{table}
 
@@ -479,6 +485,14 @@ copy the natural-language premises and proof before beginning or completing
 the formal trace, then usually reach the shared generation cap without an
 answer. This rejects the simple hypothesis that concatenating both substrates
 inherits their respective strengths.
+
+The conditioned-dual checkpoint, trained on separate mode-tagged examples,
+also retains a formal advantage: OOD answer/joint pass@1 is
+$50.3\pm6.4$/$44.9\pm6.0$ percent in formal mode versus
+$18.1\pm2.0$/$17.8\pm2.3$ percent in natural-language mode. Inspected natural
+outputs are clean through roughly depth 30, then copy long premise/proof
+prefixes and usually omit the answer. This is evidence about the requested
+output mode of one shared checkpoint, not an additive-data or capacity claim.
 
 \subsection{Continuation Midtraining Is Null or Mixed}
 
@@ -870,8 +884,9 @@ follow-ups, but not for supporting claims. The corrected train-1-to-25 result
 triggered selected reruns of length/syntax, shortcut, hybrid,
 conditioned-dual, and independent-architecture controls. The corrected
 symbol-padded and NL-then-formal controls now pass; the former preserves the
-formal direction and the latter collapses under OOD length. The remaining
-shortcut, conditioned-dual, and architecture claims stay gated.
+formal direction and the latter collapses under OOD length. The conditioned
+checkpoint also favors formal prompting OOD. The remaining shortcut and
+architecture claims stay gated.
 
 The corrected continual-pretraining pilot provides a separate negative
 constraint. Small aggregate differences, next-document continuation, tagged
@@ -885,8 +900,7 @@ planned broader mixture expansion under the positive-and-clean gate.
 The tasks are synthetic. This is necessary for a paired substrate comparison,
 but it limits claims about open-domain reasoning. The corrected \branchproof{}
 result uses one model family and shows a sharp train-depth interaction; the
-selected architecture, shortcut, and conditioned-dual controls are still
-running. The
+selected architecture and shortcut controls are still running. The
 \attrcon{} depth-50 estimate also has high seed variance. The completed
 continual-pretraining comparison has one run per condition, small mixed deltas,
 and response-format artifacts, so it cannot estimate seed variance or establish
@@ -906,6 +920,7 @@ and intermediate training ranges, but Logic has a large, three-seed pass@1 and
 correct-and-valid advantage after training through depth 25. A corrected
 symbol-padded formal control preserves most of this direction, while an
 NL-then-formal hybrid collapses under extrapolation. A corrected
+conditioned-dual checkpoint likewise favors formal prompting OOD. A corrected
 continual-pretraining pilot remains null or mixed and shows that response
 control can masquerade as context-QA transfer. The current evidence therefore
 supports a depth-dependent synthetic SFT effect, not uniform substrate
