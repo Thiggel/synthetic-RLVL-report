@@ -84,11 +84,11 @@ hybrid, conditioned-dual, and architecture controls remain in progress and are n
 
 
 \subsection{Accepted corrected BranchProof controls}
-The symbol-padded formal, NL-then-formal same-example hybrid, and both prompting modes of the
-conditioned-dual checkpoint are complete across three seeds. All pass the same 448-prompt,
-16-generation, 14-depth artifact and qualitative gates as the corrected main grid. OOD contains
-depths 30--50. Joint uses citation-free formal validity for formal outputs and translated
-citation-free validity for conditioned NL.
+The selected syntax/length, shortcut, hybrid-order, conditioned-dual, and Qwen2.5-7B controls
+are complete across three seeds; the OLMo-3-32B comparison remains partial. All accepted rows
+pass the same 448-prompt, 16-generation, 14-depth artifact and qualitative gates as the corrected
+main grid. OOD contains depths 30--50. Joint uses citation-free formal validity for formal
+outputs and translated citation-free validity for natural-language outputs.
 
 \begin{table}[H]
 \centering
@@ -98,9 +98,16 @@ citation-free validity for conditioned NL.
 Condition & Greedy OOD & OOD c@1 & OOD joint@1 & OOD c@16 & OOD joint@16 \\
 \midrule
 Symbol-padded formal & 78.1 $\pm$ 17.4 & 67.3 $\pm$ 17.5 & 62.6 $\pm$ 17.6 & 92.7 $\pm$ 9.4 & 89.0 $\pm$ 13.0 \\
+Terse natural & 89.2 $\pm$ 8.6 & 64.1 $\pm$ 24.9 & 63.6 $\pm$ 24.9 & 93.3 $\pm$ 9.0 & 92.7 $\pm$ 9.9 \\
+Target-token-matched natural & 79.8 $\pm$ 15.3 & 41.0 $\pm$ 20.1 & 40.1 $\pm$ 19.7 & 69.8 $\pm$ 34.9 & 68.5 $\pm$ 34.1 \\
+Shortcut-trained formal & 58.3 $\pm$ 11.6 & 43.1 $\pm$ 7.7 & 38.5 $\pm$ 6.6 & 87.3 $\pm$ 7.5 & 80.6 $\pm$ 10.6 \\
+Shortcut-trained natural & 96.9 $\pm$ 4.0 & 78.5 $\pm$ 14.9 & 78.1 $\pm$ 15.2 & 99.4 $\pm$ 0.9 & 99.4 $\pm$ 0.9 \\
 NL-then-formal hybrid & 0.0 $\pm$ 0.0 & 0.2 $\pm$ 0.1 & 0.0 $\pm$ 0.0 & 2.3 $\pm$ 1.6 & 0.0 $\pm$ 0.0 \\
+Formal-then-NL hybrid & 0.4 $\pm$ 0.6 & 0.5 $\pm$ 0.4 & 0.0 $\pm$ 0.0 & 7.1 $\pm$ 5.5 & 0.2 $\pm$ 0.3 \\
 Conditioned-dual formal & 54.8 $\pm$ 6.0 & 50.3 $\pm$ 6.4 & 44.9 $\pm$ 6.0 & 87.1 $\pm$ 3.9 & 80.8 $\pm$ 4.6 \\
 Conditioned-dual NL & 49.2 $\pm$ 30.4 & 18.1 $\pm$ 2.0 & 17.8 $\pm$ 2.3 & 24.8 $\pm$ 3.7 & 20.6 $\pm$ 0.9 \\
+Qwen2.5-7B formal & 69.8 $\pm$ 10.0 & 69.9 $\pm$ 11.1 & 69.2 $\pm$ 11.1 & 77.3 $\pm$ 5.2 & 76.2 $\pm$ 6.2 \\
+Qwen2.5-7B natural & 75.0 $\pm$ 7.1 & 74.9 $\pm$ 7.0 & 74.5 $\pm$ 7.4 & 76.0 $\pm$ 5.6 & 75.6 $\pm$ 6.2 \\
 \bottomrule
 \end{tabular}
 \caption{Accepted corrected train-1-to-25 controls, percentage mean $\pm$ population standard
@@ -113,7 +120,22 @@ is below compact formal supervision. The NL-then-formal hybrid is perfect at the
 the inspected samples but collapses beyond it: long generations copy the NL premises and proof
 before starting or completing the formal trace, then truncate without an answer. Its OOD answer
 pass@16 is only 2.3$\pm$
-1.6. The conditioned-dual checkpoint also favors formal
+1.6; reversing the order also collapses, with OOD
+answer pass@1 0.5$\pm$
+0.4. Terse natural supervision reaches
+64.1$\pm$
+24.9 OOD answer pass@1, while matching the natural
+target-token exposure reaches 41.0$\pm$
+20.1 and has substantial seed variance.
+Shortcut-trained formal versus natural reaches
+43.1$\pm$
+7.7 versus
+78.5$\pm$
+14.9; Qwen2.5-7B reaches
+69.9$\pm$
+11.1 versus
+74.9$\pm$
+7.0. The conditioned-dual checkpoint also favors formal
 prompting: OOD answer/joint pass@1 is
 50.3$\pm$
 6.4 /
@@ -124,13 +146,14 @@ prompting: OOD answer/joint pass@1 is
 17.8$\pm$
 2.3 for NL. Retained conditioned-NL samples are
 clean through roughly depth 30, then copy long premise/proof prefixes and usually omit the answer.
-Shortcut and architecture comparisons remain incomplete and are not used as family-level evidence.
+The remaining single-modal and conditioned OLMo-3-32B rows are still incomplete and are not used
+as family-level evidence.
 
 
 \section{Executive insights}
 \begin{itemize}
 \item The corrected 30-run BranchProof grid passed all row and cross-grid gates. At train-1-to-25, logic leads natural-language supervision on OOD greedy correctness (82.1 versus 48.8) and sampled pass@1 correctness (75.0 versus 17.8), with a similarly large joint-validity gap. The reversal is specific to the deepest training range: natural language is stronger at greedy/pass@1 for train maxima 5--20, so the result supports a depth-dependent formal advantage rather than uniform superiority.
-\item Four corrected train-1-to-25 control surfaces now pass complete three-seed row and raw-generation gates. Symbol padding preserves most of the formal OOD advantage (67.3% answer pass@1), while the NL-then-formal same-example hybrid collapses under extrapolation (0.2% answer pass@1). In the conditioned-dual checkpoint, formal prompting retains 50.3% OOD answer pass@1 versus 18.1% for NL.
+\item Eleven corrected train-1-to-25 control conditions now pass complete three-seed row and raw-generation gates. Symbol padding preserves most of the formal OOD advantage (67.3% answer pass@1), while the two same-example hybrid orders collapse under extrapolation (0.2% and 0.5% answer pass@1). Shortcut-trained formal versus natural reaches 43.1% versus 78.5%, and Qwen2.5-7B reaches 69.9% versus 74.9%. In the conditioned-dual checkpoint, formal prompting retains 50.3% OOD answer pass@1 versus 18.1% for NL.
 \item AttrCon remains independent positive-but-mixed evidence: formal traces improve mean answer correctness, while natural traces have the higher joint-validity mean.
 \item The corrected Qwen2.5 continual-pretraining pilot remains null or mixed after raw-generation and truncation audits, so the broader mixture grid is rejected.
 \item All later sections based on the wrapped-constant BranchProof construction are retained only as quarantined provenance. Corrected shortcut, conditioned-dual, and architecture controls are still pending and are not evidence yet.

@@ -46,9 +46,11 @@ substantially stronger after training through depth 25. In that setting,
 formal versus natural OOD pass@1 correctness is $75.0\pm9.5$ versus
 $17.8\pm4.7$ percent, and correct-and-valid pass@1 is $68.5\pm10.2$ versus
 $17.5\pm4.5$ percent. A corrected symbol-padded control preserves most of this
-direction, whereas an NL-then-formal same-example hybrid collapses under
-length extrapolation. A corrected conditioned-dual checkpoint also favors
-formal prompting OOD. Attribute constraints provide an independent positive
+direction, while both same-example hybrid orders collapse under length
+extrapolation. Shortcut-trained natural supervision exceeds its matched formal
+control, and Qwen2.5-7B is near-tied at pass@1. A corrected conditioned-dual
+checkpoint also favors formal prompting OOD. Attribute constraints provide an
+independent positive
 but mixed signal. A matched one-run Qwen2.5 continual-pretraining pilot is
 null or mixed, and its apparent context-QA gains largely collapse after
 generated continuation is removed. The evidence supports a depth-dependent
@@ -63,13 +65,14 @@ superiority or demonstrated downstream transfer.
   arc=1mm,
   left=2mm,right=2mm,top=1mm,bottom=1mm
 ]
-\small\textbf{Internal audit status (July 24, 2026).}
+\small\textbf{Internal audit status (July 25, 2026).}
 All performance measurements from the original \branchproof{} construction are
 excluded from the rendered preprint and must not be cited. The corrected
 30-run main grid passed its row-level and cross-grid qualitative gates and is
-reported below. Corrected three-seed symbol-padded, NL-then-formal hybrid, and
-conditioned-dual controls also passed; shortcut and architecture controls
-remain incomplete. Section~\ref{sec:uniqueness-audit} records the defect and
+reported below. Eleven selected corrected train-1-to-25 control conditions
+covering syntax/length, shortcut, hybrid order, conditioned output mode, and
+Qwen2.5-7B architecture also passed. The OLMo-3-32B comparison remains
+incomplete. Section~\ref{sec:uniqueness-audit} records the defect and
 replacement acceptance gate.
 \end{tcolorbox}
 
@@ -129,10 +132,11 @@ long-depth uniqueness defect in the original branching benchmark, repair the
 generator with fresh constants and closure-based rejection, and report the
 accepted 30-run replacement grid. Its result is depth dependent rather than a
 uniform formal advantage. A corrected syntax control preserves the result
-direction, while a corrected NL-then-formal hybrid fails under extrapolation;
-the corrected conditioned-dual checkpoint also favors formal prompting, while
-architecture and shortcut conclusions remain hypotheses
-until their selected reruns pass the same gates. We additionally report a matched
+direction, while both corrected hybrid orders fail under extrapolation.
+Shortcut-trained natural supervision exceeds the matched formal control,
+Qwen2.5-7B is near-tied at pass@1, and the corrected conditioned-dual checkpoint
+favors formal prompting. The selected OLMo-3-32B comparison remains incomplete.
+We additionally report a matched
 one-run Qwen2.5 continual-pretraining pilot whose conventional and
 context-QA results do not provide clean evidence of modality transfer.
 
@@ -260,8 +264,9 @@ subset contains 50k materialized examples. We fine-tune with LoRA rank 16,
 alpha 32, dropout 0.05, BF16 weights, batch size 1, learning rate $10^{-4}$,
 10k optimizer steps, maximum sequence length 8192, and adapters on attention
 and MLP projection modules. The corrected main comparison has passed its
-artifact and sample audit; selected architecture and mechanism controls are now
-running but remain outside the evidentiary record.
+artifact and sample audit. The selected syntax/length, shortcut, hybrid-order,
+conditioned-output, and Qwen2.5-7B controls have also passed; the OLMo-3-32B
+comparison remains in progress.
 
 For \attrcon{}, we use the same paired-rendering principle and report
 three-seed train-1-to-25 results. It provides evidence independent of the
@@ -450,9 +455,9 @@ in both modalities frequently copy premises until the shared cap without an
 answer. Formal generations also include answer-correct but proof-invalid cases,
 which is why correctness and validity remain separate outcomes.
 
-\subsection{Corrected Controls: Syntax and Conditioning Favor Formal Outputs}
+\subsection{Corrected Mechanism and Architecture Controls}
 
-Four selected train-1-to-25 control surfaces are now complete across three
+Eleven selected train-1-to-25 control conditions are now complete across three
 seeds and pass the same 448-prompt, 16-generation, 14-depth row audits and
 representative raw-generation review as the main grid. OOD includes depths
 30--50.
@@ -465,15 +470,22 @@ representative raw-generation review as the main grid. OOD includes depths
 Condition & Greedy OOD & OOD corr.@1 & OOD joint@1 & OOD corr.@16 & OOD joint@16 \\
 \midrule
 Symbol-padded formal & $78.1\pm17.4$ & $67.3\pm17.5$ & $62.6\pm17.6$ & $92.7\pm9.4$ & $89.0\pm13.0$ \\
+Terse natural & $89.2\pm8.6$ & $64.1\pm24.9$ & $63.6\pm24.9$ & $93.3\pm9.0$ & $92.7\pm9.9$ \\
+Target-token-matched natural & $79.8\pm15.3$ & $41.0\pm20.1$ & $40.1\pm19.7$ & $69.8\pm34.9$ & $68.5\pm34.1$ \\
+Shortcut-trained formal & $58.3\pm11.6$ & $43.1\pm7.7$ & $38.5\pm6.6$ & $87.3\pm7.5$ & $80.6\pm10.6$ \\
+Shortcut-trained natural & $96.9\pm4.0$ & $78.5\pm14.9$ & $78.1\pm15.2$ & $99.4\pm0.9$ & $99.4\pm0.9$ \\
 NL-then-formal hybrid & $0.0\pm0.0$ & $0.2\pm0.1$ & $0.0\pm0.0$ & $2.3\pm1.6$ & $0.0\pm0.0$ \\
+Formal-then-NL hybrid & $0.4\pm0.6$ & $0.5\pm0.4$ & $0.0\pm0.0$ & $7.1\pm5.5$ & $0.2\pm0.3$ \\
 Conditioned-dual formal & $54.8\pm6.0$ & $50.3\pm6.4$ & $44.9\pm6.0$ & $87.1\pm3.9$ & $80.8\pm4.6$ \\
 Conditioned-dual natural & $49.2\pm30.4$ & $18.1\pm2.0$ & $17.8\pm2.3$ & $24.8\pm3.7$ & $20.6\pm0.9$ \\
+Qwen2.5-7B formal & $69.8\pm10.0$ & $69.9\pm11.1$ & $69.2\pm11.1$ & $77.3\pm5.2$ & $76.3\pm6.2$ \\
+Qwen2.5-7B natural & $75.0\pm7.1$ & $74.9\pm7.0$ & $74.5\pm7.4$ & $76.0\pm5.6$ & $75.6\pm6.2$ \\
 \bottomrule
 \end{tabular}
 \caption{Accepted corrected \branchproof{} controls in percent mean
 $\pm$ population standard deviation across three seeds. Joint uses
 citation-free formal validity for formal outputs and translated
-citation-free validity for conditioned natural-language outputs.}
+citation-free validity for natural-language outputs.}
 \label{tab:branchproof-controls}
 \end{table}
 
@@ -481,10 +493,19 @@ Mechanically lengthening formal atoms with padded constants therefore
 preserves most of the compact-formal result direction, although its mean
 pass@1 accuracy is lower and more variable. The same-example hybrid instead
 fits the training edge but fails to extrapolate: inspected OOD generations
-copy the natural-language premises and proof before beginning or completing
-the formal trace, then usually reach the shared generation cap without an
-answer. This rejects the simple hypothesis that concatenating both substrates
-inherits their respective strengths.
+copy one or both trace surfaces before completing the response, then usually
+reach the shared generation cap without an answer. Reversing the trace order
+does not rescue extrapolation: OOD answer pass@1 is $0.5\pm0.4$ percent. This
+rejects the simple hypothesis that concatenating both substrates inherits
+their respective strengths.
+
+The syntax and exposure controls are heterogeneous. Terse natural supervision
+reaches $64.1\pm24.9$ percent OOD answer pass@1, while target-token-matched
+natural supervision reaches $41.0\pm20.1$ percent with substantial seed
+variance. Shortcut-trained natural supervision exceeds shortcut-trained formal
+at pass@1 ($78.5\pm14.9$ versus $43.1\pm7.7$ percent), so this shortcut control
+does not support a formal advantage. Qwen2.5-7B is near-tied, with natural
+versus formal OOD pass@1 of $74.9\pm7.0$ versus $69.9\pm11.1$ percent.
 
 The conditioned-dual checkpoint, trained on separate mode-tagged examples,
 also retains a formal advantage: OOD answer/joint pass@1 is
@@ -882,11 +903,12 @@ pass@k as evidence.
 The old mechanism and mixed-modality experiments remain useful for choosing
 follow-ups, but not for supporting claims. The corrected train-1-to-25 result
 triggered selected reruns of length/syntax, shortcut, hybrid,
-conditioned-dual, and independent-architecture controls. The corrected
-symbol-padded and NL-then-formal controls now pass; the former preserves the
-formal direction and the latter collapses under OOD length. The conditioned
-checkpoint also favors formal prompting OOD. The remaining shortcut and
-architecture claims stay gated.
+conditioned-dual, and independent-architecture controls. The selected
+syntax/length, shortcut, both hybrid orders, conditioned output modes, and
+Qwen2.5-7B controls now pass. Symbol padding preserves the formal direction;
+both hybrids collapse OOD; shortcut-trained natural supervision is stronger;
+and Qwen2.5-7B is near-tied at pass@1. The conditioned checkpoint favors formal
+prompting OOD. The OLMo-3-32B comparison remains gated.
 
 The corrected continual-pretraining pilot provides a separate negative
 constraint. Small aggregate differences, next-document continuation, tagged
@@ -899,8 +921,9 @@ planned broader mixture expansion under the positive-and-clean gate.
 
 The tasks are synthetic. This is necessary for a paired substrate comparison,
 but it limits claims about open-domain reasoning. The corrected \branchproof{}
-result uses one model family and shows a sharp train-depth interaction; the
-selected architecture and shortcut controls are still running. The
+result uses one main model family and shows a sharp train-depth interaction;
+Qwen2.5-7B is near-tied at pass@1 and the selected OLMo-3-32B control is still
+running. The
 \attrcon{} depth-50 estimate also has high seed variance. The completed
 continual-pretraining comparison has one run per condition, small mixed deltas,
 and response-format artifacts, so it cannot estimate seed variance or establish
@@ -918,9 +941,11 @@ audit invalidates the original branching-proof evidence and its derived
 ablations. On the repaired unique-answer benchmark, Natural leads at shallow
 and intermediate training ranges, but Logic has a large, three-seed pass@1 and
 correct-and-valid advantage after training through depth 25. A corrected
-symbol-padded formal control preserves most of this direction, while an
-NL-then-formal hybrid collapses under extrapolation. A corrected
-conditioned-dual checkpoint likewise favors formal prompting OOD. A corrected
+symbol-padded formal control preserves most of this direction, while both
+hybrid orders collapse under extrapolation. Shortcut-trained natural
+supervision is stronger than its formal match, Qwen2.5-7B is near-tied at
+pass@1, and a corrected conditioned-dual checkpoint favors formal prompting
+OOD. A corrected
 continual-pretraining pilot remains null or mixed and shows that response
 control can masquerade as context-QA transfer. The current evidence therefore
 supports a depth-dependent synthetic SFT effect, not uniform substrate
