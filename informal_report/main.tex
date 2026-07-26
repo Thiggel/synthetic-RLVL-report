@@ -84,8 +84,8 @@ hybrid, conditioned-dual, and architecture controls remain in progress and are n
 
 
 \subsection{Accepted corrected BranchProof controls}
-The selected syntax/length, shortcut, hybrid-order, conditioned-dual, and Qwen2.5-7B controls
-are complete across three seeds; the OLMo-3-32B comparison remains partial. All accepted rows
+The selected syntax/length, shortcut, hybrid-order, conditioned-dual, Qwen2.5-7B, and
+single-modal OLMo-3-32B controls are complete across three seeds. All accepted rows
 pass the same 448-prompt, 16-generation, 14-depth artifact and qualitative gates as the corrected
 main grid. OOD contains depths 30--50. Joint uses citation-free formal validity for formal
 outputs and translated citation-free validity for natural-language outputs.
@@ -108,6 +108,8 @@ Conditioned-dual formal & 54.8 $\pm$ 6.0 & 50.3 $\pm$ 6.4 & 44.9 $\pm$ 6.0 & 87.
 Conditioned-dual NL & 49.2 $\pm$ 30.4 & 18.1 $\pm$ 2.0 & 17.8 $\pm$ 2.3 & 24.8 $\pm$ 3.7 & 20.6 $\pm$ 0.9 \\
 Qwen2.5-7B formal & 69.8 $\pm$ 10.0 & 69.9 $\pm$ 11.1 & 69.2 $\pm$ 11.1 & 77.3 $\pm$ 5.2 & 76.2 $\pm$ 6.2 \\
 Qwen2.5-7B natural & 75.0 $\pm$ 7.1 & 74.9 $\pm$ 7.0 & 74.5 $\pm$ 7.4 & 76.0 $\pm$ 5.6 & 75.6 $\pm$ 6.2 \\
+OLMo-3-32B formal & 70.0 $\pm$ 9.1 & 63.9 $\pm$ 5.1 & 51.1 $\pm$ 1.8 & 98.8 $\pm$ 0.9 & 94.0 $\pm$ 1.8 \\
+OLMo-3-32B natural & 99.4 $\pm$ 0.5 & 98.9 $\pm$ 0.8 & 98.8 $\pm$ 0.9 & 99.8 $\pm$ 0.3 & 99.8 $\pm$ 0.3 \\
 \bottomrule
 \end{tabular}
 \caption{Accepted corrected train-1-to-25 controls, percentage mean $\pm$ population standard
@@ -146,17 +148,25 @@ prompting: OOD answer/joint pass@1 is
 17.8$\pm$
 2.3 for NL. Retained conditioned-NL samples are
 clean through roughly depth 30, then copy long premise/proof prefixes and usually omit the answer.
-The remaining single-modal and conditioned OLMo-3-32B rows are still incomplete and are not used
-as family-level evidence.
+The matched OLMo-3-32B single-modal comparison reaches OOD answer/joint pass@1
+63.9$\pm$
+5.1 /
+51.1$\pm$
+1.8 for formal versus
+98.9$\pm$
+0.8 /
+98.8$\pm$
+0.9 for natural supervision. The remaining
+OLMo-3-32B conditioned-dual replacement is incomplete and is not used as family-level evidence.
 
 
 \section{Executive insights}
 \begin{itemize}
 \item The corrected 30-run BranchProof grid passed all row and cross-grid gates. At train-1-to-25, logic leads natural-language supervision on OOD greedy correctness (82.1 versus 48.8) and sampled pass@1 correctness (75.0 versus 17.8), with a similarly large joint-validity gap. The reversal is specific to the deepest training range: natural language is stronger at greedy/pass@1 for train maxima 5--20, so the result supports a depth-dependent formal advantage rather than uniform superiority.
-\item Eleven corrected train-1-to-25 control conditions now pass complete three-seed row and raw-generation gates. Symbol padding preserves most of the formal OOD advantage (67.3% answer pass@1), while the two same-example hybrid orders collapse under extrapolation (0.2% and 0.5% answer pass@1). Shortcut-trained formal versus natural reaches 43.1% versus 78.5%, and Qwen2.5-7B reaches 69.9% versus 74.9%. In the conditioned-dual checkpoint, formal prompting retains 50.3% OOD answer pass@1 versus 18.1% for NL.
+\item Thirteen corrected train-1-to-25 control conditions now pass complete three-seed row and raw-generation gates. Symbol padding preserves most of the formal OOD advantage (67.3% answer pass@1), while the two same-example hybrid orders collapse under extrapolation (0.2% and 0.5% answer pass@1). Shortcut-trained formal versus natural reaches 43.1% versus 78.5%, and Qwen2.5-7B reaches 69.9% versus 74.9%. In the conditioned-dual checkpoint, formal prompting retains 50.3% OOD answer pass@1 versus 18.1% for NL. At OLMo-3-32B, formal versus natural reaches 63.9% versus 98.9%.
 \item AttrCon remains independent positive-but-mixed evidence: formal traces improve mean answer correctness, while natural traces have the higher joint-validity mean.
 \item The corrected Qwen2.5 continual-pretraining pilot remains null or mixed after raw-generation and truncation audits, so the broader mixture grid is rejected.
-\item All later sections based on the wrapped-constant BranchProof construction are retained only as quarantined provenance. Only the audited corrected controls summarized above are evidence; the OLMo-3-32B comparison remains incomplete.
+\item All later sections based on the wrapped-constant BranchProof construction are retained only as quarantined provenance. Only the audited corrected controls summarized above are evidence; the conditioned OLMo-3-32B replacement remains incomplete.
 \end{itemize}
 
 \section{Metric note for OOD benchmarks}

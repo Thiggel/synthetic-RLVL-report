@@ -65,14 +65,14 @@ superiority or demonstrated downstream transfer.
   arc=1mm,
   left=2mm,right=2mm,top=1mm,bottom=1mm
 ]
-\small\textbf{Internal audit status (July 25, 2026).}
+\small\textbf{Internal audit status (July 27, 2026).}
 All performance measurements from the original \branchproof{} construction are
 excluded from the rendered preprint and must not be cited. The corrected
 30-run main grid passed its row-level and cross-grid qualitative gates and is
-reported below. Eleven selected corrected train-1-to-25 control conditions
+reported below. Thirteen selected corrected train-1-to-25 control conditions
 covering syntax/length, shortcut, hybrid order, conditioned output mode, and
-Qwen2.5-7B architecture also passed. The OLMo-3-32B comparison remains
-incomplete. Section~\ref{sec:uniqueness-audit} records the defect and
+Qwen2.5-7B and OLMo-3-32B architectures also passed. The conditioned
+OLMo-3-32B replacement remains incomplete. Section~\ref{sec:uniqueness-audit} records the defect and
 replacement acceptance gate.
 \end{tcolorbox}
 
@@ -135,7 +135,8 @@ uniform formal advantage. A corrected syntax control preserves the result
 direction, while both corrected hybrid orders fail under extrapolation.
 Shortcut-trained natural supervision exceeds the matched formal control,
 Qwen2.5-7B is near-tied at pass@1, and the corrected conditioned-dual checkpoint
-favors formal prompting. The selected OLMo-3-32B comparison remains incomplete.
+favors formal prompting. In the matched single-modal OLMo-3-32B comparison,
+natural supervision substantially exceeds formal at pass@1.
 We additionally report a matched
 one-run Qwen2.5 continual-pretraining pilot whose conventional and
 context-QA results do not provide clean evidence of modality transfer.
@@ -265,8 +266,8 @@ alpha 32, dropout 0.05, BF16 weights, batch size 1, learning rate $10^{-4}$,
 10k optimizer steps, maximum sequence length 8192, and adapters on attention
 and MLP projection modules. The corrected main comparison has passed its
 artifact and sample audit. The selected syntax/length, shortcut, hybrid-order,
-conditioned-output, and Qwen2.5-7B controls have also passed; the OLMo-3-32B
-comparison remains in progress.
+conditioned-output, Qwen2.5-7B, and single-modal OLMo-3-32B controls have also
+passed; the conditioned OLMo-3-32B replacement remains in progress.
 
 For \attrcon{}, we use the same paired-rendering principle and report
 three-seed train-1-to-25 results. It provides evidence independent of the
@@ -457,7 +458,7 @@ which is why correctness and validity remain separate outcomes.
 
 \subsection{Corrected Mechanism and Architecture Controls}
 
-Eleven selected train-1-to-25 control conditions are now complete across three
+Thirteen selected train-1-to-25 control conditions are now complete across three
 seeds and pass the same 448-prompt, 16-generation, 14-depth row audits and
 representative raw-generation review as the main grid. OOD includes depths
 30--50.
@@ -480,6 +481,8 @@ Conditioned-dual formal & $54.8\pm6.0$ & $50.3\pm6.4$ & $44.9\pm6.0$ & $87.1\pm3
 Conditioned-dual natural & $49.2\pm30.4$ & $18.1\pm2.0$ & $17.8\pm2.3$ & $24.8\pm3.7$ & $20.6\pm0.9$ \\
 Qwen2.5-7B formal & $69.8\pm10.0$ & $69.9\pm11.1$ & $69.2\pm11.1$ & $77.3\pm5.2$ & $76.3\pm6.2$ \\
 Qwen2.5-7B natural & $75.0\pm7.1$ & $74.9\pm7.0$ & $74.5\pm7.4$ & $76.0\pm5.6$ & $75.6\pm6.2$ \\
+OLMo-3-32B formal & $70.0\pm9.1$ & $63.9\pm5.1$ & $51.1\pm1.8$ & $98.8\pm0.9$ & $94.0\pm1.8$ \\
+OLMo-3-32B natural & $99.4\pm0.5$ & $98.9\pm0.8$ & $98.8\pm0.9$ & $99.8\pm0.3$ & $99.8\pm0.3$ \\
 \bottomrule
 \end{tabular}
 \caption{Accepted corrected \branchproof{} controls in percent mean
@@ -506,6 +509,13 @@ variance. Shortcut-trained natural supervision exceeds shortcut-trained formal
 at pass@1 ($78.5\pm14.9$ versus $43.1\pm7.7$ percent), so this shortcut control
 does not support a formal advantage. Qwen2.5-7B is near-tied, with natural
 versus formal OOD pass@1 of $74.9\pm7.0$ versus $69.9\pm11.1$ percent.
+At OLMo-3-32B, natural supervision is substantially stronger at pass@1:
+OOD answer/joint is $98.9\pm0.8$/$98.8\pm0.9$ percent versus
+$63.9\pm5.1$/$51.1\pm1.8$ percent for formal supervision. Formal pass@16
+recovers to $98.8\pm0.9$ percent answer correctness but remains lower in joint
+validity at $94.0\pm1.8$ percent. Raw failures are ordinary wrong chains and
+depth-50 cap/format failures rather than prompt, extraction, or validator
+breakage.
 
 The conditioned-dual checkpoint, trained on separate mode-tagged examples,
 also retains a formal advantage: OOD answer/joint pass@1 is
@@ -908,7 +918,9 @@ syntax/length, shortcut, both hybrid orders, conditioned output modes, and
 Qwen2.5-7B controls now pass. Symbol padding preserves the formal direction;
 both hybrids collapse OOD; shortcut-trained natural supervision is stronger;
 and Qwen2.5-7B is near-tied at pass@1. The conditioned checkpoint favors formal
-prompting OOD. The OLMo-3-32B comparison remains gated.
+prompting OOD, while the matched single-modal OLMo-3-32B comparison strongly
+favors natural supervision at pass@1. The conditioned OLMo-3-32B replacement
+remains gated.
 
 The corrected continual-pretraining pilot provides a separate negative
 constraint. Small aggregate differences, next-document continuation, tagged
@@ -922,8 +934,9 @@ planned broader mixture expansion under the positive-and-clean gate.
 The tasks are synthetic. This is necessary for a paired substrate comparison,
 but it limits claims about open-domain reasoning. The corrected \branchproof{}
 result uses one main model family and shows a sharp train-depth interaction;
-Qwen2.5-7B is near-tied at pass@1 and the selected OLMo-3-32B control is still
-running. The
+Qwen2.5-7B is near-tied at pass@1 and the selected single-modal OLMo-3-32B
+control instead favors natural supervision. The conditioned OLMo-3-32B
+replacement is still running. The
 \attrcon{} depth-50 estimate also has high seed variance. The completed
 continual-pretraining comparison has one run per condition, small mixed deltas,
 and response-format artifacts, so it cannot estimate seed variance or establish
