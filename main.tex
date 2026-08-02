@@ -65,14 +65,14 @@ superiority or demonstrated downstream transfer.
   arc=1mm,
   left=2mm,right=2mm,top=1mm,bottom=1mm
 ]
-\small\textbf{Internal audit status (July 27, 2026).}
+\small\textbf{Internal audit status (August 2, 2026).}
 All performance measurements from the original \branchproof{} construction are
 excluded from the rendered preprint and must not be cited. The corrected
 30-run main grid passed its row-level and cross-grid qualitative gates and is
-reported below. Thirteen selected corrected train-1-to-25 control conditions
+reported below. Fifteen selected corrected train-1-to-25 control conditions
 covering syntax/length, shortcut, hybrid order, conditioned output mode, and
-Qwen2.5-7B and OLMo-3-32B architectures also passed. The conditioned
-OLMo-3-32B replacement remains incomplete. Section~\ref{sec:uniqueness-audit} records the defect and
+Qwen2.5-7B and OLMo-3-32B architectures also passed, including both output
+modes of the conditioned OLMo-3-32B checkpoint. Section~\ref{sec:uniqueness-audit} records the defect and
 replacement acceptance gate.
 \end{tcolorbox}
 
@@ -266,8 +266,8 @@ alpha 32, dropout 0.05, BF16 weights, batch size 1, learning rate $10^{-4}$,
 10k optimizer steps, maximum sequence length 8192, and adapters on attention
 and MLP projection modules. The corrected main comparison has passed its
 artifact and sample audit. The selected syntax/length, shortcut, hybrid-order,
-conditioned-output, Qwen2.5-7B, and single-modal OLMo-3-32B controls have also
-passed; the conditioned OLMo-3-32B replacement remains in progress.
+conditioned-output, Qwen2.5-7B, and single-modal and conditioned OLMo-3-32B
+controls have also passed.
 
 For \attrcon{}, we use the same paired-rendering principle and report
 three-seed train-1-to-25 results. It provides evidence independent of the
@@ -458,7 +458,7 @@ which is why correctness and validity remain separate outcomes.
 
 \subsection{Corrected Mechanism and Architecture Controls}
 
-Thirteen selected train-1-to-25 control conditions are now complete across three
+Fifteen selected train-1-to-25 control conditions are now complete across three
 seeds and pass the same 448-prompt, 16-generation, 14-depth row audits and
 representative raw-generation review as the main grid. OOD includes depths
 30--50.
@@ -483,6 +483,8 @@ Qwen2.5-7B formal & $69.8\pm10.0$ & $69.9\pm11.1$ & $69.2\pm11.1$ & $77.3\pm5.2$
 Qwen2.5-7B natural & $75.0\pm7.1$ & $74.9\pm7.0$ & $74.5\pm7.4$ & $76.0\pm5.6$ & $75.6\pm6.2$ \\
 OLMo-3-32B formal & $70.0\pm9.1$ & $63.9\pm5.1$ & $51.1\pm1.8$ & $98.8\pm0.9$ & $94.0\pm1.8$ \\
 OLMo-3-32B natural & $99.4\pm0.5$ & $98.9\pm0.8$ & $98.8\pm0.9$ & $99.8\pm0.3$ & $99.8\pm0.3$ \\
+OLMo-3-32B conditioned formal & $89.8\pm5.2$ & $85.0\pm8.7$ & $75.0\pm12.5$ & $99.8\pm0.3$ & $97.7\pm2.8$ \\
+OLMo-3-32B conditioned natural & $78.5\pm12.1$ & $77.2\pm11.7$ & $75.1\pm9.4$ & $88.8\pm7.7$ & $86.7\pm9.0$ \\
 \bottomrule
 \end{tabular}
 \caption{Accepted corrected \branchproof{} controls in percent mean
@@ -516,6 +518,15 @@ recovers to $98.8\pm0.9$ percent answer correctness but remains lower in joint
 validity at $94.0\pm1.8$ percent. Raw failures are ordinary wrong chains and
 depth-50 cap/format failures rather than prompt, extraction, or validator
 breakage.
+
+The shared conditioned OLMo-3-32B checkpoint reaches OOD answer/joint pass@1
+of $85.0\pm8.7$/$75.0\pm12.5$ percent under formal prompting and
+$77.2\pm11.7$/$75.1\pm9.4$ percent under natural prompting. Thus formal mode
+has the higher answer mean, while the joint-validity means are effectively
+tied and variable. Inspected shallow, train-edge, OOD, and depth-50 outputs
+use the intended mode wrappers and exact answer extraction. The remaining
+failures are wrong or underivable chains and long premise/proof continuations,
+not prompt, parser, or validator breakage.
 
 The conditioned-dual checkpoint, trained on separate mode-tagged examples,
 also retains a formal advantage: OOD answer/joint pass@1 is
@@ -836,23 +847,22 @@ the formal-only baseline at 7B.
 \scriptsize
 \begin{tabular}{llccc}
 \toprule
-Model & Mode & Single modality & Conditioned dual & $\Delta$ dual \\
+Model & Metric & Single modality & Conditioned dual & $\Delta$ dual \\
 \midrule
 OLMo-7B & formal prompt, long-depth corr. & 92.1 $\pm$ 3.4 & 83.3 $\pm$ 13.5 & -8.8 \\
 OLMo-7B & natural prompt, long-depth corr. & 79.4 $\pm$ 7.7 & 67.5 $\pm$ 8.2 & -11.9 \\
 \midrule
-OLMo-3-32B & formal prompt, long-depth corr. & 95.4 $\pm$ 2.8 & \textbf{96.3 $\pm$ 3.3} & +0.8 \\
-OLMo-3-32B & natural prompt, long-depth corr. & \textbf{68.5 $\pm$ 4.6} & 60.8 $\pm$ 24.4 & -7.7 \\
-OLMo-3-32B & formal prompt, hard-tail corr. & 97.5 $\pm$ 1.6 & \textbf{97.9 $\pm$ 1.8} & +0.5 \\
-OLMo-3-32B & natural prompt, hard-tail corr. & \textbf{82.5 $\pm$ 2.6} & 78.2 $\pm$ 13.5 & -4.3 \\
+OLMo-3-32B & formal OOD answer@1 & 63.9 $\pm$ 5.1 & \textbf{85.0 $\pm$ 8.7} & +21.1 \\
+OLMo-3-32B & natural OOD answer@1 & \textbf{98.9 $\pm$ 0.8} & 77.2 $\pm$ 11.7 & -21.6 \\
+OLMo-3-32B & formal OOD joint@1 & 51.1 $\pm$ 1.8 & \textbf{75.0 $\pm$ 12.5} & +23.9 \\
+OLMo-3-32B & natural OOD joint@1 & \textbf{98.8 $\pm$ 0.9} & 75.1 $\pm$ 9.4 & -23.7 \\
 \bottomrule
 \end{tabular}
 \caption{Capacity follow-up for conditioned-dual supervision. The 7B rows show
-the original negative result. At OLMo-3-32B, the formal conditioned mode closes
-and slightly reverses the single-modality gap on answer correctness, while the
-natural-language conditioned mode remains below its single-modality baseline.
-The 32B hard-tail rows use the evaluator's hard-tail band; comparisons are
-within model and mode. Conditioned-dual runs use the same optimizer-step budget
+the original negative result. At OLMo-3-32B, conditioned formal improves over
+its single-modality baseline at OOD pass@1, while conditioned natural remains
+below its much stronger single-modality baseline. Comparisons are within model,
+mode, and metric. Conditioned-dual runs use the same optimizer-step budget
 as the single-modality runs, so this is a mixed-exposure comparison rather than
 an additive-data control.}
 \label{tab:conditioned-capacity}
@@ -861,8 +871,8 @@ an additive-data control.}
 The OLMo-3-32B follow-up changes the interpretation of conditioned dual
 training. The 7B result suggests interference or insufficient capacity, rather
 than a fundamental mismatch in the conditioned prompts. When the same idea is
-tested with OLMo-3-32B, conditioned formal reasoning matches or slightly exceeds
-the single-modality formal baseline on long-depth answer correctness
+tested with OLMo-3-32B, conditioned formal reasoning exceeds
+the single-modality formal baseline on OOD pass@1 answer correctness and joint validity
 (Table~\ref{tab:conditioned-capacity}). The effect is mode-specific. The
 natural-language conditioned mode has much higher seed variance and still
 trails single-modality natural-language training on the mean. A matched sample
@@ -919,8 +929,9 @@ Qwen2.5-7B controls now pass. Symbol padding preserves the formal direction;
 both hybrids collapse OOD; shortcut-trained natural supervision is stronger;
 and Qwen2.5-7B is near-tied at pass@1. The conditioned checkpoint favors formal
 prompting OOD, while the matched single-modal OLMo-3-32B comparison strongly
-favors natural supervision at pass@1. The conditioned OLMo-3-32B replacement
-remains gated.
+favors natural supervision at pass@1. The conditioned OLMo-3-32B checkpoint is
+now complete: formal mode has higher OOD answer pass@1, while its formal and
+natural joint-validity means are nearly tied.
 
 The corrected continual-pretraining pilot provides a separate negative
 constraint. Small aggregate differences, next-document continuation, tagged
@@ -935,8 +946,10 @@ The tasks are synthetic. This is necessary for a paired substrate comparison,
 but it limits claims about open-domain reasoning. The corrected \branchproof{}
 result uses one main model family and shows a sharp train-depth interaction;
 Qwen2.5-7B is near-tied at pass@1 and the selected single-modal OLMo-3-32B
-control instead favors natural supervision. The conditioned OLMo-3-32B
-replacement is still running. The
+control instead favors natural supervision. The completed conditioned
+OLMo-3-32B comparison improves formal mode over its single-modal formal
+baseline but degrades natural mode relative to its stronger single-modal
+natural baseline. The
 \attrcon{} depth-50 estimate also has high seed variance. The completed
 continual-pretraining comparison has one run per condition, small mixed deltas,
 and response-format artifacts, so it cannot estimate seed variance or establish
