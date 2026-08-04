@@ -10,6 +10,8 @@ Overleaf renders the ICLR 2027 draft by default:
 - `informal_report/main.tex` is the older generated informal report.
 - `official_preprint/main_pre_iclr_2026-08-04.tex` preserves the previous root
   preprint source.
+- `official_preprint/main_overleaf_2026-08-04-1340.tex` preserves the edited
+  preprint from the manually merged Overleaf synchronization branch.
 - `official_preprint/` contains template assets, the bibliography, the reproducible figure script, figures, and an archived placeholder `main.tex`. Do not use `official_preprint/main.tex` as the main document unless it is deliberately refreshed.
 - `latexmkrc` selects XeLaTeX for the root preprint because the sans-serif font is bundled as Poppins under `official_preprint/fonts/poppins/`.
 
