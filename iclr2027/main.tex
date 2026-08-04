@@ -249,19 +249,19 @@ correct proof in the model distribution.
 The effect depends on the training range. Natural-language supervision is
 stronger at greedy decoding and \passk{1} when the maximum training depth is
 between 5 and 20. Formal supervision reverses the comparison only at depth 25.
-Figure~\ref{fig:depth} shows this transition. A plausible explanation is that
-the model needs enough examples of deep composition before the regularity of
-the formal language becomes useful. The experiment identifies the interaction
-but does not by itself establish this mechanism.
+A plausible explanation is that the model needs enough examples of deep
+composition before the regularity of the formal language becomes useful. The
+experiment identifies the interaction but does not by itself establish this
+mechanism.
 
 \begin{figure}[t]
 \centering
-\includegraphics[width=0.96\linewidth]{official_preprint/figures/branchproof_corrected_primary.pdf}
-\caption{Out-of-distribution accuracy as the maximum training depth increases.
-The bands show one standard deviation across three seeds. Natural-language
-supervision is stronger for shallower training ranges, while formal
-supervision is stronger after training through depth 25.}
-\label{fig:depth}
+\includegraphics[width=0.96\linewidth]{figures/corrected_branchproof_train25_sampling_efficiency.pdf}
+\caption{Formal supervision is stronger throughout the sampling curve after
+training through depth 25. We report out-of-distribution answer accuracy and
+correct-and-valid accuracy as the sample budget increases from one to sixteen.
+Bands show one standard deviation across three seeds.}
+\label{fig:train25-sampling}
 \end{figure}
 
 The attribute task provides a second positive result for answer correctness.
@@ -476,6 +476,16 @@ condition, full depth curves, greedy results, \passk{2}, \passk{4}, and
 \passk{8}, and representative successful and failed generations. It will also
 include the generator audit that led us to discard the earlier non-unique
 benchmark.
+
+\begin{figure}[h]
+\centering
+\includegraphics[width=0.96\linewidth]{official_preprint/figures/branchproof_corrected_primary.pdf}
+\caption{Out-of-distribution greedy and sampled \passk{1} accuracy across
+maximum training depths. Natural-language supervision leads through maximum
+depth 20, and formal supervision reverses the comparison after training
+through depth 25. Bands show one standard deviation across three seeds.}
+\label{fig:all-training-ranges}
+\end{figure}
 
 \section{Preliminary Transfer Diagnostics}
 \label{app:preliminary}
