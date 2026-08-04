@@ -5,13 +5,15 @@ Reader-facing LaTeX reports for the synthetic-RLVL formal-logic CoT project.
 Overleaf should render the official preprint by default:
 
 - `main.tex` is the official preprint entrypoint.
+- `iclr2027/main.tex` is the anonymous conference draft built from the
+  official ICLR 2027 style files published on July 28, 2026.
 - `informal_report/main.tex` is the older generated informal report.
 - `official_preprint/` contains template assets, the bibliography, the reproducible figure script, figures, and an archived placeholder `main.tex`. Do not use `official_preprint/main.tex` as the main document unless it is deliberately refreshed.
 - `latexmkrc` selects XeLaTeX for the root preprint because the sans-serif font is bundled as Poppins under `official_preprint/fonts/poppins/`.
 
 Overleaf does not automatically compile whichever `.tex` tab is currently open.
 Use Overleaf's **Menu -> Main document** selector to switch between
-`main.tex` and `informal_report/main.tex` when needed. Both files include
+`main.tex`, `iclr2027/main.tex`, and `informal_report/main.tex` when needed. The root and informal files include
 `% !TeX root` comments for editors that honor them.
 
 The experiment/code repo is expected at:

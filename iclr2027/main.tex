@@ -1,0 +1,491 @@
+\documentclass{article}
+
+\usepackage{iclr2027_conference,times}
+\usepackage{booktabs}
+\usepackage{graphicx}
+\usepackage{microtype}
+\usepackage{multirow}
+\usepackage{siunitx}
+\usepackage{xcolor}
+\usepackage{hyperref}
+\usepackage{url}
+
+\newcommand{\formal}{\textsc{Formal}}
+\newcommand{\natural}{\textsc{Natural}}
+\newcommand{\branching}{\textsc{Branching Proofs}}
+\newcommand{\attributes}{\textsc{Attribute Constraints}}
+\newcommand{\passk}[1]{pass@#1}
+
+\title{Formal Reasoning Traces as Complementary Training Data for Language Models}
+
+\author{Anonymous authors}
+
+% Keep anonymous for submission.
+% \iclrfinalcopy
+
+\begin{document}
+
+\maketitle
+
+\begin{abstract}
+Reasoning traces are usually treated as explanations of a solution, but they
+also determine the token-level supervision from which a model learns. We study
+whether formal derivations provide a useful complement to natural-language
+reasoning traces. Our controlled experiments pair every prompt and answer with
+two renderings of the same latent derivation. This design changes the trace
+representation while holding the underlying problem fixed. On a repaired
+unique-answer benchmark of branching deductions, formal supervision improves
+out-of-distribution answer accuracy from $17.8\pm4.7$ to $75.0\pm9.5$ percent
+at \passk{1} after training through depth 25. The corresponding correct and
+valid rate rises from $17.5\pm4.5$ to $68.5\pm10.2$ percent. Formal traces also
+improve answer accuracy on an independently generated attribute-constraint
+task, although proof validity remains mixed. The gain is not universal.
+Natural-language traces are stronger under shallower training, on a shortcut
+control, and for one 32B single-modality comparison. A mode-conditioned 32B
+model nevertheless improves its formal mode over formal-only training while
+retaining a usable natural-language mode. These results show that the language
+of intermediate reasoning changes what a model learns. They motivate a direct
+transfer experiment that adds either matched formal or natural-language
+derivations to continued language-model training and evaluates both conditions
+after the same instruction-tuning stage.
+\end{abstract}
+
+\section{Introduction}
+
+Chain-of-thought supervision trains language models to produce intermediate
+steps before answering a question~\citep{wei2022chain,kojima2022large}. Most
+reasoning traces are written in natural language. This convention makes the
+trace readable, but it also couples the computation to choices of phrasing,
+discourse order, and repetition. A derivation can instead be written as a
+sequence of explicit rule applications. Such a trace is less familiar to a
+reader, yet it may provide a cleaner learning signal for the model.
+
+This paper asks whether formal reasoning traces improve the reasoning learned
+by a language model, including settings in which the model is not required to
+use formal notation for every response. The question concerns training rather
+than tool use. We do not call a theorem prover during inference, and we do not
+replace language-model generation with symbolic execution. We change the
+tokens used to supervise intermediate reasoning and test the resulting model
+under matched generation budgets.
+
+A direct comparison is difficult with ordinary corpora because two solutions
+written in different styles may contain different computations. We address
+this problem with paired synthetic data. A deterministic generator first
+samples a latent derivation, then renders that derivation as either a compact
+formal proof or a controlled natural-language explanation. The prompt, answer,
+facts, rules, and proof graph are identical across the pair. The design allows
+us to attribute a difference in learned behavior to the trace representation
+rather than to problem selection or answer quality.
+
+The controlled results reveal an interaction between representation and
+reasoning depth. Natural-language supervision is stronger when the training
+set contains only shallow and intermediate derivations. After the training
+range reaches depth 25, formal supervision produces a large advantage on
+longer proofs. On \branching{}, formal and natural-language models obtain
+$75.0\pm9.5$ and $17.8\pm4.7$ percent out-of-distribution answer accuracy at
+\passk{1}. An independent task, \attributes{}, also favors formal supervision
+on answer correctness. These gains do not establish that formal traces are
+always preferable. Natural language performs better in several controls, and
+valid proof generation remains harder than answer prediction.
+
+We next test whether both trace languages can coexist in one model. Joining
+the two traces within one target leads to severe length-extrapolation failures.
+Training separate examples with an output-mode tag is more promising. At 7B
+parameters the conditioned model trails the corresponding single-modality
+models. At 32B parameters its formal mode improves by 21.1 points over the
+formal-only model at out-of-distribution \passk{1}, while its natural-language
+mode remains below the natural-only model. This result suggests that formal
+reasoning can be learned as an additional mode, but it does not show that
+mixed supervision improves every mode equally.
+
+The synthetic study provides the control needed to identify a trace effect.
+The practical question is whether the effect transfers when formal traces form
+a small part of ordinary language-model training. Our transfer experiment
+therefore compares continued training on Dolmino against two matched mixtures.
+One replaces 5 percent of the token stream with formal synthetic derivations,
+and the other replaces the same fraction with natural-language renderings of
+the same derivations. Each checkpoint receives the same instruction-tuning
+stage before downstream evaluation. This three-way comparison asks whether any
+gain comes from formal structure rather than from additional worked reasoning
+problems.
+
+Our contributions are as follows. We develop paired reasoning tasks that hold
+the latent computation fixed while changing its textual representation. We
+show that formal supervision can sharply improve long-depth answer accuracy,
+but only after sufficient depth coverage, and we identify settings where the
+effect does not hold. We separate answer accuracy, mechanical proof validity,
+and sampled solution coverage throughout the evaluation. We also study two
+ways of combining formal and natural-language supervision, which motivates a
+matched transfer experiment in continued pretraining.
+
+\section{Related Work}
+
+\paragraph{Reasoning traces.}
+Chain-of-thought prompting and supervised rationales improve multi-step
+reasoning in sufficiently large language models~\citep{wei2022chain,
+kojima2022large}. Subsequent work constructs new rationales through
+bootstrapping~\citep{zelikman2022star}, decomposes hard questions into smaller
+ones~\citep{zhou2023least}, and searches over candidate reasoning
+states~\citep{yao2023tree}. Scratchpad supervision similarly shows that an
+autoregressive model can use generated intermediate state to solve algorithmic
+tasks~\citep{nye2021show}. These studies establish the value of intermediate
+computation. We study the representation in which that computation is taught.
+
+\paragraph{Programs and symbolic representations.}
+Program-aided language models and program-of-thought prompting use executable
+code for intermediate computation~\citep{gao2023pal,chen2023program}.
+Logic-based methods translate problems into symbolic forms and use an external
+solver or verifier~\citep{pan2023logiclm,ling2023deductive}. Formal theorem
+proving trains models to construct machine-checkable proofs in systems such as
+Lean~\citep{polu2020generative,jiang2022draft,leandojo2023,
+leanCopilot2024}. Our setting differs in two respects. The same model performs
+all generation, and every formal target has a paired natural-language target
+derived from the same proof. We can therefore measure the training effect of
+the representation without changing the inference mechanism.
+
+\paragraph{Faithfulness and verification.}
+Natural-language rationales can omit factors that influence a prediction or
+rationalize an answer after the fact~\citep{turpin2023language,
+lanham2023measuring}. Formal syntax makes local correctness mechanically
+testable, but it does not make a generated trace valid by construction. We
+report answer accuracy and proof validity separately, and we retain sampled
+coverage because a verifier can select among multiple generations without
+access to the gold answer.
+
+\paragraph{Controlled generalization.}
+Synthetic tasks such as SCAN and COGS expose failures of systematic
+generalization by controlling the train and test distributions
+~\citep{lake2018generalization,keysers2020measuring}. We adopt the same use of
+synthetic data as a measurement instrument. Our main shift increases proof
+depth while preserving the rule system. We also train on spurious markers and
+evaluate without them to test whether a trace representation changes shortcut
+use~\citep{geirhos2020shortcut}.
+
+\section{Paired Reasoning Experiments}
+\label{sec:paired}
+
+\subsection{Tasks and trace construction}
+
+Each example begins with a latent directed acyclic proof. The generator emits
+a prompt containing ground facts, rules, a query, and distractor branches. It
+then traverses the supporting path to produce the target answer. A rendering
+function writes the path in one of two trace languages. The formal rendering
+uses atoms and explicit rule applications. The natural rendering expresses
+the same substitutions and conclusions in controlled sentences. Both targets
+end with the same answer field.
+
+\branching{} tests composition across a chain of Horn-style inferences. Every
+layer introduces a fresh constant. We compute the full Horn closure and reject
+an example unless exactly one candidate answer is derivable. This closure test
+is essential because an earlier version reused constants at long depths and
+could derive several candidate answers. No result from that earlier generator
+is used in this paper.
+
+\attributes{} propagates values among object attributes under generated
+constraints. Its vocabulary and proof construction differ from
+\branching{}, which provides an independent test of the trace hypothesis. The
+task is evaluated with its existing paired three-seed protocol.
+
+Appendix~\ref{app:examples} gives complete paired targets. Appendix
+~\ref{app:generator} describes the generators, uniqueness checks, distractor
+construction, and validator interfaces.
+
+\subsection{Models and training}
+
+The main experiment fine-tunes OLMo-3-7B on 50,000 materialized examples per
+condition. The maximum training depth is one of $5$, $10$, $15$, $20$, or
+$25$. Every condition uses three seeds. We train LoRA adapters for 10,000
+optimizer steps with rank 16, scaling 32, dropout 0.05, and learning rate
+$10^{-4}$. The maximum training sequence length is 8192 tokens.
+
+We evaluate at depths $\{1,2,5,10,12,15,18,20,25,30,35,40,45,50\}$. Each
+depth contains 32 prompts. We draw 16 generations per prompt at temperature
+1.0 and also evaluate greedy decoding. The context window is 16,384 tokens,
+and both trace languages receive the same limit of 7,168 generated tokens. An
+exhaustive tokenizer audit confirms that every gold prompt and target fits
+within these limits.
+
+We call depths above the maximum training depth out of distribution. For the
+principal train-through-25 comparison, this set contains depths 30 through 50.
+We report the probability that the first sampled generation is correct and
+the probability that at least one of $k$ samples is correct. Joint accuracy
+requires both the designated answer and a valid proof. Natural-language
+validity is computed by translating the controlled trace into the same proof
+checker, so we also report answer accuracy without this translation step.
+
+\subsection{Long-depth results}
+
+\begin{table}[t]
+\caption{Long-depth reasoning after training through depth 25. Values are
+percent mean $\pm$ standard deviation across three seeds. The branching task
+uses \passk{1} and \passk{16}. The attribute task uses its completed
+16-sample protocol.}
+\label{tab:main}
+\centering
+\small
+\begin{tabular}{llrrrr}
+\toprule
+Task & Trace & Answer@1 & Joint@1 & Answer@16 & Joint@16 \\
+\midrule
+\multirow{2}{*}{Branching proofs}
+ & Formal  & \textbf{$75.0\pm9.5$} & \textbf{$68.5\pm10.2$} & \textbf{$99.6\pm0.3$} & \textbf{$98.1\pm0.5$} \\
+ & Natural & $17.8\pm4.7$ & $17.5\pm4.5$ & $42.5\pm5.8$ & $40.2\pm4.2$ \\
+\midrule
+\multirow{2}{*}{Attribute constraints}
+ & Formal  & -- & -- & \textbf{$89.6\pm9.0$} & $73.6\pm5.3$ \\
+ & Natural & -- & -- & $80.8\pm4.9$ & \textbf{$79.5\pm3.0$} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+Formal supervision produces a large advantage on the long-depth portion of
+\branching{} once the training range reaches depth 25. The gain appears in
+greedy decoding, \passk{1}, and the full sampling budget. It is not a choice
+between answer accuracy and formal validity. Joint \passk{1} improves by 51.0
+points, and joint \passk{16} improves by 57.9 points. The 98.1 percent joint
+\passk{16} result also shows that almost every test prompt has at least one
+correct proof in the model distribution.
+
+The effect depends on the training range. Natural-language supervision is
+stronger at greedy decoding and \passk{1} when the maximum training depth is
+between 5 and 20. Formal supervision reverses the comparison only at depth 25.
+Figure~\ref{fig:depth} shows this transition. A plausible explanation is that
+the model needs enough examples of deep composition before the regularity of
+the formal language becomes useful. The experiment identifies the interaction
+but does not by itself establish this mechanism.
+
+\begin{figure}[t]
+\centering
+\includegraphics[width=0.96\linewidth]{../official_preprint/figures/branchproof_corrected_primary.pdf}
+\caption{Out-of-distribution accuracy as the maximum training depth increases.
+The bands show one standard deviation across three seeds. Natural-language
+supervision is stronger for shallower training ranges, while formal
+supervision is stronger after training through depth 25.}
+\label{fig:depth}
+\end{figure}
+
+The attribute task provides a second positive result for answer correctness.
+Formal supervision improves hard-depth accuracy by 8.8 points and depth-50
+accuracy by 37.5 points. The latter estimate has high seed variance. Natural
+language also has the higher hard-depth joint score. We therefore treat the
+attribute result as supporting evidence for correctness, not as evidence that
+formal supervision always improves valid proof generation.
+
+\subsection{What changes the result}
+
+We test whether the branching result follows from superficial properties of
+the targets. Symbol padding lengthens formal atoms without changing the proof
+grammar. It retains an out-of-distribution \passk{1} accuracy of
+$67.3\pm17.5$ percent, compared with $75.0\pm9.5$ for compact formal traces.
+Terse natural-language targets reach $64.1\pm24.9$ percent, although their
+variance is high. A target-token-matched natural condition reaches
+$41.0\pm20.1$ percent. These controls show that neither target length nor the
+number of supervised tokens alone explains the main gap. They do not isolate
+a single beneficial property of the formal trace.
+
+The shortcut experiment does not support a general robustness claim. Models
+are trained with a spurious schema marker on 80 percent of examples and tested
+on marker-free examples. Natural-language supervision obtains
+$78.5\pm14.9$ percent out-of-distribution \passk{1}, while formal supervision
+obtains $43.1\pm7.7$ percent. This negative result prevents us from attributing
+the depth gain to broad resistance against shortcuts.
+
+Architecture controls are also mixed. Qwen2.5-7B is close at \passk{1}, with
+$69.9\pm11.1$ for formal and $74.9\pm7.0$ for natural-language supervision.
+In the single-modality OLMo-3-32B comparison, natural-language supervision is
+much stronger at \passk{1}. The formal model nevertheless reaches
+$98.8\pm0.9$ percent answer \passk{16}, compared with $99.8\pm0.3$ for the
+natural model. The formal model therefore covers correct solutions but assigns
+them less probability under unconstrained sampling.
+
+\section{Combining Trace Languages}
+\label{sec:combined}
+
+Formal reasoning need not replace natural-language reasoning in every training
+example or every generated response. We test two ways to combine the trace
+languages. A same-example hybrid asks the model to generate both renderings in
+one target. A conditioned model instead receives separate formal and natural
+examples with an output-mode tag.
+
+Both orders of the same-example hybrid fail on long proofs. The model often
+copies a long prefix of one or both traces and reaches the generation limit
+before producing an answer. Formal-then-natural targets obtain
+$0.5\pm0.4$ percent out-of-distribution answer \passk{1}, and the reverse
+order obtains $0.2\pm0.1$ percent. Combining the traces by concatenation makes
+the sequence substantially harder without yielding a useful common model.
+
+\begin{table}[t]
+\caption{Single-modality and conditioned training at 32B parameters. Results
+are out-of-distribution percentages at \passk{1}. The conditioned model is one
+checkpoint evaluated under two output tags.}
+\label{tab:conditioned}
+\centering
+\small
+\begin{tabular}{llrrr}
+\toprule
+Output mode & Training & Answer & Joint & Change in answer \\
+\midrule
+Formal  & Single modality & $63.9\pm5.1$ & $51.1\pm1.8$ & -- \\
+Formal  & Conditioned & \textbf{$85.0\pm8.7$} & \textbf{$75.0\pm12.5$} & $+21.1$ \\
+\midrule
+Natural & Single modality & \textbf{$98.9\pm0.8$} & \textbf{$98.8\pm0.9$} & -- \\
+Natural & Conditioned & $77.2\pm11.7$ & $75.1\pm9.4$ & $-21.7$ \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+At 7B parameters, conditioned training trails both single-modality baselines.
+The 32B result in Table~\ref{tab:conditioned} changes the interpretation. The
+conditioned formal mode improves over formal-only training, which suggests
+that the negative 7B result can reflect capacity or interference rather than a
+failure of the output tags. The gain is mode specific. Natural-language
+performance falls relative to the strong natural-only baseline. Raw
+generations use the requested wrappers and show no meaningful mode leakage.
+The remaining errors are incorrect branches and unfinished long proofs.
+
+This experiment supports a limited claim. One sufficiently large model can
+learn both trace languages, and exposure to natural-language derivations does
+not prevent improvement in its formal mode. It does not show that conditioned
+training dominates separate models. It instead motivates treating formal
+traces as complementary data whose value should be measured at a natural
+language interface.
+
+\section{Transfer Through Continued Training}
+\label{sec:transfer}
+
+The paired experiments isolate a training effect on synthetic tasks. We now
+test whether a small amount of formal reasoning data changes general language
+model reasoning. The base model is Qwen2.5-7B. The ordinary training stream is
+Dolmino, which was constructed for language-model midtraining rather than
+generic web pretraining. We compare three token-matched conditions over five
+billion tokens. The control uses Dolmino alone. The natural mixture replaces
+5 percent of tokens with natural-language synthetic proofs. The formal mixture
+replaces the same fraction with paired formal proofs.
+
+The two injected datasets contain the same latent derivations and final
+answers. All three streams use the same document wrappers, packing policy,
+optimizer, learning-rate schedule, and token budget. We save checkpoints for
+direct evaluation, then apply the same instruction-tuning data and selected
+learning rate to every condition. The post-instruction comparison is primary
+because the intended use of the model is ordinary question answering rather
+than raw document continuation.
+
+Our downstream suite includes mathematical reasoning, knowledge and
+instruction benchmarks, and three context-provided multi-hop tasks. The
+multi-hop evaluation covers HotpotQA, 2WikiMultiHopQA, and MuSiQue under the
+same prompts and stopping rules. We preregister the unweighted macro across
+the primary task set and the macro across the three multi-hop F1 scores. We
+also report every task separately. A transfer claim requires the formal
+mixture to exceed both the control and the matched natural mixture after the
+same instruction tuning.
+
+The terminal natural checkpoint and the matched instruction-tuning runs were
+not complete when this draft was created. We therefore reserve the transfer
+table rather than reporting an unmatched comparison. Preliminary direct
+evaluation of the control and formal checkpoints is discussed only in
+Appendix~\ref{app:preliminary}. It is not used to support the paper's main
+claim.
+
+\section{Discussion}
+
+The experiments show that reasoning traces are not interchangeable labels for
+the same computation. Their token structure changes optimization enough to
+reverse generalization at greater proof depth. Formal supervision is most
+useful in the regime where the model has seen sufficiently deep compositions,
+and its high joint \passk{16} indicates that correct proofs are broadly
+available in the sampled distribution. This latter result makes
+verifier-guided selection and reinforcement learning natural follow-up
+mechanisms. It does not imply that \passk{16} gains will automatically become
+\passk{1} gains after posttraining.
+
+The negative results narrow the conclusion. Formal traces do not improve every
+task, architecture, or data perturbation. They can also produce the right
+answer with an invalid proof. A formal-looking sequence should therefore not
+be treated as evidence of faithful computation without mechanical checking.
+The strongest supported conclusion is that formal derivations can be a better
+source of supervision for some compositional regimes and can coexist with
+natural-language behavior in a sufficiently large model.
+
+The continued-training experiment tests the more consequential claim. If the
+formal mixture improves downstream reasoning beyond both matched controls,
+then formal derivations are useful even when the evaluated response is natural
+language. If the three conditions remain tied after instruction tuning, the
+paper still identifies where the synthetic advantage holds and where it fails
+to transfer. The matched natural mixture is necessary in either case because
+it separates formal structure from the value of adding worked solutions.
+
+\section{Limitations}
+
+The causal comparison relies on synthetic tasks. This control comes at the
+cost of narrower semantics than open-domain reasoning. The large branching
+gain appears only at the deepest training range and is not reproduced as a
+\passk{1} advantage by every architecture. Natural-language validity also
+depends on a task-specific translator, whereas formal validity is checked
+directly. The 32B conditioned comparison changes both capacity and exposure
+relative to the 7B study, so it does not identify which factor resolves the
+earlier interference. Finally, the transfer experiment uses one base-model
+family and a 5 percent mixture. Conclusions about broad midtraining practice
+will require replication across models and mixture rates.
+
+\section{Conclusion}
+
+Formal derivations can provide a useful learning signal even when they are not
+the model's only reasoning language. In paired synthetic experiments, formal
+supervision yields a large long-depth gain after sufficient depth coverage and
+improves answer correctness on a second constraint task. The same advantage is
+not universal, and several controls favor natural-language traces. A
+mode-conditioned 32B model shows that both trace languages can be learned by
+one checkpoint while improving the weaker formal mode. The decisive practical
+test is therefore not whether formal traces always replace natural language.
+It is whether adding formal derivations improves ordinary downstream reasoning
+more than adding matched natural-language solutions.
+
+\bibliography{references}
+\bibliographystyle{iclr2027_conference}
+
+\appendix
+
+\section{Complete Paired Examples}
+\label{app:examples}
+
+This section will contain complete prompt and target pairs for both tasks. We
+will include one formal target and its natural-language rendering side by side,
+with line wrapping chosen to preserve the exact training text. The examples
+will be drawn from the audited materialized datasets rather than reconstructed
+for presentation.
+
+\section{Generator and Validation Details}
+\label{app:generator}
+
+For every branching example, the generator computes Horn closure over all
+facts and rules before serialization. It accepts the example only if the
+labeled answer is derivable and every competing candidate answer is absent
+from the closure. Constants are unique across layers, which prevents unrelated
+branches from merging at greater depths. Unit tests cover closure, paired
+rendering, answer extraction, and both validity paths.
+
+We will provide pseudocode for generation and the complete formal grammar in
+the next draft. We will also report target-token distributions for every trace
+ablation and the maximum prompt-plus-target length under the evaluation
+tokenizer.
+
+\section{Additional Controlled Results}
+
+The final appendix will report all three seeds for every main and ablation
+condition, full depth curves, greedy results, \passk{2}, \passk{4}, and
+\passk{8}, and representative successful and failed generations. It will also
+include the generator audit that led us to discard the earlier non-unique
+benchmark.
+
+\section{Preliminary Transfer Diagnostics}
+\label{app:preliminary}
+
+Direct evaluation of the completed five-billion-token control and formal
+checkpoints gives ten-task macros of 0.6246 and 0.6169. The formal checkpoint
+improves all six measured cells across standard and tagged versions of
+2WikiMultiHopQA, HotpotQA, and MuSiQue. Some generations exhibit stopping and
+continuation artifacts, and the matched natural checkpoint was still running.
+These observations motivate the common instruction-tuning stage but do not
+yet provide a valid three-way transfer comparison.
+
+\end{document}
