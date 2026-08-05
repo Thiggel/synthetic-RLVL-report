@@ -83,6 +83,69 @@ failures copy premises until the shared cap and never emit an answer. Selected l
 hybrid, conditioned-dual, and architecture controls that passed the same gates are reported next.
 
 
+\subsection{Verifier-guided selection from retained generations}
+All six train-1-to-25 full-retention rows contain 448 prompt groups and 16 generations per
+prompt. The fail-closed audit accepted all 43,008 generations, including fresh-constant and
+credited-validity checks. The sampling curve remains strongly separated before selection.
+
+\begin{table}[H]
+\centering
+\scriptsize
+\begin{tabular}{llrrr}
+\toprule
+Trace & $k$ & OOD answer & OOD joint & Depth-50 joint \\
+\midrule
+Logic & 1 & 75.4 $\pm$ 11.0 & 68.4 $\pm$ 11.8 & 48.1 $\pm$ 17.9 \\
+Logic & 4 & 96.0 $\pm$ 2.2 & 91.2 $\pm$ 4.1 & 80.5 $\pm$ 9.0 \\
+Logic & 8 & 98.9 $\pm$ 0.6 & 96.1 $\pm$ 1.6 & 90.6 $\pm$ 3.2 \\
+Logic & 16 & 99.8 $\pm$ 0.3 & 98.3 $\pm$ 0.6 & 95.8 $\pm$ 2.9 \\
+Natural & 1 & 17.4 $\pm$ 5.0 & 17.1 $\pm$ 4.8 & 1.8 $\pm$ 0.6 \\
+Natural & 4 & 25.8 $\pm$ 2.8 & 24.8 $\pm$ 2.0 & 6.8 $\pm$ 2.2 \\
+Natural & 8 & 31.3 $\pm$ 3.2 & 29.8 $\pm$ 2.1 & 12.5 $\pm$ 4.2 \\
+Natural & 16 & 38.3 $\pm$ 3.4 & 36.9 $\pm$ 2.7 & 21.9 $\pm$ 8.8 \\
+\bottomrule
+\end{tabular}
+\caption{Corrected BranchProof sampling efficiency over the fully retained generations.
+Joint is modality-appropriate citation-free correct-and-valid performance.}
+\end{table}
+
+The first-valid and maximum-line-valid selectors use only verifier diagnostics and never the
+gold answer. The oracle row is reported only as a coverage ceiling.
+
+\begin{table}[H]
+\centering
+\scriptsize
+\begin{tabular}{llrr}
+\toprule
+Trace & Selection from 16 & OOD answer & OOD joint \\
+\midrule
+Logic & First valid & 97.3 $\pm$ 1.1 & 96.7 $\pm$ 1.1 \\
+Logic & Max line-valid & 96.5 $\pm$ 1.9 & 96.0 $\pm$ 1.8 \\
+Logic & Oracle ceiling & 99.8 $\pm$ 0.3 & 98.3 $\pm$ 0.6 \\
+Natural & First valid & 33.8 $\pm$ 1.4 & 32.9 $\pm$ 1.1 \\
+Natural & Max line-valid & 33.8 $\pm$ 1.4 & 32.9 $\pm$ 1.1 \\
+Natural & Oracle ceiling & 38.3 $\pm$ 3.4 & 36.9 $\pm$ 2.7 \\
+\bottomrule
+\end{tabular}
+\caption{OOD selection from 16 retained candidates. First-valid and max-line-valid are
+non-oracle; the oracle ceiling uses the gold answer and is not a deployable selector.}
+\end{table}
+
+For logic, first-valid selection reaches
+97.3$\pm$1.1
+percent OOD answer accuracy and
+96.7$\pm$1.1
+percent joint accuracy. The corresponding natural-language values are
+33.8$\pm$1.4
+and 32.9$\pm$1.1 percent.
+Raw depth-50 review shows complete correct-valid chains and genuine answer-correct-invalid
+formal traces. Natural-language failures predominantly copy premises until truncation: across
+seeds, 27--32 percent omit a closing answer, versus 1.1--2.8 percent for logic. Thus the
+selection result reflects both proof checkability and a large representation-dependent
+long-context generation failure; it is not evidence that a verifier alone closes the gap.
+
+
+
 \subsection{Accepted corrected BranchProof controls}
 The selected syntax/length, shortcut, hybrid-order, conditioned-dual, Qwen2.5-7B, and
 single-modal and conditioned OLMo-3-32B controls are complete across three seeds. All accepted rows
@@ -2305,6 +2368,8 @@ conditioned_dual_vs_main_by_train_depth.csv
 corrected_branchproof_final_group_summary.csv
 corrected_branchproof_paired_delta_summary.csv
 corrected_branchproof_selected_controls.csv
+corrected_branchproof_verifier_sampling_curve.csv
+corrected_branchproof_verifier_selection.csv
 cot_bare_ood_generation_examples.csv
 group_summary_all.csv
 hfsa_batch_size_ablation_diagnostics.csv

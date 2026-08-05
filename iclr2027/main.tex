@@ -264,6 +264,43 @@ Bands show one standard deviation across three seeds.}
 \label{fig:train25-sampling}
 \end{figure}
 
+We also retain all 16 generations for every train-through-25 prompt and test
+whether mechanical validity can select a response without using the gold
+answer. The first-valid selector chooses the earliest candidate accepted by
+the modality-appropriate citation-free checker. It raises formal OOD answer
+accuracy from $75.4\pm11.0$ percent at \passk{1} to $97.3\pm1.1$ percent;
+joint accuracy rises from $68.4\pm11.8$ to $96.7\pm1.1$ percent. The same
+selector reaches only $33.8\pm1.4$ answer and $32.9\pm1.1$ joint accuracy for
+natural-language traces. Selection uses no answer signal; an oracle that does
+use the gold answer is reported only as a coverage ceiling.
+
+\begin{table}[t]
+\caption{Non-oracle verifier selection on corrected BranchProof. Values are
+OOD percent mean $\pm$ standard deviation across three seeds. The first-valid
+selector chooses from 16 retained candidates using validity only.}
+\label{tab:verifier-selection}
+\centering
+\small
+\begin{tabular}{llrr}
+\toprule
+Trace & Readout & Answer & Joint \\
+\midrule
+Formal  & \passk{1} sample & $75.4\pm11.0$ & $68.4\pm11.8$ \\
+Formal  & First valid of 16 & \textbf{$97.3\pm1.1$} & \textbf{$96.7\pm1.1$} \\
+Natural & \passk{1} sample & $17.4\pm5.0$ & $17.1\pm4.8$ \\
+Natural & First valid of 16 & $33.8\pm1.4$ & $32.9\pm1.1$ \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+All six retention rows pass the 448-prompt, 16-generation, fresh-constant,
+and fail-closed validity audit. Raw depth-50 generations show that the gap is
+not a selector artifact: natural-language traces often copy the long premise
+list until truncation, omitting a closing answer in 27--32 percent of retained
+samples across seeds, versus 1.1--2.8 percent for formal traces. The result
+therefore combines formal checkability with a representation-dependent
+long-context generation advantage.
+
 The attribute task provides a second positive result for answer correctness.
 Formal supervision improves hard-depth accuracy by 8.8 points and depth-50
 accuracy by 37.5 points. The latter estimate has high seed variance. Natural
@@ -379,12 +416,14 @@ also report every task separately. A transfer claim requires the formal
 mixture to exceed both the control and the matched natural mixture after the
 same instruction tuning.
 
-The terminal natural checkpoint and the matched instruction-tuning runs were
-not complete when this draft was created. We therefore reserve the transfer
-table rather than reporting an unmatched comparison. Preliminary direct
-evaluation of the control and formal checkpoints is discussed only in
-Appendix~\ref{app:preliminary}. It is not used to support the paper's main
-claim.
+All three terminal checkpoints and direct evaluations are complete. Their
+ten-task macros are close, and all three share a severe long-document stopping
+artifact, so the direct readout does not support a modality-transfer claim.
+The matched instruction-tuning runs and their corresponding evaluations are
+still incomplete. We therefore reserve the final transfer table rather than
+reporting a mixed direct/post-instruction comparison. The audited direct
+diagnostic is summarized in Appendix~\ref{app:preliminary} and is not used to
+support the paper's main claim.
 
 \section{Discussion}
 
@@ -393,10 +432,12 @@ the same computation. Their token structure changes optimization enough to
 reverse generalization at greater proof depth. Formal supervision is most
 useful in the regime where the model has seen sufficiently deep compositions,
 and its high joint \passk{16} indicates that correct proofs are broadly
-available in the sampled distribution. This latter result makes
-verifier-guided selection and reinforcement learning natural follow-up
-mechanisms. It does not imply that \passk{16} gains will automatically become
-\passk{1} gains after posttraining.
+available in the sampled distribution. A validity-only selector recovers most
+of this formal coverage without consulting the gold answer. It does not close
+the natural-language gap, however, because many long natural traces truncate
+before a checkable proof and answer. Reinforcement learning remains a distinct
+follow-up: verifier selection does not imply that \passk{16} gains will
+automatically become \passk{1} gains after posttraining.
 
 The negative results narrow the conclusion. Formal traces do not improve every
 task, architecture, or data perturbation. They can also produce the right
@@ -490,12 +531,13 @@ through depth 25. Bands show one standard deviation across three seeds.}
 \section{Preliminary Transfer Diagnostics}
 \label{app:preliminary}
 
-Direct evaluation of the completed five-billion-token control and formal
-checkpoints gives ten-task macros of 0.6246 and 0.6169. The formal checkpoint
-improves all six measured cells across standard and tagged versions of
-2WikiMultiHopQA, HotpotQA, and MuSiQue. Some generations exhibit stopping and
-continuation artifacts, and the matched natural checkpoint was still running.
-These observations motivate the common instruction-tuning stage but do not
-yet provide a valid three-way transfer comparison.
+Direct evaluation of the completed five-billion-token control, formal, and
+matched-natural checkpoints gives ten-task macros of 0.6246, 0.6169, and
+0.6149. Raw standard-task review finds ordinary task errors rather than a
+formal-transfer advantage. Stock long-document QA continuation is about 95
+percent in every condition, and the tagged multi-hop readout remains low and
+mixed. The common stopping regression makes the direct three-way comparison a
+diagnostic, not positive transfer evidence. The identical instruction-tuning
+stage is required before the final transfer interpretation.
 
 \end{document}
