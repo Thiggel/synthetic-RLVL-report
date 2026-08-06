@@ -1,0 +1,421 @@
+
+\section{Post-hoc Branching-Proof Uniqueness Audit}
+\label{sec:uniqueness-audit}
+
+The original generator selected from 18 one-letter constants and wrapped the
+constant sequence after depth 17. Reusing state predicates at reused constants
+allowed distinct branches to derive the same atoms. Independent Horn closure
+over 96 examples per depth found the labeled answer derivable in every case,
+but found additional derivable candidate answers in most long-depth cases
+(Table~\ref{tab:uniqueness-audit}).
+
+\begin{table}[h]
+\centering
+\small
+\begin{tabular}{rcc}
+\toprule
+Depth & Examples with multiple answers & Mean derived candidates \\
+\midrule
+5, 10, 15 & 0/96 & 1.000 \\
+20 & 73/96 & 2.562 \\
+25, 30, 35 & 74/96 & 2.417 \\
+40, 45, 50 & 92/96 & 3.562 \\
+\bottomrule
+\end{tabular}
+\caption{Closure audit of the quarantined branching-proof construction. Each
+question has four candidate final states.}
+\label{tab:uniqueness-audit}
+\end{table}
+
+This defect also changes the interpretation of the old sample-budget curves.
+For the OLMo-7B train-1-to-25 runs, mean long-depth pass@1 was $0.513$ for
+formal traces and $0.574$ for natural-language traces; pass@16 was $0.921$ and
+$0.794$, respectively. At depth 50, pass@1 was $0.241$ versus $0.147$, while
+pass@16 was $0.833$ versus $0.510$. One stored formal generation answered a
+non-labeled candidate that the citation-free proof checker accepted as valid,
+directly confirming that the single-label correctness metric penalized a valid
+answer under the old premises.
+
+The corrected construction uses fresh constants \texttt{c0} through
+\texttt{c\{depth\}} and explicit atoms such as \texttt{A(c18)}. Its production
+preflight checked 1,000 train and 2,000 evaluation instances, with unique-answer
+rate $1.0$, maximum derived-candidate count 1, no generation failures, and
+balanced answer positions. Replacement evaluation uses a 16,384-token context,
+the same 7,168-new-token cap for both trace languages, greedy decoding, and
+pass@k for $k\in\{1,2,4,8,16\}$. Across every corrected validation row and
+depth, the minimum measured headroom is 494 tokens for generation and 2,788
+tokens for the full context. The full three-seed rerun subsequently passed all
+30 row audits and the cross-grid qualitative audit; its accepted replacement
+results are reported in Table~1 of the main paper.
+
+\section{Task Details}
+\label{sec:task-details}
+
+\branchproof{} samples a target proof path of controlled depth and adds
+distractor branches that are locally coherent but do not support the queried
+answer. Shortcut variants add training-only marker correlations that identify
+the active branch with a chosen probability. Evaluation removes those markers.
+
+\attrcon{} samples objects, slots, values, and propagation constraints. The
+formal trace names slot/value relations directly. The natural trace describes
+the same propagation in controlled prose. This changes the symbolic surface
+while preserving the paired-rendering principle.
+
+\section{Training and Evaluation Details}
+\label{sec:training-details}
+
+All main SFT runs use materialized datasets so that the formal and natural
+conditions see the same prompts and answers. Each train-depth subset contains
+50k examples, and the online validation subset contains 256 examples. Main runs
+train for 10k optimizer steps with LoRA adapters on \texttt{q\_proj},
+\texttt{k\_proj}, \texttt{v\_proj}, \texttt{o\_proj}, \texttt{up\_proj},
+\texttt{down\_proj}, and \texttt{gate\_proj}. The LoRA rank is 16, alpha is 32,
+dropout is 0.05, the optimizer learning rate is $10^{-4}$, the per-device batch
+size is 1, gradient accumulation is 1 unless an ablation states otherwise, and
+training uses BF16 with gradient checkpointing.
+
+Post-hoc evaluation uses vLLM with top-$p=0.95$, temperature 1.0, 16 sampled
+generations per prompt, and pass@k values $\{1,2,4,8,16\}$. The explicit depth
+grid is $\{1,2,5,10,12,15,18,20,25,30,35,40,45,50\}$. For each seed and depth
+we evaluate 32 prompts, so a train-1-to-25 \branchproof{} long-depth band
+contains $5 \times 32=160$ prompts per seed. Reported uncertainty is seed-level
+standard deviation, not a confidence interval.
+
+\section{Trace Grammar and Validation}
+\label{sec:grammar}
+
+Formal traces contain four blocks: constants, predicates, premises, and proof
+lines, followed by a conclusion and answer. A proof line contains a formula and
+a rule justification such as premise retrieval or implication elimination. The
+formal checker parses the generated blocks and verifies that each proof line is
+licensed by earlier lines and premises. Natural-language traces use controlled
+sentences for the same premises and proof steps. When possible, a
+task-specific translator maps those sentences back into the formal checker.
+Because translation coverage is task-specific, final-answer correctness is the
+primary cross-task metric and translated validity is reported as a diagnostic.
+
+The operational \branchproof{} formal surface is:
+
+\begin{verbatim}
+<formal>
+<constants> CONST_DEF+ </constants>
+<predicates> PRED_DEF+ </predicates>
+<premises> FORMULA+ </premises>
+<proof> PROOF_LINE+ </proof>
+<conclusion> ATOM </conclusion>
+<answer> LABEL </answer>
+
+CONST_DEF  ::= CONST "=" LABEL
+PRED_DEF   ::= PRED "x:" "x is" LABEL
+ATOM       ::= PRED CONST
+FORMULA    ::= ATOM | ATOM "&" ATOM "->" ATOM | ATOM "->" ATOM
+PROOF_LINE ::= FORMULA "; R," REF
+             | ATOM "; ->E," REF "," REF
+             | ATOM "&" ATOM "; &I," REF "," REF
+\end{verbatim}
+
+The \attrcon{} surface uses the same block structure but replaces unary
+predicate atoms with object-slot-value relations. In both tasks, references
+must point to earlier proof lines or listed premises. Generated lines cannot
+justify future steps.
+
+\section{Generator and Evaluation Mechanics}
+\label{sec:generator-eval}
+
+The \branchproof{} generator samples a target path, assigns labels to constants
+and predicates, then adds distractor branches that remain locally coherent but
+do not derive the queried conclusion. In pseudocode:
+
+\begin{verbatim}
+sample target answer label
+sample initial object state
+for depth step in 1..D:
+    sample active branch rule(s)
+    derive next object state
+    add coherent distractor rules for inactive branches
+render one prompt
+render the same latent proof as formal and natural-language targets
+\end{verbatim}
+
+The \attrcon{} generator follows the same paired-rendering principle with
+objects, slots, values, and propagation constraints. The natural-language target
+is not free-form prose. It is controlled text produced from the same latent
+derivation.
+
+Answer extraction first searches for the final \texttt{<answer>} field. If no
+well-formed final answer is present, the generation is counted incorrect even
+when earlier text contains the gold label. Formal validation then parses block
+boundaries, declarations, formulas, proof-line references, and rule
+applications. Common validation failures are malformed block structure,
+undeclared symbols, references to unavailable lines, applying implication
+elimination to the wrong antecedent, and stopping before the queried conclusion.
+Natural-language validation adds one more possible failure mode: the controlled
+sentence must translate back into a formal step before the proof checker can
+evaluate it.
+
+\section{Paired Target Examples}
+\label{sec:paired-example}
+
+The following minimal examples show the paired target format used throughout the
+experiments. The prompt and answer are identical within each pair. Only the
+target trace substrate changes. Full experimental examples include more
+distractor premises and longer derivations.
+
+\paragraph{\branchproof{} example 1.}
+
+\begin{verbatim}
+Prompt:
+a is ruby. a is north.
+If a is north and a is ruby, then b is olive.
+What is b?
+\end{verbatim}
+
+\noindent\begin{minipage}[t]{0.48\linewidth}
+\textbf{Formal target}
+\scriptsize
+\begin{verbatim}
+<formal>
+<constants> a = a b = b </constants>
+<predicates> Rx: x is ruby Nx: x is north
+Ox: x is olive </predicates>
+<premises> Ra Na Na & Ra -> Ob </premises>
+<proof> Ra ; R,1
+Na ; R,2
+Na & Ra ; &I,5,4
+Ob ; ->E,3,6 </proof>
+<conclusion> Ob </conclusion>
+<answer> olive </answer>
+\end{verbatim}
+\end{minipage}\hfill
+\begin{minipage}[t]{0.48\linewidth}
+\textbf{Natural-language target}
+\scriptsize
+\begin{verbatim}
+<think>
+a is ruby. a is north.
+Since a is north and a is ruby, b is olive.
+Therefore, b is olive.
+</think>
+<answer> olive </answer>
+\end{verbatim}
+\end{minipage}
+
+\paragraph{\branchproof{} example 2.}
+
+\begin{verbatim}
+Prompt:
+a is cobalt. a is east.
+If a is east and a is cobalt, then b is maple.
+If b is maple, then b is south.
+If b is south and b is maple, then c is cedar.
+What is c?
+\end{verbatim}
+
+\noindent\begin{minipage}[t]{0.48\linewidth}
+\textbf{Formal target}
+\scriptsize
+\begin{verbatim}
+<formal>
+<constants> a = a b = b c = c </constants>
+<predicates> Cx: x is cobalt Ex: x is east
+Mx: x is maple Sx: x is south Dx: x is cedar </predicates>
+<premises> Ca Ea
+Ea & Ca -> Mb
+Mb -> Sb
+Sb & Mb -> Dc </premises>
+<proof> Ca ; R,1
+Ea ; R,2
+Ea & Ca ; &I,7,6
+Mb ; ->E,3,8
+Sb ; ->E,4,9
+Sb & Mb ; &I,10,9
+Dc ; ->E,5,11 </proof>
+<conclusion> Dc </conclusion>
+<answer> cedar </answer>
+\end{verbatim}
+\end{minipage}\hfill
+\begin{minipage}[t]{0.48\linewidth}
+\textbf{Natural-language target}
+\scriptsize
+\begin{verbatim}
+<think>
+a is cobalt. a is east.
+Since a is east and a is cobalt, b is maple.
+Since b is maple, b is south.
+Since b is south and b is maple, c is cedar.
+Therefore, c is cedar.
+</think>
+<answer> cedar </answer>
+\end{verbatim}
+\end{minipage}
+
+\paragraph{\attrcon{} example 1.}
+
+\begin{verbatim}
+Prompt:
+s0 has value red. s1 has value blue.
+If s0 is red and s1 is blue, then s2 is green.
+Which values fill all constrained slots?
+\end{verbatim}
+
+\noindent\begin{minipage}[t]{0.48\linewidth}
+\textbf{Formal target}
+\scriptsize
+\begin{verbatim}
+<formal>
+<constants> s0 = attribute slot 0 s1 = attribute slot 1
+s2 = attribute slot 2
+red = attribute value red
+blue = attribute value blue
+green = attribute value green </constants>
+<predicates> Value(x,y): slot x has value y
+Constraint(x,y,z,w,u,v): values y and w at slots x and z
+jointly force value v at slot u </predicates>
+<premises> Value(s0,red) Value(s1,blue)
+Constraint(s0,red,s1,blue,s2,green)
+Value(s0,red) & Value(s1,blue) &
+Constraint(s0,red,s1,blue,s2,green)
+-> Value(s2,green) </premises>
+<proof> Value(s0,red) ; R,1
+Value(s1,blue) ; R,2
+Constraint(s0,red,s1,blue,s2,green) ; R,3
+Value(s0,red) & Value(s1,blue) ; &I,5,6
+Value(s0,red) & Value(s1,blue) &
+Constraint(s0,red,s1,blue,s2,green) ; &I,8,7
+Value(s2,green) ; ->E,4,9 </proof>
+<answer> red-blue-green </answer>
+\end{verbatim}
+\end{minipage}\hfill
+\begin{minipage}[t]{0.48\linewidth}
+\textbf{Natural-language target}
+\scriptsize
+\begin{verbatim}
+<think>
+s0 has value red.
+s1 has value blue.
+The applicable joint constraint maps s0=red and s1=blue
+to s2=green.
+Combine the two prerequisite slot values.
+Therefore s2 has value green.
+</think>
+<answer> red-blue-green </answer>
+\end{verbatim}
+\end{minipage}
+
+\paragraph{\attrcon{} example 2.}
+
+\begin{verbatim}
+Prompt:
+s0 has value amber. s1 has value ivory.
+If s0 is amber and s1 is ivory, then s2 is olive.
+If s0 is amber and s2 is olive, then s3 is coral.
+Which values fill all constrained slots?
+\end{verbatim}
+
+\noindent\begin{minipage}[t]{0.48\linewidth}
+\textbf{Formal target}
+\scriptsize
+\begin{verbatim}
+<formal>
+<constants> s0 = attribute slot 0 s1 = attribute slot 1
+s2 = attribute slot 2 s3 = attribute slot 3
+amber = attribute value amber
+ivory = attribute value ivory
+olive = attribute value olive
+coral = attribute value coral </constants>
+<predicates> Value(x,y): slot x has value y
+Constraint(x,y,z,w,u,v): values y and w at slots x and z
+jointly force value v at slot u </predicates>
+<premises> Value(s0,amber) Value(s1,ivory)
+Constraint(s0,amber,s1,ivory,s2,olive)
+Value(s0,amber) & Value(s1,ivory) &
+Constraint(s0,amber,s1,ivory,s2,olive) -> Value(s2,olive)
+Constraint(s0,amber,s2,olive,s3,coral)
+Value(s0,amber) & Value(s2,olive) &
+Constraint(s0,amber,s2,olive,s3,coral)
+-> Value(s3,coral) </premises>
+<proof> Value(s0,amber) ; R,1
+Value(s1,ivory) ; R,2
+Constraint(s0,amber,s1,ivory,s2,olive) ; R,3
+Value(s0,amber) & Value(s1,ivory) ; &I,7,8
+Value(s0,amber) & Value(s1,ivory) &
+Constraint(s0,amber,s1,ivory,s2,olive) ; &I,10,9
+Value(s2,olive) ; ->E,4,11
+Constraint(s0,amber,s2,olive,s3,coral) ; R,5
+Value(s0,amber) & Value(s2,olive) ; &I,7,12
+Value(s0,amber) & Value(s2,olive) &
+Constraint(s0,amber,s2,olive,s3,coral) ; &I,14,13
+Value(s3,coral) ; ->E,6,15 </proof>
+<answer> amber-ivory-olive-coral </answer>
+\end{verbatim}
+\end{minipage}\hfill
+\begin{minipage}[t]{0.48\linewidth}
+\textbf{Natural-language target}
+\scriptsize
+\begin{verbatim}
+<think>
+s0 has value amber.
+s1 has value ivory.
+The applicable joint constraint maps s0=amber and s1=ivory
+to s2=olive.
+Combine the two prerequisite slot values.
+Therefore s2 has value olive.
+The applicable joint constraint maps s0=amber and s2=olive
+to s3=coral.
+Combine the two prerequisite slot values.
+Therefore s3 has value coral.
+</think>
+<answer> amber-ivory-olive-coral </answer>
+\end{verbatim}
+\end{minipage}
+
+\ifshowquarantined
+\section{Artifact Control Not Used as Main Evidence}
+\label{sec:excluded-controls}
+
+The terse-NL artifact is not used as a main mechanism result. The audit found
+that, for the inspected training sequence, the current terse-NL target is
+token-identical to the natural-language baseline, so it is not a clean shorter
+natural-language control. Its result remains in the generated CSV artifacts but
+is omitted from the main syntax table and figure.
+
+\section{Additional Shortcut Variants}
+\label{sec:shortcut-kind}
+
+\begin{table}[h]
+\centering
+\scriptsize
+\begin{tabular}{llccc}
+\toprule
+Shortcut type & Trace & Rate & Long-depth corr. & Depth-50 corr. \\
+\midrule
+Position & \logic{} & 0.5 & 90.0 $\pm$ 6.0 & 84.4 $\pm$ 5.4 \\
+Position & \logic{} & 0.8 & 87.9 $\pm$ 2.4 & 76.0 $\pm$ 1.8 \\
+Position & \nl{} & 0.5 & 54.0 $\pm$ 17.3 & 39.6 $\pm$ 9.0 \\
+Position & \nl{} & 0.8 & 51.3 $\pm$ 25.0 & 39.6 $\pm$ 33.1 \\
+\midrule
+Initial marker & \logic{} & 0.5 & 88.3 $\pm$ 2.5 & 85.4 $\pm$ 9.5 \\
+Initial marker & \logic{} & 0.8 & 88.5 $\pm$ 4.2 & 86.5 $\pm$ 9.0 \\
+Initial marker & \nl{} & 0.5 & 46.9 $\pm$ 12.0 & 11.5 $\pm$ 12.6 \\
+Initial marker & \nl{} & 0.8 & 77.1 $\pm$ 20.4 & 66.7 $\pm$ 13.0 \\
+\bottomrule
+\end{tabular}
+\caption{Additional shortcut mechanisms. Formal traces are consistently robust.
+The natural-language initial-marker rate-0.8 row is a measured exception and
+should be interpreted as distribution-specific rather than a general shortcut
+benefit. Rows are mean $\pm$ standard deviation over three seeds.}
+\label{tab:shortcut-kind}
+\end{table}
+\fi
+
+\section{Metric Definitions}
+\label{sec:metrics}
+
+Answer correctness is computed after extracting the final answer field from the
+generation. Formal joint validity requires both answer correctness and a
+mechanically valid formal trace. Natural-language joint validity requires answer
+correctness and successful translation of the generated natural-language trace
+into a valid formal proof. Because the natural-language translator is
+task-specific, answer correctness is the primary cross-task metric.
+
+
