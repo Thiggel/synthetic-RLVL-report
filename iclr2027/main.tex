@@ -507,6 +507,24 @@ transfers \emph{instructed answer formatting} --- a real but modest
 behavioral effect, with formal marginally ahead of natural --- and does not
 transfer measurable multi-hop reasoning.
 
+\paragraph{The null is robust across the sampled distribution.}
+Because greedy decoding systematically understates the formal condition in
+the controlled setting (Section~\ref{sec:verifier}), we replayed the exact
+evaluation prompts with sixteen samples per item ($T{=}0.8$) and computed
+pass@$k$, majority-vote, and oracle best-of-16 metrics for all three
+checkpoints (Appendix~\ref{app:transfer-passk}). If formal midtraining
+improved the underlying solution distribution without moving the greedy
+argmax, it would surface here; it does not. Untagged tasks are flat at every
+$k$ (GSM8K pass@16: 98.0/97.8/98.0). On tagged multi-hop tasks the formal
+condition leads at small $k$ but the conditions converge by $k{=}16$, and
+oracle best-F1@16 is flat throughout --- the distributions have the same
+support, and the low-$k$ gaps reproduce the compliance asymmetry. Sampling
+also exposes a second compliance layer that fallback extraction alone cannot
+catch: the control model frequently echoes the literal placeholder from the
+instruction template inside its answer tags, scoring as tagged-but-wrong.
+Excluding these degenerate answers collapses the remaining per-draw
+differences to null on all three tasks.
+
 \paragraph{Why the null is informative.}
 The controlled study predicts the formal advantage only under intact deep
 derivations (Section~\ref{sec:main-results}). A post-hoc audit of the
@@ -683,6 +701,72 @@ Inspection of control-condition failures confirms the mechanism: the model
 emits a correct bare answer (for example \texttt{Long Island}) with no
 \texttt{<answer>} wrapper and receives an F1 of zero under strict tagged
 extraction.
+
+\subsection{Sampled-distribution readout (pass@$k$)}
+\label{app:transfer-passk}
+
+We replay the exact evaluation prompts through each post-instruction-tuning
+checkpoint with one greedy decode plus sixteen samples ($T{=}0.8$,
+top-$p{=}0.95$), scoring with the accepted evaluators, and report the
+unbiased pass@$k$ estimator. Table~\ref{tab:transfer-passk} gives pass@1
+(sampled), pass@16, strict majority vote over sixteen samples, and oracle
+best-F1@16 for the tagged multi-hop tasks, plus pass@16 for the two
+untagged mathematical tasks.
+
+\begin{table}[h]
+\caption{Sampled-distribution metrics (percent). Pass@$k$ uses the unbiased
+estimator over sixteen samples at $T{=}0.8$; best-F1@16 is the oracle
+maximum over samples. Paired example-level bootstrap intervals for the
+formal$-$control pass@16 delta cover zero on every task except MuSiQue
+($+6.0$\,[$+1.5,+10.5$]), where the matching formal$-$natural delta is null
+($+2.0$\,[$-1.5,+5.5$]).}
+\label{tab:transfer-passk}
+\centering
+\small
+\begin{tabular}{llrrr}
+\toprule
+Task & Metric & Control & \formal{} & \nat{} \\
+\midrule
+\multirow{4}{*}{HotpotQA (tagged)}
+ & pass@1 (sampled) & 23.2 & 28.5 & 25.6 \\
+ & pass@16 & 61.0 & 62.0 & 60.5 \\
+ & maj@16 (strict) & 40.0 & 42.0 & 40.0 \\
+ & best-F1@16 & 73.9 & 75.1 & 74.1 \\
+\midrule
+\multirow{4}{*}{2WikiMQA (tagged)}
+ & pass@1 (sampled) & 14.5 & 19.2 & 17.2 \\
+ & pass@16 & 57.5 & 57.5 & 58.0 \\
+ & maj@16 (strict) & 21.0 & 29.5 & 26.0 \\
+ & best-F1@16 & 67.6 & 67.4 & 66.9 \\
+\midrule
+\multirow{4}{*}{MuSiQue (tagged)}
+ & pass@1 (sampled) & 9.2 & 11.1 & 9.9 \\
+ & pass@16 & 36.0 & 42.0 & 40.0 \\
+ & maj@16 (strict) & 15.5 & 17.0 & 16.5 \\
+ & best-F1@16 & 49.5 & 54.1 & 52.0 \\
+\midrule
+GSM8K & pass@16 & 98.0 & 97.8 & 98.0 \\
+MATH-500 & pass@16 & 53.8 & 53.0 & 54.4 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+Per-draw differences on the tagged tasks are driven by two compliance
+layers. First, tag presence: the control model's sampled extraction-failure
+rate is 12--18 percent against 7--9 percent for the trace conditions.
+Second, degenerate tag content: the control model frequently copies the
+literal placeholder ellipsis from the instruction template into its answer
+tags (457 of 2{,}275 tagged control samples on 2WikiMQA), which counts as an
+extractable wrong answer and therefore survives both tag-presence
+conditioning and the fallback extractor. Conditioning per-draw accuracy on a
+present, non-degenerate answer collapses the formal$-$control deltas to
+null on all three tasks (2WikiMQA $+1.4$\,[$-1.0,+3.9$]; HotpotQA
+$+1.8$\,[$-0.1,+3.8$]; MuSiQue $+1.1$\,[$-0.4,+2.7$]). The two isolated
+significant contrasts that remain across roughly a dozen comparisons
+(the MuSiQue pass@16 delta above and a $+1.5$\,[$+0.4,+2.7$]
+formal$-$natural conditional delta on HotpotQA) are each uncorroborated by
+the matching paired contrast and consistent with multiple-testing
+expectations.
 
 \section{Additional Controlled Results}
 
