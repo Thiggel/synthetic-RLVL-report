@@ -340,115 +340,73 @@ Section~\ref{sec:no-formal-output} shows that it does not carry over to the
 midtraining setting, where the models stop emitting formal derivations
 altogether.
 
-\section{What the Formal Rendering Contributes}
+\section{Controls}
 \label{sec:ablations}
 
-A formal derivation differs from prose in several ways at once. It uses symbols
-for predicates, it numbers its lines, it cites the lines each step depends on,
-it names the licensing rule, and the whole object is machine-checkable. Any of
-these could be doing the work. We separate them by training on renderings that
-keep some properties and break others, all at maximum training depth 25 and all
-with three seeds.
+Table~\ref{tab:controls} reports controls run on the same corrected generator
+as Table~\ref{tab:crossover}, so the entries are directly comparable to the
+depth-25 row there.
 
 \begin{table}[t]
 \centering
-\caption{Out-of-distribution \passk{16} answer accuracy at maximum training
-depth 25, in percent, for renderings that break individual properties of the
-formal target. \emph{Formal joint} additionally requires the emitted derivation
-to pass the proof checker. All rows, including the two baselines, were
-evaluated together on the ablation campaign's own held-out slice, whose
-absolute values differ from Table~\ref{tab:crossover} and should be compared
-only within this table.}
-\label{tab:tracecontrols}
+\caption{Out-of-distribution answer accuracy in percent, mean and standard
+deviation over three seeds, for controls run on the same corrected generator as
+Table~\ref{tab:crossover}. All entries train through depth 25.}
+\label{tab:controls}
 \begin{tabular}{lcc}
 \toprule
-supervised rendering & answer \passk{16} & formal joint \passk{16}\\
+condition & \passk{1} & \passk{16}\\
 \midrule
-formal derivation (baseline)       & $92.1\pm3.1$ & $71.0\pm7.6$\\
-English explanation (baseline)     & $79.4\pm7.7$ & n/a\\
-\midrule
-formal syntax, invalid steps       & $89.2\pm5.6$ & $0.0$\\
-formal syntax, shuffled lines      & $69.0\pm2.6$ & $0.0$\\
-English with rule names annotated  & $57.5\pm5.4$ & $0.0$\\
-pseudocode                         & $54.4\pm24.8$ & $0.0$\\
-English, shuffled sentences        & $49.0\pm15.6$ & $0.0$\\
-terse English                      & $34.8\pm18.4$ & $0.0$\\
+\multicolumn{3}{l}{\emph{reference, maximum training depth 25}}\\
+\quad formal derivation & $75.0\pm9.5$ & $99.6\pm0.3$\\
+\quad English explanation & $17.8\pm4.7$ & $42.5\pm5.8$\\
+\midrule\multicolumn{3}{l}{\emph{supervision-quantity control}}\\
+\quad English, target tokens matched to formal & $41.0\pm20.1$ & $69.8\pm34.9$\\
+\midrule\multicolumn{3}{l}{\emph{spurious marker planted in training, absent at test}}\\
+\quad formal & $43.1\pm7.7$ & $87.3\pm7.5$\\
+\quad English & $78.5\pm14.9$ & $99.4\pm0.9$\\
+\midrule\multicolumn{3}{l}{\emph{both notations in one model}}\\
+\quad concatenated, formal first & $0.5\pm0.4$ & $7.1\pm5.5$\\
+\quad concatenated, English first & $0.2\pm0.1$ & $2.3\pm1.6$\\
+\quad mode-conditioned, formal mode & $50.3\pm6.4$ & $87.1\pm3.9$\\
+\quad mode-conditioned, English mode & $18.1\pm2.0$ & $24.8\pm3.7$\\
+\midrule\multicolumn{3}{l}{\emph{other base models}}\\
+\quad Qwen2.5-7B, formal & $69.9\pm11.1$ & $77.3\pm5.2$\\
+\quad Qwen2.5-7B, English & $74.9\pm7.0$ & $76.0\pm5.6$\\
+\quad OLMo-3-32B, formal & $63.9\pm5.1$ & $98.8\pm0.9$\\
+\quad OLMo-3-32B, English & $98.9\pm0.8$ & $99.8\pm0.3$\\
+\quad OLMo-3-32B conditioned, formal mode & $85.0\pm8.7$ & $99.8\pm0.3$\\
 \bottomrule
 \end{tabular}
 \end{table}
 
-Table~\ref{tab:tracecontrols} separates two things that the formal rendering
-supplies together. Training on derivations whose syntax is intact but whose
-inference steps are invalid costs almost nothing in answer accuracy, at
-$89.2\pm5.6$ against $92.1$ for the correct derivations, while checkability
-collapses from $71.0$ to zero. What drives answer accuracy is therefore the
-regular, explicitly structured surface form, and what makes the output
-verifiable is the validity of the steps. A rendering can have the first without
-the second.
+Equating the number of supervised target tokens across conditions leaves the
+ordering intact, at $69.8\pm34.9$ \passk{16} for the token-matched English
+condition against $99.6\pm0.3$ for formal supervision, so the gap is not an
+effect of supervision quantity. The variance of that control is very large,
+which is worth noting alongside the point estimate.
 
-Order matters within the notation. Shuffling the lines of a formal derivation
-preserves every symbol and rule name while destroying the dependency sequence,
-and costs $23$ points. Importing the formal vocabulary into English without the
-formal layout reaches $57.5\pm5.4$ and does not recover the formal result,
-pseudocode sits at $54.4$ with a wide spread, and terse English is weakest at
-$34.8$, so compressing the prose is actively harmful.
+A spurious marker planted in training and removed at test time reverses the
+comparison. English supervision is barely affected, at $99.4\pm0.9$
+\passk{16} and $76.1$ percent at depth 50, while formal supervision falls to
+$87.3\pm7.5$ and to $11.7$ percent at depth 50. The formal advantage is
+therefore not generic robustness to distribution shift, and a model trained on
+rigid syntax appears to bind more readily to a rigid spurious feature.
 
-\subsection{Spurious shortcuts}
+Putting both notations in one model fails when they are concatenated into a
+single target, at $0.5\pm0.4$ and $0.2\pm0.1$ \passk{1}, because the model
+copies one or both long traces and exhausts its budget. Mode-conditioned
+training, with an output-mode tag on separate examples, works better and
+reaches $50.3\pm6.4$ \passk{1} in formal mode.
 
-Deduction problems can often be solved by a surface cue instead of the
-derivation. We plant a spurious schema marker on a fraction of training
-examples and remove it at test time, which turns any reliance on the cue into a
-measurable loss.
-
-\begin{table}[t]
-\centering
-\caption{Out-of-distribution and depth-50 \passk{16} answer accuracy, in
-percent, as the fraction of training examples carrying a spurious marker
-increases. The marker is absent at test time. Formal supervision is unaffected.
-English supervision degrades, and the degradation is largest at the deepest
-test problems.}
-\label{tab:shortcuts}
-\begin{tabular}{lcccc}
-\toprule
-& \multicolumn{4}{c}{fraction of training examples carrying the marker}\\
-\cmidrule(lr){2-5}
-supervision and test set & 0.0 & 0.3 & 0.5 & 0.8\\
-\midrule
-formal, out of distribution  & $92.1\pm3.1$ & $89.2\pm1.0$ & $90.6\pm1.2$ & $94.0\pm3.2$\\
-English, out of distribution & $79.4\pm7.7$ & $58.8\pm23.8$ & $64.2\pm27.2$ & $63.8\pm3.8$\\
-\midrule
-formal, depth 50             & $83.3\pm7.2$ & $84.4\pm0.0$ & $83.3\pm4.8$ & $82.3\pm13.0$\\
-English, depth 50            & $51.0\pm12.7$ & $45.8\pm36.5$ & $38.5\pm36.2$ & $28.1\pm6.2$\\
-\bottomrule
-\end{tabular}
-\end{table}
-
-Formal supervision is flat across the whole range, at $89$ to $94$ percent out
-of distribution and $82$ to $84$ at depth 50, with no trend in the marker
-fraction. English supervision falls by roughly $15$ points out of distribution
-as soon as any marker is present, and at depth 50 it declines monotonically
-from $51.0$ to $28.1$. The seed variance of the English conditions is also very
-large, above $20$ points in three of six cells, so individual English runs
-differ in how heavily they commit to the cue. A model supervised on explicit
-derivations has less room to substitute a surface feature for the derivation,
-because the supervised target spells the derivation out.
-
-At \passk{1} the ordering under shortcuts runs the other way, with English at
-$78.5\pm14.9$ against $43.1\pm7.7$ at the highest marker fraction, so what is
-robust here is the set of problems the model can solve at all, consistent with
-the sampled and greedy separation throughout this paper.
-
-\subsection{Capacity, mode conditioning and scale}
-
-Capacity reorders the comparison. The conditions are close on Qwen2.5-7B at
-$69.9\pm11.1$ against $74.9\pm7.0$ \passk{1}, and English leads on OLMo-3-32B
-at $98.9\pm0.8$ against $63.9\pm5.1$, where formal coverage still sits near
-ceiling at $98.8\pm0.9$ \passk{16}. Concatenating both renderings into one
-target fails outright, below one percent, and mode-conditioned training at 32B
-lifts the formal mode to $85.0\pm8.7$, still below single-modality English.
-Models trained from scratch at 50M to 200M parameters fail in both conditions
-at every size, so the effect operates on competence supplied by pretraining.
-Appendix~\ref{sec:boundary-details} reports all three in full.
+Capacity reorders the comparison. On Qwen2.5-7B the conditions are close, at
+$69.9\pm11.1$ against $74.9\pm7.0$ \passk{1}. On OLMo-3-32B English leads
+decisively at $98.9\pm0.8$ against $63.9\pm5.1$, while formal coverage stays
+near ceiling at $98.8\pm0.9$ \passk{16}, so the deficit at 32B is one of
+probability mass and not of coverage. Mode conditioning at 32B lifts the formal
+mode to $85.0\pm8.7$ \passk{1}, still below single-modality English. Models
+trained from scratch at 50M to 200M parameters fail in both conditions at every
+size, so the effect operates on competence supplied by pretraining.
 
 \section{Midtraining a 7B Model on Formal Derivations}
 \label{sec:transfer}
