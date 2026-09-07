@@ -29,7 +29,7 @@
 \newcommand{\nl}{\textsc{Natural}}
 \newcommand{\passk}[1]{pass@#1}
 
-\title{Formal Reasoning Traces Buy Coverage\\Before They Buy Accuracy}
+\title{Proof over Prose: Training Language Models\\on Formal Multi-Hop Derivations}
 
 \author{Anonymous authors}
 
@@ -38,161 +38,181 @@
 \maketitle
 
 \begin{abstract}
-Supervised reasoning traces are almost always written in natural language,
-though the same derivation can be written as a sequence of explicit rule
-applications. We isolate that variable with paired corpora in which the prompt,
-the answer and the latent proof are identical across conditions and only the
-trace rendering differs. Which rendering generalizes better depends on how deep
-the training derivations go. Below a depth threshold natural-language traces
-extrapolate further out of distribution, and at maximum training depth 25 the
-ordering reverses, with formal supervision at $75.0\pm9.5$ percent
-out-of-distribution answer \passk{1} against $17.8\pm4.7$ for the matched
-natural condition. The reversal appears ten depth levels earlier under sampling
-than under greedy decoding, which separates two thresholds and identifies
-coverage, and not single-sample accuracy, as what formal supervision buys
-first. Because formal derivations are checkable, that coverage is recoverable
-without an answer key, and an answer-blind selector returning the first sample
-a proof checker accepts converts sixteen samples into $97.3\pm1.1$ percent
-single-answer accuracy against $33.8\pm1.4$ percent for translated
-natural-language traces. Midtraining Qwen2.5-7B on 2.5 billion tokens with ten
-percent of the mixture replaced by matched derivations at depth 25 reproduces
-the dissociation. Both trace conditions improve external deduction accuracy
-over an untreated control and over a length-matched corpus carrying no deep
-deduction, and the formal condition exceeds the natural condition under
-sampling while falling below it under greedy decoding. The single-seed limit of
-that last comparison is quantified against measured training-run variance.
+Language models learn to reason from examples of reasoning, and those examples
+are almost always written in prose. We ask whether the notation matters. Our
+data comes from a generator that samples multi-hop deduction problems over Horn
+clauses, where every step offers four locally plausible continuations, exactly
+one of which follows from the current state, and the answer is unique by
+construction. Each latent proof is written out twice. One version is a formal
+derivation with numbered lines and named inference rules. The other is a
+controlled English explanation of the same steps. Prompt, answer and proof
+graph are identical within a pair, so two models trained on opposite sides
+differ only in the notation they were shown.
+
+Which notation produces the better reasoner depends on how many hops the
+training proofs contain. Through five to twenty hops the English rendering
+generalizes further to unseen depths. At twenty-five hops the ordering reverses
+and formal supervision reaches $75.0\pm9.5$ percent out-of-distribution
+accuracy where English reaches $17.8\pm4.7$. Drawing sixteen samples instead of
+one moves the reversal ten hops earlier, to fifteen, so formal supervision
+first widens the set of problems a model can solve at all and only later
+improves its first attempt. A formal derivation can be checked mechanically, so
+the wider set is usable without an answer key, and returning the first sample a
+proof checker accepts yields $97.3\pm1.1$ percent accuracy where the same
+procedure on English traces yields $33.8\pm1.4$ percent.
+
+The effect is not confined to the controlled setting. We midtrain Qwen2.5-7B on
+2.5 billion tokens with ten percent of the mixture replaced by these
+derivations, and accuracy improves on held-out ProofWriter problems that the
+generator never produced. Replacing the same ten percent with ordinary long
+documents, matched to the formal traces in length distribution, leaves accuracy
+at the control level, so document length alone does not explain the gain.
 \end{abstract}
 
 \input{fig_design}
 
 \section{Introduction}
 
-Chain-of-thought supervision trains language models to emit intermediate steps
-before an answer \citep{wei2022chain,kojima2022large}, and almost all such
-supervision is written in prose. The convention is uniform enough to hide an
-experimental variable, since the same derivation can be rendered as discursive
-text or as a numbered sequence of rule applications, and the two renderings
-present the learner with different token-level structure. This paper measures
-what that choice does to the reasoning a model acquires.
+A language model that answers a multi-hop question correctly has, somewhere in
+its training data, seen many worked examples of chains of inference. Those
+examples are written in prose, because that is how people write when they
+explain themselves. The same derivation could instead be written in formal
+logic, with each line naming the rule that produced it and the earlier lines it
+depends on. Whether that changes what the model learns is an empirical question
+that the literature has not asked, since the two notations never appear over
+the same underlying problems in natural corpora. Two solutions written in
+different styles are rarely two renderings of one computation, so any
+comparison drawn from found data confounds notation with problem difficulty and
+with the care of whoever wrote the solution.
 
-Ordinary corpora cannot answer the question, because two solutions written in
-different styles rarely encode the same computation. We therefore generate
-paired synthetic corpora in which a deterministic generator samples a latent
-proof and renders it either as a compact formal derivation or as a controlled
-natural-language explanation. Within a pair the prompt, answer, facts, rules
-and proof graph are identical and only the trace language changes
-(Figure~\ref{fig:overview}), so differences between models trained on the two
-sides are attributable to representation. The study concerns training and not
-tool use, since no prover is called at inference time and both conditions
-generate under matched token budgets.
+We remove that confound by generating both renderings from a single source. A
+deterministic generator samples a latent proof over Horn clauses and then
+writes it out twice, once as a formal derivation and once as a controlled
+English explanation. The prompt, the answer, the premises and the proof graph
+are shared. Only the notation of the supervised trace changes, so a difference
+between two models trained on opposite sides of a pair can be attributed to the
+notation (Figure~\ref{fig:overview}). No prover runs at inference time, and
+both conditions generate under identical token budgets, so we are measuring
+what the notation teaches and any difference cannot come from access to a
+solver.
 
+Our claim is not that a model trained on formal derivations begins reasoning in
+formal logic internally. What the formal rendering supplies is an explicit,
+uniform record of how a multi-hop derivation is assembled, in which every step
+states which premises it consumed and which rule licensed it. A model trained
+on prose sees the same chain with those dependencies left implicit in the
+grammar of the sentences. The question is whether making the structure explicit
+produces a better multi-hop reasoner, and the answer turns out to depend on how
+long the chains in training were.
 
-Which trace language generalizes better is not a fixed property of the
-representation. With shallow-to-intermediate training ranges the
-natural-language condition is reliably stronger out of distribution, and once
-the training range reaches depth 25 the comparison reverses by a wide margin,
-with formal supervision at $75.0\pm9.5$ percent out-of-distribution answer
-\passk{1} against $17.8\pm4.7$ (Figure~\ref{fig:crossover}). Length and
-token-budget controls show the gap is not explained by target length or by the
-number of supervised tokens, and an independently generated
-constraint-propagation task reproduces the correctness advantage.
+Through training ranges of five to twenty hops the English rendering is
+reliably stronger on held-out problems deeper than anything seen in training.
+At twenty-five hops the comparison reverses by a factor of four, with formal
+supervision at $75.0\pm9.5$ percent against $17.8\pm4.7$
+(Table~\ref{tab:crossover}). Neither target length nor the number of supervised
+tokens accounts for the reversal, and an independently generated
+constraint-propagation task reproduces it.
 
-The location of the reversal depends on decoding. Under greedy decoding the
-formal condition overtakes the natural condition only at maximum training depth
-25, while under sampling with sixteen draws the crossover has already occurred
-at maximum training depth 15, at $69.9$ percent against $56.9$. Formal
-supervision buys the ability to produce a correct derivation somewhere in a
-modest sample budget well before it buys one on the first attempt, so reporting
-greedy accuracy alone would place the threshold ten depth levels too high.
+How the model is decoded moves the reversal. Greedy decoding places it at
+twenty-five hops. Sixteen samples place it at fifteen, where formal supervision
+reaches $69.9$ percent against $56.9$. In the range between those two points a
+formally trained model can already construct a correct derivation within a
+modest sample budget while still failing on its first attempt. Any study that
+reported only greedy accuracy would locate the effect ten hops too late and
+would describe the intervening range as showing no formal advantage.
 
-Because a checkable representation lets that sample budget be spent without an
-answer key, the gap is practically useful. Nearly every test prompt admits a
-correct and mechanically valid formal proof within sixteen samples, at joint
-\passk{16} of $98.1\pm0.5$ percent, and selecting the first sample the checker
-accepts yields $97.3\pm1.1$ percent single-answer accuracy against
-$33.8\pm1.4$ for translated natural-language traces. If reinforcement learning
-with verifiable rewards sharpens a base model toward samples it can already
-draw without extending its coverage \citep{yue2025does}, then the coverage
-measured here is what bounds such posttraining.
+That gap between what a model can produce and what it produces first is where
+formal notation pays. Validity of a formal derivation is decidable by the same
+engine that generated the problem, so a sample can be checked without knowing
+the answer. Nearly every test prompt admits a correct and mechanically valid
+proof within sixteen samples, at $98.1\pm0.5$ percent, and returning the first
+sample the checker accepts recovers $97.3\pm1.1$ percent single-answer
+accuracy. Applied to English traces the identical procedure recovers
+$33.8\pm1.4$ percent, largely because long English derivations often fail to
+terminate before the budget runs out, leaving nothing for the checker to
+accept. Recent work argues that reinforcement learning with verifiable rewards
+mostly reweights a model toward completions it can already sample
+\citep{yue2025does}. If that is right, then the breadth we measure here is the
+quantity that bounds what such posttraining can reach.
 
-Whether any of this survives contact with ordinary language-model training is a
-separate question. We midtrain Qwen2.5-7B on 2.5 billion tokens of a production
-mixture with ten percent of the loss tokens replaced by matched derivations at
-depth 25, holding the token budget and every hyperparameter identical across
-conditions and adding a control corpus of long documents length-matched to the
-formal traces but carrying no deep deduction. Replacement with either trace
-language raises accuracy on a held-out external deduction benchmark, the
-length-matched control does not reproduce that gain, and the formal condition
-exceeds the natural condition under sampling while falling below it under
-greedy decoding.
+Controlled fine-tuning on synthetic problems cannot tell us whether any of this
+matters for a language model trained the ordinary way. We therefore midtrain
+Qwen2.5-7B on 2.5 billion tokens of a production mixture, replacing ten percent
+of the loss tokens with matched derivations at twenty-five hops and holding
+every other hyperparameter fixed across conditions. Both renderings improve
+accuracy on held-out ProofWriter problems. A corpus of ordinary long documents
+matched to the formal traces in length distribution does not, which rules out
+the most obvious alternative explanation. The sampled and greedy orderings
+separate here as they did in the controlled study.
 
 \section{Related Work}
 
-\paragraph{Reasoning traces and controlled synthetic study.}
-Chain-of-thought prompting and supervised rationales improve multi-step
-reasoning \citep{wei2022chain,kojima2022large}, and later work bootstraps
-rationales \citep{zelikman2022star}, decomposes questions
-\citep{zhou2023least}, searches over reasoning states \citep{yao2023tree} and
-supervises scratchpads \citep{nye2021show}. The benefit concentrates in
-mathematical and symbolic domains \citep{sprague2025tocot}. Synthetic corpora
-with known generative structure make mechanism questions answerable that
-benchmark accuracy cannot address, as in the iGSM family
-\citep{ye2024physics,ye2024physics22} and in work controlling the generating
-grammar directly \citep{allenzhu2023physics1}. Formal analysis of
-chain-of-thought on synthetic deduction exposes failure modes that benchmark
-scores hide \citep{saparov2023language}, compositional tasks expose limits that
-scale does not remove \citep{dziri2023faith}, the learning-to-reason objective
-can be satisfied by statistical shortcuts \citep{zhang2023paradox}, and the
-locality of the training distribution has been proposed as the reason
-intermediate steps help at all \citep{prystawski2023why}. We adopt the same
-instrument and add the representation axis, holding the problem distribution
-fixed and varying only the rendering of the supervised trace.
+Three lines of work bear on the question we ask, and none of them varies the
+notation of a reasoning trace while holding the reasoning fixed.
 
-\paragraph{Programs, formal systems and autoformalization.}
-Program-aided prompting uses executable code for intermediate computation
-\citep{gao2023pal,chen2023program}, logic pipelines delegate inference to an
-external solver \citep{pan2023logiclm,ling2023deductive}, rule-based deduction
-over language has been studied with generated proof corpora
-\citep{clark2020transformers,tafjord2021proofwriter}, theorem proving trains
-models to construct machine-checkable objects
-\citep{polu2020generative,jiang2022draft,leandojo2023,leanCopilot2024},
-autoformalization translates informal statements into such systems
-\citep{wu2022autoformalization}, and recent proposals verify traces by typing
-them \citep{perrier2025typed}. Those methods intervene at inference time and
-change the mechanism producing or validating an answer. Our intervention is at
-training time, the inference mechanism is unchanged, and every formal target
-has a paired natural-language target from the same proof, so representation is
-measurable without confounding it with the availability of a solver.
+The first established that intermediate steps help. Prompting a model to write
+out its reasoning improves multi-step accuracy \citep{wei2022chain,
+kojima2022large}, and the idea has been extended by bootstrapping rationales
+\citep{zelikman2022star}, decomposing questions \citep{zhou2023least},
+searching over partial reasoning states \citep{yao2023tree} and supervising a
+scratchpad directly \citep{nye2021show}. Theory explains part of the gain,
+since intermediate tokens let a constant-depth transformer carry out serial
+computation that it cannot perform in a single forward pass
+\citep{feng2023towards, merrill2024expressive, li2024chain}. What this work
+holds constant is the notation. The steps are written in prose throughout,
+which leaves open whether prose is the reason the steps help or merely the
+medium they arrived in.
 
-\paragraph{Verification, selection and test-time compute.}
-Trained verifiers rerank sampled solutions \citep{cobbe2021training}, process
-supervision scores individual steps \citep{lightman2024lets}, self-consistency
-uses sampled agreement \citep{wang2023selfconsistency}, and repeated sampling
-converts inference compute into coverage \citep{brown2024large}. How to spend a
-fixed test-time budget has been studied empirically
-\citep{snell2024scaling,muennighoff2025s1} and theoretically
-\citep{setlur2025scaling}. The selector used here needs no trained verifier and
-no answer key, since validity of a formal derivation is decidable by the engine
-that generated the task. Whether verifiable-reward training expands the
-reasoning boundary or sharpens the sampling distribution is disputed
-\citep{yue2025does,guo2025deepseekr1,shao2024deepseekmath,gandhi2025cognitive},
-and the coverage measurements here speak to the quantity at issue.
+The second line asks what is actually being learned, and it reaches for
+synthetic data to do so. Controlling the generator makes it possible to ask
+questions that benchmark accuracy cannot answer, as in the iGSM family
+\citep{ye2024physics, ye2024physics22} and in work that controls the generating
+grammar outright \citep{allenzhu2023physics1}. The findings are sobering.
+Models trained to reason can satisfy the objective through statistical
+shortcuts \citep{zhang2023paradox}, they fail on compositions that scale does
+not fix \citep{dziri2023faith}, and formal analysis of their derivations
+exposes error modes that aggregate scores conceal
+\citep{saparov2023language, clark2020transformers, tafjord2021proofwriter}. The
+locality of the training distribution has even been proposed as the reason
+intermediate steps help at all \citep{prystawski2023why}. These studies vary
+the problems, the model and the training signal. The representation of the
+trace itself remains a free variable that nobody has moved.
 
-\paragraph{Faithfulness and controlled generalization.}
-Rationales can omit the factors driving a prediction and can rationalize an
-answer produced otherwise \citep{turpin2023language,lanham2023measuring}, so
-answer accuracy and proof validity are reported separately throughout.
-Synthetic benchmarks control train and test distributions to expose failures of
-systematic generalization
-\citep{lake2018generalization,keysers2020measuring,hupkes2020compositionality},
-with length a distinct axis \citep{anil2022exploring}, and theory shows
-chain-of-thought lets a constant-depth transformer emulate serial computation
-it otherwise cannot perform
-\citep{feng2023towards,merrill2024expressive,li2024chain}. Our shift increases
-proof depth while holding the rule system fixed, and a spurious-marker shift
-tests shortcut reliance \citep{geirhos2020shortcut}.
+The third line treats formality as an inference-time resource. Program-aided
+prompting delegates computation to an interpreter \citep{gao2023pal,
+chen2023program}, logic pipelines hand the problem to a solver
+\citep{pan2023logiclm, ling2023deductive}, theorem provers construct objects a
+kernel will check \citep{polu2020generative, jiang2022draft, leandojo2023,
+leanCopilot2024}, autoformalization translates informal statements into such
+systems \citep{wu2022autoformalization}, and recent proposals type a trace to
+make it verifiable \citep{perrier2025typed}. In all of these the formal object
+earns its place at test time, through an external checker or an external solver.
+Whether formality is worth anything as \emph{training} signal, with no solver
+present at inference, is a different question, and it is the one we take up.
 
-\section{A Paired-Trace Testbed}
+Our measurements also touch a live disagreement about sampling. Repeated
+sampling converts inference compute into solved problems
+\citep{brown2024large}, verifiers and process supervision select among those
+samples \citep{cobbe2021training, lightman2024lets}, self-consistency selects by
+agreement \citep{wang2023selfconsistency}, and how best to spend a fixed budget
+has been studied both empirically \citep{snell2024scaling, muennighoff2025s1}
+and theoretically \citep{setlur2025scaling}. Against that, one recent argument
+holds that verifiable-reward training mostly sharpens a model toward what it
+could already sample \citep{yue2025does, guo2025deepseekr1, shao2024deepseekmath,
+gandhi2025cognitive}. Our selector needs no trained verifier and no answer key,
+since validity is decidable by the generating engine, and the breadth it
+exploits is precisely the quantity that argument says bounds posttraining.
+
+Two further concerns frame how we report. Prose rationales can omit what
+actually drove a prediction \citep{turpin2023language, lanham2023measuring}, so
+we separate answer accuracy from proof validity everywhere. And systematic
+generalization is conventionally probed by controlling the train and test
+distributions \citep{lake2018generalization, keysers2020measuring,
+hupkes2020compositionality, anil2022exploring}, which is what our depth split
+does, with a spurious-marker variant to test shortcut reliance
+\citep{geirhos2020shortcut}.
+
+\section{Data and Experimental Setup}
 \label{sec:paired}
 
 Each example begins with a latent directed acyclic proof. A generator emits a
@@ -235,7 +255,7 @@ so answer-only accuracy is reported alongside every joint metric.
 Appendices~\ref{sec:training-details} and~\ref{sec:metrics} give the remaining
 configuration and the metric definitions.
 
-\section{Depth Coverage Determines Which Trace Language Generalizes}
+\section{How Proof Depth Changes the Comparison}
 \label{sec:main-results}
 
 \input{fig_crossover}
@@ -300,13 +320,14 @@ The correctness advantage of formal supervision at high training depth
 reproduces there, which makes it unlikely that the effect depends on a
 particular rule system.
 
-\section{The Verifiability Dividend}
+\section{Checking Samples Without an Answer Key}
 \label{sec:verifier}
 
-Coverage is useful only if it can be harvested without the answer. For formal
-traces it can, since validity is decidable by the engine that generated the
-task. Consider a selector that draws $k$ samples, checks each in order and
-returns the answer of the first one the checker accepts.
+A model whose sixteen samples contain a correct proof is only useful if that
+proof can be picked out without already knowing the answer. For formal
+derivations it can be, since validity is decidable by the same engine that
+generated the problem. Consider a selector that draws $k$ samples, checks each
+in order and returns the answer of the first one the checker accepts.
 
 \begin{proposition}
 \label{prop:selector}
@@ -331,12 +352,10 @@ so no checkable derivation exists to accept, which drives $a+b$ down and leaves
 the selector with nothing to select from. No reward model and no gold labels
 enter the procedure.
 
-\section{Boundary Conditions}
+\section{Where the Effect Reverses}
 \label{sec:boundary}
 
-Four further experiments bound where the effect holds, and
-Appendix~\ref{sec:boundary-details} reports them in full. Capacity reorders the
-comparison, since the two conditions are close on Qwen2.5-7B at $69.9\pm11.1$
+Capacity reorders the comparison, since the two conditions are close on Qwen2.5-7B at $69.9\pm11.1$
 against $74.9\pm7.0$ \passk{1} and the natural condition leads on OLMo-3-32B at
 $98.9\pm0.8$ against $63.9\pm5.1$, where formal coverage nonetheless stays near
 ceiling at $98.8\pm0.9$ \passk{16}. Concatenating both renderings into one
@@ -347,9 +366,10 @@ examples and removed at test time makes the natural condition the robust one,
 at $78.5\pm14.9$ against $43.1\pm7.7$, so the formal advantage is not generic
 robustness to distribution shift. Models trained from scratch at 50M to 200M
 parameters fail in both conditions at every size, so the effect operates on
-competence supplied by pretraining and does not create it.
+competence supplied by pretraining and does not create it. Full tables for all
+four experiments are in Appendix~\ref{sec:boundary-details}.
 
-\section{Transfer to Language-Model Midtraining}
+\section{Midtraining a 7B Model on Formal Derivations}
 \label{sec:transfer}
 
 Whether the same variable matters when derivations are a small minority of an
@@ -385,7 +405,7 @@ tokens against $3{,}750$ for the formal traces, mean $3{,}832$ against
 $3{,}856$, maximum $7{,}750$ against $7{,}728$, and all thirty populated
 250-token bins agree within about three percent.
 
-\subsection{Corpus construction and packing}
+\subsection{Corpora and packing}
 
 A corpus of 72{,}000 examples is generated with depths 1 to 25 round-robin,
 branching factor 4 and distractor ratio 0.5, matching the controlled study. The
@@ -394,9 +414,9 @@ them holds the underlying computation fixed as in Section~\ref{sec:paired}.
 Rendered lengths and packing statistics appear in
 Appendix~\ref{sec:midtrain-details}.
 
-Packing preserves documents. A document longer than one window is excluded and
-counted, and none is split across windows, so the mid-derivation truncation
-that would destroy the depth structure under study cannot occur. Zero documents
+A document longer than one window is excluded and counted, and none is split
+across windows, so the mid-derivation truncation that would destroy the depth
+structure under study cannot occur. Zero documents
 were excluded and zero split in every condition. Padding uses a dedicated token
 masked out of the loss. A decoded-batch audit verifies both properties on real
 loader windows and training refuses to start if it fails.
@@ -464,7 +484,7 @@ Table~\ref{tab:transfer-passk} gives the contrast under both decodings.
 \centering
 \caption{Formal minus natural on the near-transfer derivation family, by
 inference depth and decoding rule. Positive favours the formal condition. The
-sign of the contrast depends on the decoding rule and not on the depth.}
+sign of the contrast follows the decoding rule, with no clear depth trend.}
 \label{tab:transfer-passk}
 \begin{tabular}{lrrrrr}
 \toprule
@@ -519,12 +539,13 @@ often, so its advantage is confounded with exposure and cannot be attributed to
 the rendering. Resolving that requires an exposure-matched condensed corpus,
 which is not part of this work.
 
-\subsection{What the transfer result does and does not establish}
+\subsection{How far this result goes}
 \label{sec:transfer-limits}
 
 Every midtraining condition was trained once, so the intervals in
-Table~\ref{tab:transfer-boot} estimate evaluation sampling error and not the
-variability that retraining under a different seed would produce. That second
+Table~\ref{tab:transfer-boot} estimate evaluation sampling error. They say
+nothing about the variability that retraining under a different seed would
+produce. That second
 quantity is measurable. An auxiliary experiment on the same evaluation suite,
 described in Appendix~\ref{sec:variance}, gives a per-run standard deviation
 near $0.019$ and therefore near $0.027$ for a difference between two
@@ -532,13 +553,13 @@ independently seeded conditions. Combined with the evaluation term this gives
 about $0.033$ for the formal against natural contrast, whose interval then
 becomes approximately $[-0.015, +0.115]$ and includes zero.
 
-The consequence is specific. The contrasts against Control, between $0.176$ and
-$0.276$, are six to ten times the training standard deviation and are not at
+The contrasts against Control, between $0.176$ and $0.276$, are six to ten times the training standard deviation and are not at
 risk from single-seed training. The contrast between the two trace languages,
 at $0.050$, is roughly twice that standard deviation and is a sign reversal
 against the greedy ordering, which is the pattern most likely to be produced by
 run-to-run variation. We therefore report the transfer-scale formal advantage
-as consistent with the controlled study and not as independently established.
+as consistent with the controlled study. We do not claim it is independently
+established.
 Replication under a second instruction-tuning seed is the appropriate remedy,
 since enlarging the evaluation set would shrink the smaller error term and
 leave the larger untouched.
@@ -554,9 +575,9 @@ below-threshold comparison.
 
 \section{Discussion}
 
-Trace language is a training-time variable whose sign depends on depth
-coverage. Neither rendering is better in general, and the location of the
-threshold depends on how the model is decoded. A study reporting greedy
+Neither notation is better in general. Which one produces the stronger reasoner
+flips as the training proofs get deeper, and where it flips depends on how the
+model is decoded. A study reporting greedy
 accuracy alone places the crossover at depth 25 and concludes that formal
 supervision is harmful everywhere below it, where the same experiment read at
 \passk{16} places it at depth 15 and shows the formal condition ahead through
@@ -575,7 +596,7 @@ running that stage on both trace conditions, which we have not done.
 
 The controlled study uses one model family at 7B and one at 32B, and the
 transfer study uses a third. Depth thresholds estimated on OLMo-3-7B are
-applied to Qwen2.5-7B by assumption and not by measurement.
+applied to Qwen2.5-7B by assumption. We did not measure them there.
 
 The transfer conditions were trained once each, with the consequences set out
 in Section~\ref{sec:transfer-limits}.
@@ -588,8 +609,8 @@ carry that dependency.
 
 The generator produces one family of Horn-style deduction problems and one
 constraint-propagation family. Neither involves arithmetic, natural-language
-ambiguity or retrieval, and the depth axis studied here is proof depth and not
-context length or problem breadth.
+ambiguity or retrieval, and the depth axis studied here is proof depth. Context length and problem
+breadth are untouched.
 
 The condensed rendering is confounded with exposure, as described in
 Section~\ref{sec:transfer-results}.
