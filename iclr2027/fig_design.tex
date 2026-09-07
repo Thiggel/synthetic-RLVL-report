@@ -1,0 +1,67 @@
+% The paired-trace construction, drawn on a single worked example.
+\definecolor{formalcol}{RGB}{40,104,178}
+\definecolor{natcol}{RGB}{34,139,94}
+\definecolor{sharedcol}{RGB}{90,90,95}
+\begin{figure}[!h]
+\centering
+\begin{tikzpicture}[
+  font=\scriptsize,
+  box/.style={rounded corners=2pt, draw=gray!55, line width=0.5pt, inner sep=3pt, align=left},
+  shared/.style={box, fill=gray!7},
+  fbox/.style={box, draw=formalcol!65, fill=formalcol!5},
+  nbox/.style={box, draw=natcol!65, fill=natcol!5},
+  lbl/.style={font=\scriptsize\itshape, text=gray!60},
+  ar/.style={-{Latex[length=4pt,width=3.5pt]}, draw=gray!60, line width=0.5pt},
+]
+\usetikzlibrary{arrows.meta}
+
+\node[shared, text width=0.86\linewidth] (prompt)
+  {\textbf{Prompt}\; \texttt{a is ruby. a is north.}\\
+   \texttt{If a is north and a is ruby, then b is olive.}\quad\texttt{What is b?}};
+
+\node[shared, below=2.5mm of prompt, text width=0.86\linewidth] (proof)
+  {\textbf{Latent proof}\;
+   \texttt{Ra}, \texttt{Na} $\Rightarrow$ \texttt{Na \& Ra} $\Rightarrow$ \texttt{Ob}
+   \hfill \textcolor{gray!70}{depth $d$, branching 4, one derivable answer}};
+
+\node[fbox, below left=4.5mm and -0.5mm of proof.south, text width=0.40\linewidth, anchor=north west, xshift=-0.415\linewidth] (formal)
+  {\textcolor{formalcol}{\textbf{\textsc{Formal} target}}\\[1pt]
+   \texttt{<premises> Ra Na}\\
+   \texttt{\ \ Na \& Ra -> Ob </premises>}\\
+   \texttt{<proof> Ra ; R,1}\\
+   \texttt{\ \ Na ; R,2}\\
+   \texttt{\ \ Na \& Ra ; \&I,5,4}\\
+   \texttt{\ \ Ob ; ->E,3,6 </proof>}\\
+   \texttt{<answer> olive </answer>}};
+
+\node[nbox, below right=4.5mm and -0.5mm of proof.south, text width=0.40\linewidth, anchor=north east, xshift=0.415\linewidth] (nat)
+  {\textcolor{natcol}{\textbf{\textsc{Natural} target}}\\[1pt]
+   \texttt{<think>}\\
+   \texttt{\ \ a is ruby. a is north.}\\
+   \texttt{\ \ Since a is north and a is}\\
+   \texttt{\ \ ruby, b is olive.}\\
+   \texttt{\ \ Therefore, b is olive.}\\
+   \texttt{</think>}\\
+   \texttt{<answer> olive </answer>}};
+
+\draw[ar] (prompt) -- (proof);
+\draw[ar] (proof.south) -- ++(0,-2mm) -| (formal.north);
+\draw[ar] (proof.south) -- ++(0,-2mm) -| (nat.north);
+
+\node[lbl, below=1.0mm of formal.south, anchor=north] (fl) {trained on \textsc{Formal} only};
+\node[lbl, below=1.0mm of nat.south, anchor=north] (nl) {trained on \textsc{Natural} only};
+
+\node[shared, below=8mm of proof.south, yshift=-2.75cm, text width=0.86\linewidth, align=center] (test)
+  {Train through depth $D$, evaluate at depths beyond $D$.\;
+   Prompt, answer and latent proof are identical across conditions,
+   so any difference is attributable to the trace rendering.};
+\draw[ar] (fl) -- (fl |- test.north);
+\draw[ar] (nl) -- (nl |- test.north);
+\end{tikzpicture}
+\caption{The paired-trace construction. A generator samples a latent proof and
+renders it as a formal derivation or as a controlled natural-language
+explanation. The prompt, the answer and the proof graph are shared, and only
+the supervised trace differs. Models are trained on one rendering and evaluated
+beyond the training depth range.}
+\label{fig:overview}
+\end{figure}

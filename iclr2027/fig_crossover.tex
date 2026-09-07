@@ -1,0 +1,58 @@
+% Generated from the three-seed grid. Shaded regions are one standard
+% deviation over seeds. Do not edit by hand.
+\definecolor{formalcol}{RGB}{40,104,178}
+\definecolor{natcol}{RGB}{34,139,94}
+\pgfplotsset{crossoverstyle/.style={
+    width=0.375\linewidth, height=4.5cm,
+    xmin=4, xmax=26, ymin=0, ymax=1.05,
+    xtick={5,10,15,20,25}, ytick={0,0.25,0.5,0.75,1.0},
+    tick align=outside, tick pos=left,
+    xlabel={maximum training depth},
+    grid=major, grid style={gray!16, line width=0.3pt},
+    axis line style={gray!55},
+    label style={font=\footnotesize}, tick label style={font=\scriptsize},
+    title style={font=\small, yshift=-2pt},
+    every axis plot/.append style={line width=1.0pt},
+}}
+\begin{figure}[t]
+\centering
+\begin{tikzpicture}
+\begin{axis}[crossoverstyle, name=plot1,  title={greedy}, ylabel={out-of-distribution accuracy},]
+  \addplot [name path=logicu, draw=none, forget plot] coordinates {(5,0.1665) (10,0.3534) (15,0.3163) (20,0.3338) (25,0.8905)};
+  \addplot [name path=logicl, draw=none, forget plot] coordinates {(5,0.0495) (10,0.3090) (15,0.2461) (20,0.1072) (25,0.7511)};
+  \addplot [formalcol, opacity=0.16, forget plot] fill between [of=logicu and logicl];
+  \addplot [name path=nlu, draw=none, forget plot] coordinates {(5,0.6430) (10,0.6840) (15,0.6237) (20,0.8816) (25,0.7048)};
+  \addplot [name path=nll, draw=none, forget plot] coordinates {(5,0.4838) (10,0.5160) (15,0.5247) (20,0.4864) (25,0.2702)};
+  \addplot [natcol, opacity=0.16, forget plot] fill between [of=nlu and nll];
+  \addplot [formalcol, mark=*, mark size=1.4pt] coordinates {(5,0.1080) (10,0.3312) (15,0.2812) (20,0.2205) (25,0.8208)};
+  \addplot [natcol, mark=*, mark size=1.4pt] coordinates {(5,0.5634) (10,0.6000) (15,0.5742) (20,0.6840) (25,0.4875)};
+\end{axis}
+\begin{axis}[crossoverstyle, name=plot2, legend style={at={(0.5,-0.32)}, anchor=north, legend columns=2, draw=none, fill=none, font=\footnotesize, /tikz/every even column/.append style={column sep=8pt}}, at={($(plot1.east)+(0.9cm,0)$)}, anchor=west, title={sampled \passk{1}}, yticklabels={},]
+  \addplot [name path=logicu, draw=none, forget plot] coordinates {(5,0.1458) (10,0.3257) (15,0.2903) (20,0.3456) (25,0.8445)};
+  \addplot [name path=logicl, draw=none, forget plot] coordinates {(5,0.0502) (10,0.2911) (15,0.2313) (20,0.1190) (25,0.6547)};
+  \addplot [formalcol, opacity=0.16, forget plot] fill between [of=logicu and logicl];
+  \addplot [name path=nlu, draw=none, forget plot] coordinates {(5,0.5907) (10,0.6612) (15,0.5052) (20,0.3658) (25,0.2254)};
+  \addplot [name path=nll, draw=none, forget plot] coordinates {(5,0.4567) (10,0.4984) (15,0.4854) (20,0.2582) (25,0.1314)};
+  \addplot [natcol, opacity=0.16, forget plot] fill between [of=nlu and nll];
+  \addplot [formalcol, mark=*, mark size=1.4pt] coordinates {(5,0.0980) (10,0.3084) (15,0.2608) (20,0.2323) (25,0.7496)};
+  \addplot [natcol, mark=*, mark size=1.4pt] coordinates {(5,0.5237) (10,0.5798) (15,0.4953) (20,0.3120) (25,0.1784)};
+  \legend{Formal, Natural language}
+\end{axis}
+\begin{axis}[crossoverstyle, name=plot3, at={($(plot2.east)+(0.9cm,0)$)}, anchor=west, title={sampled \passk{16}}, yticklabels={},]
+  \addplot [name path=logicu, draw=none, forget plot] coordinates {(5,0.6569) (10,0.7075) (15,0.7651) (20,0.9288) (25,0.9987)};
+  \addplot [name path=logicl, draw=none, forget plot] coordinates {(5,0.3431) (10,0.6487) (15,0.6333) (20,0.6788) (25,0.9929)};
+  \addplot [formalcol, opacity=0.16, forget plot] fill between [of=logicu and logicl];
+  \addplot [name path=nlu, draw=none, forget plot] coordinates {(5,0.8310) (10,0.8191) (15,0.6279) (20,0.6190) (25,0.4830)};
+  \addplot [name path=nll, draw=none, forget plot] coordinates {(5,0.6386) (10,0.6039) (15,0.5101) (20,0.2872) (25,0.3670)};
+  \addplot [natcol, opacity=0.16, forget plot] fill between [of=nlu and nll];
+  \addplot [formalcol, mark=*, mark size=1.4pt] coordinates {(5,0.5000) (10,0.6781) (15,0.6992) (20,0.8038) (25,0.9958)};
+  \addplot [natcol, mark=*, mark size=1.4pt] coordinates {(5,0.7348) (10,0.7115) (15,0.5690) (20,0.4531) (25,0.4250)};
+\end{axis}
+\end{tikzpicture}
+\caption{Out-of-distribution answer accuracy on \branchproof{} against maximum
+training depth, for three decoding rules. Shaded regions give one standard
+deviation over three seeds. Greedy decoding and \passk{1} place the crossover
+at maximum training depth 25. Sampling with sixteen draws places it at 15, ten
+depth levels earlier.}
+\label{fig:crossover}
+\end{figure}

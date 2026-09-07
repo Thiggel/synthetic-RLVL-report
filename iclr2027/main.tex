@@ -12,6 +12,11 @@
 \usepackage{amsmath}
 \usepackage{amsthm}
 \usepackage{amssymb}
+\usepackage{tikz}
+\usepackage{pgfplots}
+\pgfplotsset{compat=1.18}
+\usepgfplotslibrary{fillbetween}
+\usetikzlibrary{calc,positioning,fit,backgrounds,arrows.meta}
 
 \newtheorem{proposition}{Proposition}
 
@@ -24,7 +29,7 @@
 \newcommand{\nl}{\textsc{Natural}}
 \newcommand{\passk}[1]{pass@#1}
 
-\title{Depth Coverage Determines Whether Formal or\\Natural-Language Reasoning Traces Generalize Better}
+\title{Formal Reasoning Traces Buy Coverage\\Before They Buy Accuracy}
 
 \author{Anonymous authors}
 
@@ -58,6 +63,8 @@ sampling while falling below it under greedy decoding. The single-seed limit of
 that last comparison is quantified against measured training-run variance.
 \end{abstract}
 
+\input{fig_design}
+
 \section{Introduction}
 
 Chain-of-thought supervision trains language models to emit intermediate steps
@@ -79,17 +86,6 @@ sides are attributable to representation. The study concerns training and not
 tool use, since no prover is called at inference time and both conditions
 generate under matched token budgets.
 
-\begin{figure}[t]
-\centering
-\includegraphics[width=0.98\linewidth]{official_preprint/figures/overview_claim.pdf}
-\caption{\textbf{Left.} The paired-trace design. Each training example exists in
-two versions with identical prompt, answer and latent proof, and only the
-supervised trace language differs. \textbf{Right.} After training through depth
-25, formal-trace models extrapolate beyond the training range while matched
-natural-language models degrade, shown for out-of-distribution answer
-\passk{16}.}
-\label{fig:overview}
-\end{figure}
 
 Which trace language generalizes better is not a fixed property of the
 representation. With shallow-to-intermediate training ranges the
@@ -242,16 +238,7 @@ configuration and the metric definitions.
 \section{Depth Coverage Determines Which Trace Language Generalizes}
 \label{sec:main-results}
 
-\begin{figure}[t]
-\centering
-\includegraphics[width=0.96\linewidth]{official_preprint/figures/branchproof_corrected_primary.pdf}
-\caption{The depth-coverage crossover on \branchproof{}. Out-of-distribution
-greedy accuracy (left) and sampled \passk{1} (right) as a function of maximum
-training depth. Natural-language supervision generalizes better through the
-shallow and intermediate range, and the ordering reverses at maximum training
-depth 25. Bands give one standard deviation over three seeds.}
-\label{fig:crossover}
-\end{figure}
+\input{fig_crossover}
 
 Out-of-distribution answer accuracy as a function of maximum training depth is
 given in Table~\ref{tab:crossover}. Through maximum training depth 20 the
@@ -437,13 +424,37 @@ Appendix~\ref{sec:midtrain-details} gives every remaining setting.
 \subsection{Results}
 \label{sec:transfer-results}
 
-On the external ProofWriter items, both trace conditions improve over Control
-and over LongDoc, and LongDoc does not improve over Control. At inference depth
-3 the ordering is Control $0.444$, LongDoc $0.454$, Logic $0.500$, Natural
-$0.570$. At depth 0, which requires lookup and no inference, the conditions are
-close together at $0.442$ to $0.488$, which is the shape a genuine deduction
-effect should have. The gain therefore does not follow from exposure to long
-documents.
+On the external ProofWriter items both trace conditions improve over Control
+and over LongDoc, and LongDoc does not improve over Control
+(Table~\ref{tab:transfer-pw}). At inference depth 0, which requires lookup and
+no inference, all five conditions fall between $0.442$ and $0.488$, and the
+separation appears only once inference is required. That is the shape a
+deduction effect should have, and it is not reproduced by exposure to long
+documents alone.
+
+\begin{table}[t]
+\centering
+\caption{Exact match on the external ProofWriter items by inference depth, 500
+items per depth. LongDoc is length-matched to the formal traces and carries no
+deep deduction. Depth 0 requires lookup and no inference.}
+\label{tab:transfer-pw}
+\begin{tabular}{lccccc}
+\toprule
+inference depth & 0 & 1 & 2 & 3 & 5\\
+\midrule
+Control    & 0.442 & 0.328 & 0.440 & 0.444 & 0.460\\
+LongDoc    & 0.458 & 0.322 & 0.444 & 0.454 & 0.440\\
+Logic      & 0.480 & 0.358 & 0.494 & 0.500 & 0.502\\
+Natural    & \textbf{0.488} & \textbf{0.388} & \textbf{0.562} & \textbf{0.570} & \textbf{0.564}\\
+Condensed  & 0.460 & 0.346 & 0.460 & 0.480 & 0.474\\
+\bottomrule
+\end{tabular}
+\end{table}
+
+The near-transfer family separates the conditions far more sharply. Control
+sits near the floor at $0.000$ to $0.040$ exact match across depths, where every
+condition trained on derivations reaches $0.23$ to $0.29$, so the replaced
+slice teaches a capability the control mixture does not supply at all.
 
 Under greedy decoding the natural condition is ahead of the formal condition on
 thirteen of fifteen tasks. Under sampling the ordering reverses.
