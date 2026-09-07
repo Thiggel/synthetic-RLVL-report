@@ -533,19 +533,6 @@ campaign on the same evaluation suite in which five conditions were each
 trained under two instruction-tuning seeds, giving fifty condition and task
 pairs.
 
-\section{Proof of Proposition~\ref{prop:selector}}
-\label{sec:proof}
-
-\begin{proof}
-The samples are independent, so the index of the first accepted sample is
-independent of whether that sample is correct. Acceptance occurs at least once
-with probability $1-(1-a-b)^{k}$. Conditioned on acceptance, the accepted
-sample is drawn from the acceptance event, in which correctness has probability
-$a/(a+b)$. Substituting $b=0$ gives $1-(1-a)^{k}$.
-\end{proof}
-
-
-
 \section{Extended Testbed Description}
 \label{sec:testbed-extended}
 
@@ -582,4 +569,25 @@ contributes an equal number of examples. Seeds are recorded per corpus and are
 disjoint across roles, so that no corpus used for training shares a seed with a
 corpus used for evaluation or for sampling.
 
+
+
+\section{Per-Depth Transfer Contrasts}
+\label{sec:transfer-tables}
+
+\begin{table}[t]
+\centering
+\caption{Formal minus natural on the near-transfer derivation family, by
+inference depth and decoding rule. Positive favours the formal condition. The
+sign of the contrast follows the decoding rule, with no clear depth trend.}
+\label{tab:transfer-passk}
+\begin{tabular}{lrrrrr}
+\toprule
+decoding & d5 & d10 & d15 & d20 & d25\\
+\midrule
+greedy   & $-0.175$ & $-0.165$ & $-0.055$ & $-0.040$ & $-0.105$\\
+\passk{16} & $+0.035$ & $+0.070$ & $+0.140$ & $+0.040$ & $-0.035$\\
+maj@16   & $-0.140$ & $-0.030$ & $-0.005$ & $+0.025$ & $-0.070$\\
+\bottomrule
+\end{tabular}
+\end{table}
 
