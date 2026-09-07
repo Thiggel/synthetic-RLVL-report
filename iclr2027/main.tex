@@ -39,34 +39,28 @@
 
 \begin{abstract}
 Language models learn to reason from examples of reasoning, and those examples
-are almost always written in prose. We ask whether the notation matters. Our
-data comes from a generator that samples multi-hop deduction problems over Horn
-clauses, where every step offers four locally plausible continuations, exactly
-one of which follows from the current state, and the answer is unique by
-construction. Each latent proof is written out twice. One version is a formal
-derivation with numbered lines and named inference rules. The other is a
-controlled English explanation of the same steps. Prompt, answer and proof
-graph are identical within a pair, so two models trained on opposite sides
-differ only in the notation they were shown.
-
-Which notation produces the better reasoner depends on how many hops the
-training proofs contain. Through five to twenty hops the English rendering
-generalizes further to unseen depths. At twenty-five hops the ordering reverses
-and formal supervision reaches $75.0\pm9.5$ percent out-of-distribution
-accuracy where English reaches $17.8\pm4.7$. Drawing sixteen samples instead of
-one moves the reversal ten hops earlier, to fifteen, so formal supervision
-first widens the set of problems a model can solve at all and only later
-improves its first attempt. A formal derivation can be checked mechanically, so
-the wider set is usable without an answer key, and returning the first sample a
-proof checker accepts yields $97.3\pm1.1$ percent accuracy where the same
-procedure on English traces yields $33.8\pm1.4$ percent.
-
-The effect is not confined to the controlled setting. We midtrain Qwen2.5-7B on
-2.5 billion tokens with ten percent of the mixture replaced by these
-derivations, and accuracy improves on held-out ProofWriter problems that the
-generator never produced. Replacing the same ten percent with ordinary long
-documents, matched to the formal traces in length distribution, leaves accuracy
-at the control level, so document length alone does not explain the gain.
+are almost always written in prose. We ask whether the notation matters. A
+generator samples multi-hop deduction problems over Horn clauses, where every
+step offers four locally plausible continuations, exactly one of which follows,
+and the answer is unique by construction. Each latent proof is written out
+twice, once as a formal derivation with numbered lines and named inference
+rules and once as a controlled English explanation of the same steps. Prompt,
+answer and proof graph are identical within a pair, so two models trained on
+opposite sides differ only in the notation they were shown. Which notation
+produces the better reasoner depends on how many hops the training proofs
+contain. Through five to twenty hops English generalizes further to unseen
+depths, and at twenty-five hops the ordering reverses, with formal supervision
+at $75.0\pm9.5$ percent out-of-distribution accuracy where English reaches
+$17.8\pm4.7$. Drawing sixteen samples moves the reversal ten hops earlier, so
+formal supervision first widens the set of problems a model can solve at all
+and only later improves its first attempt. Formal derivations are mechanically
+checkable, so that wider set is usable without an answer key, and returning the
+first sample a proof checker accepts yields $97.3\pm1.1$ percent against
+$33.8\pm1.4$ percent for English traces. Midtraining Qwen2.5-7B on 2.5 billion
+tokens with ten percent of the mixture replaced by these derivations improves
+accuracy on held-out ProofWriter problems, where an equal share of ordinary
+long documents matched in length distribution leaves accuracy at the control
+level.
 \end{abstract}
 
 \input{fig_design}
@@ -268,9 +262,9 @@ four, and $0.996$ \passk{16} against $0.425$.
 
 \begin{table}[t]
 \centering
-\caption{Out-of-distribution answer accuracy on \branchproof{} by maximum
-training depth, three seeds per cell. Greedy and \passk{1} order the conditions
-identically. \passk{16} reverses ten depth levels earlier.}
+\caption{Out-of-distribution answer accuracy on \branchproof{}, in percent,
+mean and standard deviation over three seeds. Greedy decoding and \passk{1}
+order the conditions identically. \passk{16} reverses ten hops earlier.}
 \label{tab:crossover}
 \begin{tabular}{lccccc}
 \toprule
@@ -278,14 +272,14 @@ identically. \passk{16} reverses ten depth levels earlier.}
 \cmidrule(lr){2-6}
 metric and condition & 5 & 10 & 15 & 20 & 25\\
 \midrule
-greedy, \formal{}   & 0.108 & 0.331 & 0.281 & 0.220 & \textbf{0.821}\\
-greedy, \nat{}      & \textbf{0.563} & \textbf{0.600} & \textbf{0.574} & \textbf{0.684} & 0.487\\
+greedy, \formal{} & $10.8\pm5.9$ & $33.1\pm2.2$ & $28.1\pm3.5$ & $22.1\pm11.3$ & \textbf{$82.1\pm7.0$}\\
+greedy, \nat{} & \textbf{$56.3\pm8.0$} & \textbf{$60.0\pm8.4$} & \textbf{$57.4\pm5.0$} & \textbf{$68.4\pm19.8$} & $48.8\pm21.7$\\
 \midrule
-\passk{1}, \formal{} & 0.098 & 0.308 & 0.261 & 0.232 & \textbf{0.750}\\
-\passk{1}, \nat{}    & \textbf{0.524} & \textbf{0.580} & \textbf{0.495} & \textbf{0.312} & 0.178\\
+\passk{1}, \formal{} & $9.8\pm4.8$ & $30.8\pm1.7$ & $26.1\pm2.9$ & $23.2\pm11.3$ & \textbf{$75.0\pm9.5$}\\
+\passk{1}, \nat{} & \textbf{$52.4\pm6.7$} & \textbf{$58.0\pm8.1$} & \textbf{$49.5\pm1.0$} & \textbf{$31.2\pm5.4$} & $17.8\pm4.7$\\
 \midrule
-\passk{16}, \formal{} & 0.500 & 0.678 & \textbf{0.699} & \textbf{0.804} & \textbf{0.996}\\
-\passk{16}, \nat{}    & \textbf{0.735} & \textbf{0.711} & 0.569 & 0.453 & 0.425\\
+\passk{16}, \formal{} & $50.0\pm15.7$ & $67.8\pm2.9$ & \textbf{$69.9\pm6.6$} & \textbf{$80.4\pm12.5$} & \textbf{$99.6\pm0.3$}\\
+\passk{16}, \nat{} & \textbf{$73.5\pm9.6$} & \textbf{$71.2\pm10.8$} & $56.9\pm5.9$ & $45.3\pm16.6$ & $42.5\pm5.8$\\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -345,8 +339,11 @@ depth 25 the formal condition attains joint \passk{16} of $98.1\pm0.5$ percent
 and the selector attains $97.3\pm1.1$ percent, so the $0.8$ point gap is the
 empirical cost of $b>0$ and the selector sits close to the permitted ceiling.
 
-The same selector applied to translated natural-language traces recovers
-$33.8\pm1.4$ percent. The deficit is not primarily a failure of translation.
+This holds for models trained on formal derivations alone.
+Section~\ref{sec:no-formal-output} shows that it does not carry over to the
+midtraining setting, where the models stop emitting formal derivations
+altogether. The same selector applied to translated natural-language traces
+recovers $33.8\pm1.4$ percent. The deficit is not primarily a failure of translation.
 Long natural traces frequently fail to terminate inside the generation budget,
 so no checkable derivation exists to accept, which drives $a+b$ down and leaves
 the selector with nothing to select from. No reward model and no gold labels
@@ -538,6 +535,29 @@ advantage is not a length effect. It traverses its proof set 2.6 times more
 often, so its advantage is confounded with exposure and cannot be attributed to
 the rendering. Resolving that requires an exposure-matched condensed corpus,
 which is not part of this work.
+
+\subsection{The midtrained models do not write formal proofs}
+\label{sec:no-formal-output}
+
+Since the formal condition saw a tenth of its midtraining tokens as formal
+derivations, one might expect it to produce them. It does not. Searching all
+1{,}000 greedy generations of the formal arm for any marker of the training
+rendering, including the premise and proof delimiters and the named inference
+rules, returns nothing. The count is zero out of 1{,}000, and the same holds
+for every other condition. After instruction tuning, all five models answer in
+prose, and the formal arm's derivations read as ordinary English chains of the
+form \emph{the rule applies, therefore the next fact holds}.
+
+Two things follow. The gain reported above cannot be an effect of the model
+adopting formal notation, so what the formal slice contributes is exposure to
+explicit and uniformly structured multi-hop derivations during midtraining, and
+that exposure survives instruction tuning while the notation itself does not.
+And the selector of Section~\ref{sec:verifier} does not apply at this scale,
+because there is no formal derivation to check. Proposition~\ref{prop:selector}
+governs the controlled setting, where the model is trained on formal traces
+alone and emits them reliably. Recovering the same property after midtraining
+would require either a larger synthetic share or an instruction stage that
+preserves the notation, neither of which we attempt here.
 
 \subsection{How far this result goes}
 \label{sec:transfer-limits}
