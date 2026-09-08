@@ -2,102 +2,35 @@
 \section{Answer-Uniqueness Validation of the Generator}
 \label{sec:uniqueness-audit}
 
-Every metric in this paper compares a generated answer against a single
-labelled answer, which is only meaningful if the labelled answer is the sole
-one derivable from the premises. The generator enforces this by construction
-and the property is verified independently.
-
-Each example introduces fresh constants \texttt{c0} through
-\texttt{c\{depth\}}, so no constant is reused across layers and no two branches
-can derive the same atom through coincidental reuse of a state predicate. A
-preflight check computes the full Horn closure of 1{,}000 training instances
-and 2{,}000 evaluation instances with a solver independent of the generator,
-and records the number of candidate final states derivable in each. The
-unique-answer rate is $1.0$, the maximum derived-candidate count is 1, there
+Every metric in this paper compares a generated answer against one labelled
+answer, which is only meaningful if the labelled answer is the sole one
+derivable from the premises. Each example introduces fresh constants
+\texttt{c0} through \texttt{c\{depth\}}, so no constant is reused across layers
+and no two branches can derive the same atom through reuse of a state
+predicate. A preflight check computes the full Horn closure of 1{,}000 training
+instances and 2{,}000 evaluation instances with a solver independent of the
+generator and records the number of candidate final states derivable in each.
+The unique-answer rate is 1.0, the maximum derived-candidate count is 1, there
 are no generation failures, and answer positions are balanced across the four
 candidates.
 
 Token headroom is verified over the same instances. Evaluation uses a
-16{,}384-token context with a 7{,}168-new-token generation cap applied
-identically to both trace languages. Across every validation row and every
-depth, the minimum measured headroom is 494 tokens for generation and 2{,}788
-tokens for the full context, so neither trace language is truncated at any
-depth reported in this paper.
-
-\section{Estimating Training-Run Variance}
-\label{sec:variance}
-
-The bootstrap intervals in Table~\ref{tab:transfer-boot} resample evaluation
-documents and therefore capture evaluation sampling error alone. Variability
-attributable to training was estimated separately in an auxiliary experiment
-on the same evaluation suite.
-
-Five instruction-tuning conditions, differing only in which synthetic mixture
-was blended into the instruction data, were each trained twice from the same
-base checkpoint under different seeds, and all ten resulting models were
-evaluated with the identical protocol of
-Appendix~\ref{sec:midtrain-details}. For each condition and each task, the
-absolute difference between the two seeds gives one observation of run-to-run
-variability. Over the fifty resulting condition and task pairs the mean
-absolute difference is $0.023$, the median is $0.011$ and the maximum is
-$0.135$. Treating the two runs of a condition as independent draws implies a
-per-run standard deviation near $0.019$, and therefore a standard deviation
-near $0.027$ for a difference between two independently seeded conditions.
-
-Combining that term with the evaluation term gives a standard deviation near
-$0.033$ for the contrast between the two trace conditions in
-Section~\ref{sec:transfer-results}. The largest seed differences fall on the
-same task family that carries the trace-language contrast, which is why the
-contrast is reported in Section~\ref{sec:transfer-limits} as consistent with
-the controlled study and not as independently established.
-
-\section{Task Details}
-\label{sec:task-details}
-
-\branchproof{} samples a target proof path of controlled depth and adds
-distractor branches that are locally coherent but do not support the queried
-answer. Shortcut variants add training-only marker correlations that identify
-the active branch with a chosen probability. Evaluation removes those markers.
-
-\attrcon{} samples objects, slots, values, and propagation constraints. The
-formal trace names slot/value relations directly. The natural trace describes
-the same propagation in controlled prose. This changes the symbolic surface
-while preserving the paired-rendering principle.
-
-\section{Training and Evaluation Details}
-\label{sec:training-details}
-
-All main SFT runs use materialized datasets so that the formal and natural
-conditions see the same prompts and answers. Each train-depth subset contains
-50k examples, and the online validation subset contains 256 examples. Main runs
-train for 10k optimizer steps with LoRA adapters on \texttt{q\_proj},
-\texttt{k\_proj}, \texttt{v\_proj}, \texttt{o\_proj}, \texttt{up\_proj},
-\texttt{down\_proj}, and \texttt{gate\_proj}. The LoRA rank is 16, alpha is 32,
-dropout is 0.05, the optimizer learning rate is $10^{-4}$, the per-device batch
-size is 1, gradient accumulation is 1 unless an ablation states otherwise, and
-training uses BF16 with gradient checkpointing.
-
-Post-hoc evaluation uses vLLM with top-$p=0.95$, temperature 1.0, 16 sampled
-generations per prompt, and pass@k values $\{1,2,4,8,16\}$. The explicit depth
-grid is $\{1,2,5,10,12,15,18,20,25,30,35,40,45,50\}$. For each seed and depth
-we evaluate 32 prompts, so a train-1-to-25 \branchproof{} long-depth band
-contains $5 \times 32=160$ prompts per seed. Reported uncertainty is seed-level
-standard deviation, not a confidence interval.
+16{,}384-token context with a 7{,}168-token generation cap applied identically
+to both notations. Across every validation row and every depth the minimum
+measured headroom is 494 tokens for generation and 2{,}788 tokens for the full
+context, so neither notation is truncated at any depth reported in this paper.
 
 \section{Trace Grammar and Validation}
 \label{sec:grammar}
 
-Formal traces contain four blocks: constants, predicates, premises, and proof
-lines, followed by a conclusion and answer. A proof line contains a formula and
-a rule justification such as premise retrieval or implication elimination. The
-formal checker parses the generated blocks and verifies that each proof line is
-licensed by earlier lines and premises. Natural-language traces use controlled
-sentences for the same premises and proof steps. When possible, a
-task-specific translator maps those sentences back into the formal checker.
-Because translation coverage is task-specific, final-answer correctness is the
-primary cross-task metric and translated validity is reported as a diagnostic.
-
-The operational \branchproof{} formal surface is:
+Formal traces contain four blocks, constants, predicates, premises and proof
+lines, followed by a conclusion and an answer. A proof line contains a formula
+and a rule justification such as premise retrieval or implication elimination.
+The checker parses the generated blocks and verifies that each proof line is
+licensed by earlier lines and premises. English traces use controlled sentences
+for the same premises and proof steps, and a deterministic translator maps
+those sentences back into the checker. The operational \branchproof{} formal
+surface is:
 
 \begin{verbatim}
 <formal>
@@ -117,17 +50,15 @@ PROOF_LINE ::= FORMULA "; R," REF
              | ATOM "&" ATOM "; &I," REF "," REF
 \end{verbatim}
 
-The \attrcon{} surface uses the same block structure but replaces unary
-predicate atoms with object-slot-value relations. In both tasks, references
-must point to earlier proof lines or listed premises. Generated lines cannot
-justify future steps.
+References must point to earlier proof lines or listed premises, so a line
+cannot justify a future step.
 
 \section{Generator and Evaluation Mechanics}
 \label{sec:generator-eval}
 
-The \branchproof{} generator samples a target path, assigns labels to constants
-and predicates, then adds distractor branches that remain locally coherent but
-do not derive the queried conclusion. In pseudocode:
+The generator samples a target path, assigns labels to constants and
+predicates, then adds distractor branches that remain locally coherent but do
+not derive the queried conclusion. In pseudocode:
 
 \begin{verbatim}
 sample target answer label
@@ -137,34 +68,26 @@ for depth step in 1..D:
     derive next object state
     add coherent distractor rules for inactive branches
 render one prompt
-render the same latent proof as formal and natural-language targets
+render the same latent proof as formal and English targets
 \end{verbatim}
 
-The \attrcon{} generator follows the same paired-rendering principle with
-objects, slots, values, and propagation constraints. The natural-language target
-is not free-form prose. It is controlled text produced from the same latent
-derivation.
-
-Answer extraction first searches for the final \texttt{<answer>} field. If no
-well-formed final answer is present, the generation is counted incorrect even
-when earlier text contains the gold label. Formal validation then parses block
-boundaries, declarations, formulas, proof-line references, and rule
-applications. Common validation failures are malformed block structure,
-undeclared symbols, references to unavailable lines, applying implication
-elimination to the wrong antecedent, and stopping before the queried conclusion.
-Natural-language validation adds one more possible failure mode: the controlled
-sentence must translate back into a formal step before the proof checker can
-evaluate it.
+Answer extraction searches for the final \texttt{<answer>} field. If no
+well-formed final answer is present the generation is counted incorrect, even
+when earlier text contains the gold label. Formal validation parses block
+boundaries, declarations, formulas, proof-line references and rule
+applications. Common failures are malformed block structure, undeclared
+symbols, references to unavailable lines, applying implication elimination to
+the wrong antecedent, and stopping before the queried conclusion. English
+validation adds one failure mode: the controlled sentence must translate back
+into a formal step before the checker can evaluate it.
 
 \section{Paired Target Examples}
 \label{sec:paired-example}
 
-The following minimal examples show the paired target format used throughout the
-experiments. The prompt and answer are identical within each pair. Only the
-target trace substrate changes. Full experimental examples include more
-distractor premises and longer derivations.
+The prompt and the answer are identical within each pair. Full experimental
+examples contain more distractor premises and longer derivations.
 
-\paragraph{\branchproof{} example 1.}
+\paragraph{Example 1.}
 
 \begin{verbatim}
 Prompt:
@@ -174,7 +97,7 @@ What is b?
 \end{verbatim}
 
 \noindent\begin{minipage}[t]{0.48\linewidth}
-\textbf{Formal target}
+\textbf{\formal{} target}
 \scriptsize
 \begin{verbatim}
 <formal>
@@ -191,7 +114,7 @@ Ob ; ->E,3,6 </proof>
 \end{verbatim}
 \end{minipage}\hfill
 \begin{minipage}[t]{0.48\linewidth}
-\textbf{Natural-language target}
+\textbf{\nat{} target}
 \scriptsize
 \begin{verbatim}
 <think>
@@ -203,7 +126,7 @@ Therefore, b is olive.
 \end{verbatim}
 \end{minipage}
 
-\paragraph{\branchproof{} example 2.}
+\paragraph{Example 2.}
 
 \begin{verbatim}
 Prompt:
@@ -215,7 +138,7 @@ What is c?
 \end{verbatim}
 
 \noindent\begin{minipage}[t]{0.48\linewidth}
-\textbf{Formal target}
+\textbf{\formal{} target}
 \scriptsize
 \begin{verbatim}
 <formal>
@@ -238,7 +161,7 @@ Dc ; ->E,5,11 </proof>
 \end{verbatim}
 \end{minipage}\hfill
 \begin{minipage}[t]{0.48\linewidth}
-\textbf{Natural-language target}
+\textbf{\nat{} target}
 \scriptsize
 \begin{verbatim}
 <think>
@@ -252,246 +175,116 @@ Therefore, c is cedar.
 \end{verbatim}
 \end{minipage}
 
-\paragraph{\attrcon{} example 1.}
+\section{Controlled-Study Training and Evaluation Details}
+\label{sec:training-details}
 
-\begin{verbatim}
-Prompt:
-s0 has value red. s1 has value blue.
-If s0 is red and s1 is blue, then s2 is green.
-Which values fill all constrained slots?
-\end{verbatim}
+All runs use materialized datasets so that the two conditions see the same
+prompts and answers. Each train-depth subset contains 50{,}000 examples and the
+online validation subset 256. Runs train for 10{,}000 optimizer steps with LoRA
+adapters on the query, key, value, output, up, down and gate projections, rank
+16, alpha 32, dropout 0.05, learning rate $10^{-4}$, per-device batch size 1
+and gradient accumulation 1 unless a control states otherwise, in bfloat16
+with gradient checkpointing.
 
-\noindent\begin{minipage}[t]{0.48\linewidth}
-\textbf{Formal target}
-\scriptsize
-\begin{verbatim}
-<formal>
-<constants> s0 = attribute slot 0 s1 = attribute slot 1
-s2 = attribute slot 2
-red = attribute value red
-blue = attribute value blue
-green = attribute value green </constants>
-<predicates> Value(x,y): slot x has value y
-Constraint(x,y,z,w,u,v): values y and w at slots x and z
-jointly force value v at slot u </predicates>
-<premises> Value(s0,red) Value(s1,blue)
-Constraint(s0,red,s1,blue,s2,green)
-Value(s0,red) & Value(s1,blue) &
-Constraint(s0,red,s1,blue,s2,green)
--> Value(s2,green) </premises>
-<proof> Value(s0,red) ; R,1
-Value(s1,blue) ; R,2
-Constraint(s0,red,s1,blue,s2,green) ; R,3
-Value(s0,red) & Value(s1,blue) ; &I,5,6
-Value(s0,red) & Value(s1,blue) &
-Constraint(s0,red,s1,blue,s2,green) ; &I,8,7
-Value(s2,green) ; ->E,4,9 </proof>
-<answer> red-blue-green </answer>
-\end{verbatim}
-\end{minipage}\hfill
-\begin{minipage}[t]{0.48\linewidth}
-\textbf{Natural-language target}
-\scriptsize
-\begin{verbatim}
-<think>
-s0 has value red.
-s1 has value blue.
-The applicable joint constraint maps s0=red and s1=blue
-to s2=green.
-Combine the two prerequisite slot values.
-Therefore s2 has value green.
-</think>
-<answer> red-blue-green </answer>
-\end{verbatim}
-\end{minipage}
-
-\paragraph{\attrcon{} example 2.}
-
-\begin{verbatim}
-Prompt:
-s0 has value amber. s1 has value ivory.
-If s0 is amber and s1 is ivory, then s2 is olive.
-If s0 is amber and s2 is olive, then s3 is coral.
-Which values fill all constrained slots?
-\end{verbatim}
-
-\noindent\begin{minipage}[t]{0.48\linewidth}
-\textbf{Formal target}
-\scriptsize
-\begin{verbatim}
-<formal>
-<constants> s0 = attribute slot 0 s1 = attribute slot 1
-s2 = attribute slot 2 s3 = attribute slot 3
-amber = attribute value amber
-ivory = attribute value ivory
-olive = attribute value olive
-coral = attribute value coral </constants>
-<predicates> Value(x,y): slot x has value y
-Constraint(x,y,z,w,u,v): values y and w at slots x and z
-jointly force value v at slot u </predicates>
-<premises> Value(s0,amber) Value(s1,ivory)
-Constraint(s0,amber,s1,ivory,s2,olive)
-Value(s0,amber) & Value(s1,ivory) &
-Constraint(s0,amber,s1,ivory,s2,olive) -> Value(s2,olive)
-Constraint(s0,amber,s2,olive,s3,coral)
-Value(s0,amber) & Value(s2,olive) &
-Constraint(s0,amber,s2,olive,s3,coral)
--> Value(s3,coral) </premises>
-<proof> Value(s0,amber) ; R,1
-Value(s1,ivory) ; R,2
-Constraint(s0,amber,s1,ivory,s2,olive) ; R,3
-Value(s0,amber) & Value(s1,ivory) ; &I,7,8
-Value(s0,amber) & Value(s1,ivory) &
-Constraint(s0,amber,s1,ivory,s2,olive) ; &I,10,9
-Value(s2,olive) ; ->E,4,11
-Constraint(s0,amber,s2,olive,s3,coral) ; R,5
-Value(s0,amber) & Value(s2,olive) ; &I,7,12
-Value(s0,amber) & Value(s2,olive) &
-Constraint(s0,amber,s2,olive,s3,coral) ; &I,14,13
-Value(s3,coral) ; ->E,6,15 </proof>
-<answer> amber-ivory-olive-coral </answer>
-\end{verbatim}
-\end{minipage}\hfill
-\begin{minipage}[t]{0.48\linewidth}
-\textbf{Natural-language target}
-\scriptsize
-\begin{verbatim}
-<think>
-s0 has value amber.
-s1 has value ivory.
-The applicable joint constraint maps s0=amber and s1=ivory
-to s2=olive.
-Combine the two prerequisite slot values.
-Therefore s2 has value olive.
-The applicable joint constraint maps s0=amber and s2=olive
-to s3=coral.
-Combine the two prerequisite slot values.
-Therefore s3 has value coral.
-</think>
-<answer> amber-ivory-olive-coral </answer>
-\end{verbatim}
-\end{minipage}
-
-
+Evaluation uses vLLM with top-$p$ 0.95, temperature 1.0, sixteen samples per
+prompt and one greedy decode, at depths
+$\{1,2,5,10,12,15,18,20,25,30,35,40,45,50\}$ with 32 prompts per depth per
+seed. The out-of-distribution band for a run with maximum training depth $D$
+is every evaluated depth above $D$; for $D=25$ it contains $5\times32=160$
+prompts per seed. Reported uncertainty is the standard deviation over three
+seeds.
 
 \section{Metric Definitions}
 \label{sec:metrics}
 
-Answer correctness is computed after extracting the final answer field from the
-generation. Formal joint validity requires both answer correctness and a
-mechanically valid formal trace. Natural-language joint validity requires answer
-correctness and successful translation of the generated natural-language trace
-into a valid formal proof. Because the natural-language translator is
-task-specific, answer correctness is the primary cross-task metric.
-
-
+Answer accuracy is computed after extracting the final answer field.
+\passk{k} uses the unbiased estimator of \citet{chen2021evaluating} over the
+sixteen samples. Formal joint validity requires a correct answer and a
+mechanically valid formal trace. English joint validity requires a correct
+answer and a successful translation of the trace into a valid formal proof.
+Checker selection draws the sixteen samples in a fixed order, accepts the first
+whose derivation the checker validates, and scores its answer; if none is
+accepted the item is scored incorrect. The selector never sees the gold answer.
 
 \section{Length and Token-Budget Controls}
 \label{sec:length-controls}
 
-Formal and natural renderings of the same latent proof differ in length, which
-raises the possibility that the controlled comparison measures the quantity of
-supervision. Three controls bound that explanation.
-
-Generation budgets are identical by construction. Both conditions receive a
-7{,}168-token generation limit inside a 16{,}384-token window. A tokenizer
-audit over the full evaluation set confirms that every gold prompt and every
-gold target fits inside that limit in both renderings, so neither condition is
-truncated at generation time and neither is advantaged by a looser budget.
-
-Supervised token counts are equated in a matched-token training run, in which
-the number of target tokens per condition is held equal by subsampling the
-longer condition. The ordering of the two conditions is unchanged.
-
-The transfer study of Section~\ref{sec:transfer} supplies a third control at a
-different scale. The \textbf{LongDoc} condition matches the token-length
-histogram of the formal traces to within one percent at the median while
-carrying no deep deduction, and it does not reproduce the gain of the trace
-conditions on the external benchmark. Length alone therefore does not account
-for the effect in either setting.
+Generation budgets are identical by construction, at a 7{,}168-token limit
+inside a 16{,}384-token window, and the tokenizer audit of
+Appendix~\ref{sec:uniqueness-audit} confirms that every gold target fits in
+both notations. Supervised token counts are equated in the token-matched run
+of Table~\ref{tab:controls} by subsampling the longer condition until the
+number of target tokens per condition is equal. The \longdoc{} condition of
+Section~\ref{sec:transfer} supplies a third control at midtraining scale.
 
 \section{Boundary Condition Details}
 \label{sec:boundary-details}
 
-\paragraph{Capacity.}
-Single-modality training at three scales gives out-of-distribution answer
-\passk{1} of $69.9\pm11.1$ formal against $74.9\pm7.0$ natural on Qwen2.5-7B,
-and $63.9\pm5.1$ formal against $98.9\pm0.8$ natural on OLMo-3-32B. Formal
-answer \passk{16} at 32B is $98.8\pm0.9$, so the deficit at 32B is a deficit of
-probability mass and not of coverage.
+\paragraph{Shortcut.}
+A spurious schema marker identifies the active branch on 80 percent of
+training examples and is removed at test time. Out-of-distribution \passk{1} is
+$43.1\pm7.7$ percent for \formal{} and $78.5\pm14.9$ for \nat{}; at depth 50
+the two are $11.7$ and $76.1$ percent.
 
 \paragraph{Mode conditioning.}
-Concatenating both renderings into a single target yields $0.5\pm0.4$ percent
+Concatenating both renderings into one target gives $0.5\pm0.4$ percent
 out-of-distribution \passk{1} with the formal rendering first and $0.2\pm0.1$
-percent with the natural rendering first. Mode-conditioned training with an
-output-mode tag reaches $85.0\pm8.7$ answer \passk{1} in formal mode at 32B and
-$77.2\pm11.7$ in natural mode. Raw generations show clean separation between
-the modes.
+with the English rendering first; generations copy one or both traces and
+exhaust the budget. Mode-conditioned training places an output-mode tag on
+separate examples. At 7B it reaches $50.3\pm6.4$ percent \passk{1} in formal
+mode and $18.1\pm2.0$ in English mode; at 32B, $85.0\pm8.7$ and $77.2\pm11.7$.
+Raw generations separate cleanly by mode.
 
-\paragraph{Shortcuts.}
-A spurious schema marker planted on 80 percent of training examples and removed
-at test time gives $43.1\pm7.7$ out-of-distribution \passk{1} for formal
-against $78.5\pm14.9$ for natural. Additional marker types and injection rates were
-measured and are not reported here.
-
-\paragraph{Scale floor.}
-From-scratch training at 50M to 200M parameters on the same corpora gives
-out-of-distribution joint \passk{k} of $0.0$ for all $k\le 8$ at every size in
-both conditions.
+\paragraph{Capacity.}
+Single-notation training gives out-of-distribution \passk{1} of $69.9\pm11.1$
+formal against $74.9\pm7.0$ English on Qwen2.5-7B, and $63.9\pm5.1$ against
+$98.9\pm0.8$ on OLMo-3-32B. Formal \passk{16} at 32B is $98.8\pm0.9$.
 
 \section{Midtraining Configuration}
 \label{sec:midtrain-details}
 
-\begin{table}[t]
+\begin{table}[h]
 \centering
 \caption{Rendered document lengths under the Qwen2.5-7B tokenizer, 72{,}000
 documents per corpus, and packing statistics at sequence length 8{,}192.}
 \label{tab:corpus}
 \begin{tabular}{lrrrrrrr}
 \toprule
-corpus & p50 & mean & p99 & max & windows & real tokens & pack.\ eff.\\
+corpus & p50 & mean & p99 & max & windows & real tokens & packing eff.\\
 \midrule
-Logic     & 3{,}749 & 3{,}856 & 7{,}673 & 7{,}727 & 35{,}492 & 277{,}732{,}923 & 0.9551\\
-Natural   & 3{,}819 & 3{,}907 & 7{,}744 & 7{,}851 & 35{,}979 & 281{,}372{,}725 & 0.9545\\
-Condensed & 1{,}450 & 1{,}500 & 3{,}007 & 3{,}014 & 13{,}311 & 108{,}099{,}330 & 0.9912\\
-LongDoc   & 3{,}712 & 3{,}832 & n/a & 7{,}750 & n/a & n/a & n/a\\
+\formal{}    & 3{,}749 & 3{,}856 & 7{,}673 & 7{,}727 & 35{,}492 & 277{,}732{,}923 & 0.9551\\
+\nat{}       & 3{,}819 & 3{,}907 & 7{,}744 & 7{,}851 & 35{,}979 & 281{,}372{,}725 & 0.9545\\
+\condensed{} & 1{,}450 & 1{,}500 & 3{,}007 & 3{,}014 & 13{,}311 & 108{,}099{,}330 & 0.9912\\
+\longdoc{}   & 3{,}712 & 3{,}832 & n/a & 7{,}750 & n/a & n/a & n/a\\
 \bottomrule
 \end{tabular}
 \end{table}
 
-
 \paragraph{Optimisation.}
 Every condition trains Qwen2.5-7B for 2{,}385 steps at sequence length 8{,}192
 with a global batch of 128 sequences, formed as micro-batch 2 with gradient
-accumulation 32 over eight A100-80 devices. The resulting budget is
-$2{,}500{,}853{,}760$ tokens per condition, chosen to equal $4{,}770\times
-128\times 4{,}096$ so that it matches the token budget of an earlier study at
-half the sequence length. Learning rate is $1\times10^{-5}$ with minimum
-$1\times10^{-6}$, 128 warmup steps, decay beginning at step 128 and a decay
-horizon of 18{,}946 steps. Checkpoints are written every 250 steps. Measured
-throughput is approximately 36.0 seconds per iteration and 29{,}000 tokens per
-second, at 191 TFLOP/s per device. Collective-operation timeouts are set to 120
-minutes. A run exceeds the 24-hour scheduling limit and is completed as two
-serialized allocations, with the second resuming from the newest complete
-checkpoint.
+accumulation 32 over eight A100-80GB devices, for $2{,}500{,}853{,}760$ tokens
+per condition. The learning rate is $10^{-5}$ with minimum $10^{-6}$, 128
+warmup steps, and a decay horizon of 18{,}946 steps. Checkpoints are written
+every 250 steps. Throughput is about 36 seconds per iteration. A run exceeds
+the 24-hour scheduling limit and is completed as two serialized allocations,
+the second resuming from the newest complete checkpoint.
 
 \paragraph{Replaced slice.}
-The 72{,}000 source examples are generated at seed 20260907 for the
-reinforcement-learning study and at seed 20260830 for the midtraining study,
-with depths 1 to 25 sampled round-robin, branching factor 4, distractor ratio
-0.5 and the \texttt{hard\_fsa\_schema} variant. Seeds are disjoint from those
-used for evaluation corpora and for sampling. A per-condition document weight
-is solved so that the realised synthetic share of loss tokens is exactly ten
-percent after padding is accounted for, which is necessary because the three
-renderings have different packing efficiencies.
+The 72{,}000 source examples are generated at seed 20260830 with depths 1 to
+25 round-robin, branching factor 4, distractor ratio 0.5 and the same generator
+variant as the controlled study. Seeds are disjoint from those of every
+evaluation corpus. A per-condition document weight is solved so that the
+realised synthetic share of loss tokens is exactly ten percent after padding,
+which is necessary because the three renderings pack with different
+efficiencies.
 
-\paragraph{Packing.}
-Documents are packed by a document-preserving packer at sequence length 8{,}192
-under a fixed shuffle seed of 42. The packer never splits a document. A
-document exceeding one window is excluded and counted as overlength. Tail
-padding uses a dedicated padding token that is masked out of the loss.
-Overlength and split counts are zero for every condition, reported in
-Table~\ref{tab:corpus}. Before training begins, a decoded-batch audit
+\paragraph{Packing and audit.}
+Documents are packed by a document-preserving packer at sequence length
+8{,}192 under a fixed shuffle seed. The packer never splits a document; a
+document exceeding one window is excluded and counted. Tail padding uses a
+dedicated token masked out of the loss. Overlength and split counts are zero
+for every condition. Before training begins, a decoded-batch audit
 reconstructs real loader windows and verifies that no split document is
 present, that the padding token is masked, and that the realised replacement
 share matches the target. Training refuses to start if any gate fails.
@@ -501,93 +294,107 @@ Each midtrained checkpoint is converted to the Hugging Face format and
 instruction-tuned on 100{,}000 examples of a public instruction corpus at a
 pinned revision, for one epoch at learning rate $5\times10^{-6}$ with warmup
 ratio 0.03, maximum sequence length 4{,}096, per-device batch size 1, and seed
-3407. Training is full-parameter under fully sharded data parallelism with
-gradient checkpointing. Only the final checkpoint is written.
+3407 (replicate: seed 3408), full-parameter under fully sharded data
+parallelism with gradient checkpointing. Only the final checkpoint is written.
 
 \paragraph{Evaluation.}
-Greedy evaluation uses a standard harness with a paged-attention inference
-backend in bfloat16, a maximum model length of 8{,}192, a chat template applied
-to every prompt, and per-sample logging enabled. The reported metric is exact
-match on the extracted answer. The external family is ProofWriter under the
-open-world assumption at inference depths 0, 1, 2, 3 and 5 with 500 items per
-depth. The near-transfer family is a held-out sample from the same generator at
-depths 5, 10, 15, 20 and 25 with 200 items per depth.
-
-Sampled evaluation draws sixteen completions per item at temperature 0.8 and
-top-$p$ 0.95 under a fixed seed, with a 2{,}048-token response limit. Prompts
-are replayed verbatim from the logged greedy samples, so the greedy and sampled
-measurements differ in the sampler alone and in nothing else. The scorer used
-for sampled generations imports the same extraction and matching function used
-by the greedy harness, and was verified to reproduce all fifteen published
-greedy exact-match values before any sampled number was computed. Audits
-require the expected item count per task, no empty generations beyond a
-tolerance, and no truncated prompts.
+Greedy evaluation uses a standard harness with a paged-attention backend in
+bfloat16, a maximum model length of 8{,}192, the model's chat template applied
+to every prompt, and per-sample logging. The metric is exact match on the
+extracted answer. The external family is ProofWriter under the open-world
+assumption, bucketed by proof depth at 0, 1, 2, 3 and 5 with 500 items per
+depth. The near-transfer family is a held-out sample from the generator at
+depths 5, 10, 15, 20 and 25 with 200 items per depth, prompted to write a
+derivation before the answer, with a 2{,}048-token generation cap. Sampled
+evaluation draws sixteen completions per item at temperature 0.8 and top-$p$
+0.95 under a fixed seed, replaying the prompts logged by the greedy run, and
+stops on every end-of-sequence token declared by the checkpoint. The scorer
+imports the extraction function of the greedy harness. The general suite is
+GSM8K, MATH-500, BBH, MMLU, ARC-Challenge, HellaSwag, WinoGrande, PIQA and
+LogiQA, and the multi-hop tasks are HotpotQA, 2WikiMultihopQA and MuSiQue
+under standard prompting.
 
 \paragraph{Statistics.}
-Contrasts in Table~\ref{tab:transfer-boot} come from a paired bootstrap over
-evaluation documents with 4{,}000 resamples, resampling document indices once
-per replicate and applying the same indices to every condition and depth.
-Reported intervals are the 2.5th and 97.5th percentiles of the replicate
-distribution. Training-run variance is estimated separately from an earlier
-campaign on the same evaluation suite in which five conditions were each
-trained under two instruction-tuning seeds, giving fifty condition and task
-pairs.
+Contrasts are computed by a paired bootstrap over evaluation documents with
+4{,}000 resamples, resampling document indices once per replicate and applying
+the same indices to every condition and depth. Reported intervals are the
+2.5th and 97.5th percentiles of the replicate distribution.
 
-\section{Extended Testbed Description}
-\label{sec:testbed-extended}
+\section{Estimating Training-Run Variance}
+\label{sec:variance}
 
+Training-run variability was estimated in an auxiliary experiment on the same
+evaluation suite. Five instruction-tuning conditions, differing only in which
+synthetic mixture was blended into the instruction data, were each trained
+twice from the same base checkpoint under different seeds, and all ten models
+were evaluated with the protocol of Appendix~\ref{sec:midtrain-details}. For
+each condition and task the absolute difference between the two seeds gives one
+observation of run-to-run variability. Over the fifty resulting pairs the mean
+absolute difference is $0.023$, the median $0.011$ and the maximum $0.135$.
+Treating the two runs of a condition as independent draws implies a per-run
+standard deviation near $0.019$, and near $0.027$ for a difference between two
+independently seeded conditions. The largest seed differences fall on the
+near-transfer family.
 
-
-Each example begins with a latent directed acyclic proof. The generator emits a
-prompt containing ground facts, rules, a query and distractor branches, then
-traverses the supporting path to produce the target answer. A rendering
-function writes that path in one of two trace languages. The \formal{}
-rendering declares constants and predicates and applies named inference rules
-to numbered lines. The \nat{} rendering expresses the same substitutions and
-conclusions, line for line, in controlled sentences. Both targets end with the
-same answer field, and the prompt is natural language in both conditions.
-
-\branchproof{} tests composition across a chain of Horn-style inferences in
-which every step offers four locally plausible branches, exactly one of which
-is derivable from the current state. Every layer introduces a fresh constant.
-The generator computes the full Horn closure of each example and accepts it
-only when exactly one candidate answer is derivable, which removes the
-possibility that a model is rewarded for guessing among several defensible
-answers. \attrcon{} propagates values among object attributes under generated
-constraints. Its vocabulary and proof construction are disjoint from
-\branchproof{}, so it provides an independent test of the same hypothesis.
-Appendix~\ref{sec:paired-example} gives complete paired targets,
-Appendices~\ref{sec:grammar} and~\ref{sec:generator-eval} specify the grammar,
-the generator and the validators, and Appendix~\ref{sec:uniqueness-audit}
-documents the answer-uniqueness audit of the final generator.
-
-Generation parameters are held fixed across every controlled experiment
-reported below. The branching factor is 4, the distractor ratio is 0.5, and the
-schema variant is the one denoted \texttt{hard\_fsa\_schema} in the release.
-Depths are sampled round-robin so that each depth in the training range
-contributes an equal number of examples. Seeds are recorded per corpus and are
-disjoint across roles, so that no corpus used for training shares a seed with a
-corpus used for evaluation or for sampling.
-
-
-
-\section{Per-Depth Transfer Contrasts}
+\section{Per-Depth Transfer Tables}
 \label{sec:transfer-tables}
 
-\begin{table}[t]
+\begin{table}[h]
 \centering
-\caption{Formal minus natural on the near-transfer derivation family, by
-inference depth and decoding rule. Positive favours the formal condition. The
-sign of the contrast follows the decoding rule, with no clear depth trend.}
-\label{tab:transfer-passk}
-\begin{tabular}{lrrrrr}
+\caption{General-benchmark scores of the five midtrained and instruction-tuned
+models at seed 3407, in percent. GSM8K is strict-match exact match; MATH-500
+is scored by a post-hoc answer-prefix checker; BBH is exact match over the
+chain-of-thought few-shot suite; the multi-hop tasks report F1 under standard
+prompting.}
+\label{tab:general}
+\scriptsize\setlength{\tabcolsep}{3pt}
+\begin{tabular}{lrrrrrrrrrrrr}
 \toprule
-decoding & d5 & d10 & d15 & d20 & d25\\
+condition & GSM8K & MATH & BBH & MMLU & ARC & HSwag & WinoG & PIQA & LogiQA & Hotpot & 2Wiki & MuSiQue\\
 \midrule
-greedy   & $-0.175$ & $-0.165$ & $-0.055$ & $-0.040$ & $-0.105$\\
-\passk{16} & $+0.035$ & $+0.070$ & $+0.140$ & $+0.040$ & $-0.035$\\
-maj@16   & $-0.140$ & $-0.030$ & $-0.005$ & $+0.025$ & $-0.070$\\
+\ctrl{}      & 78.6 & 11.8 & 67.4 & 69.8 & 50.3 & 56.3 & 69.8 & 79.3 & 31.2 & 55.7 & 38.9 & 29.9\\
+\longdoc{}   & 79.2 & 12.8 & 68.3 & 69.6 & 51.6 & 56.6 & 70.3 & 79.2 & 29.3 & 57.6 & 35.3 & 30.2\\
+\formal{}    & 79.2 & 12.2 & 68.0 & 69.1 & 52.7 & 56.1 & 70.0 & 79.0 & 28.1 & 57.1 & 36.4 & 27.3\\
+\nat{}       & 78.6 & 11.4 & 68.3 & 69.2 & 50.3 & 56.0 & 70.4 & 78.9 & 27.8 & 55.9 & 38.2 & 27.2\\
+\condensed{} & 79.8 & 11.2 & 68.6 & 69.0 & 52.0 & 56.2 & 70.4 & 78.9 & 26.6 & 57.0 & 34.3 & 26.8\\
 \bottomrule
 \end{tabular}
 \end{table}
 
+\begin{table}[h]
+\centering
+\caption{Near-transfer contrasts pooled over inference depths 5 to 25 (1{,}000
+documents), in percentage points, with 95 percent intervals from a paired
+bootstrap over documents with 4{,}000 resamples. Intervals cover evaluation
+sampling error only; Appendix~\ref{sec:variance} gives the training-run term.}
+\label{tab:transfer-boot}
+\begin{tabular}{lrr}
+\toprule
+contrast & \passk{16} & mean single-sample\\
+\midrule
+\nat{} $-$ \ctrl{}     & $+29.4\ [25.8, 33.1]$ & $+20.5\ [19.0, 21.9]$\\
+\formal{} $-$ \ctrl{}  & $+24.4\ [20.8, 28.0]$ & $+13.7\ [12.5, 14.9]$\\
+\nat{} $-$ \longdoc{}  & $+25.0\ [21.4, 28.6]$ & $+19.7\ [18.2, 21.1]$\\
+\formal{} $-$ \longdoc{} & $+20.0\ [16.3, 23.5]$ & $+12.9\ [11.6, 14.2]$\\
+\longdoc{} $-$ \ctrl{} & $+4.4\ [0.7, 8.0]$ & $+0.8\ [0.3, 1.4]$\\
+\nat{} $-$ \formal{}   & $+5.0\ [2.1, 7.9]$ & $+6.8\ [5.2, 8.3]$\\
+\bottomrule
+\end{tabular}
+\end{table}
+
+% CONDENSED arm of the clean sampled readout and the SEED-3408 replicate
+% (jobs 4200590/4200591/4200592/4200593): add when complete.
+
+\section{An Earlier Configuration}
+\label{sec:earlier-config}
+
+Before the study of Section~\ref{sec:transfer}, the same three-way design was
+run at sequence length 4{,}096 with a five percent replacement share, a compact
+rendering, and derivations capped at depth 14 so that they fit the window, for
+the same token budget. On a ten-task general suite the three conditions scored
+$58.2$, $58.4$ and $58.5$ percent macro-average for control, formal and
+English, and on tagged multi-hop question answering the differences vanished
+under fallback answer extraction. That configuration had no length-matched
+control and no deduction benchmark, and its derivations never reached the
+depths at which the controlled study locates the formal advantage, so it
+motivated the present design without constraining it.
