@@ -18,15 +18,20 @@
 \usepgfplotslibrary{fillbetween}
 \usetikzlibrary{calc,positioning,fit,backgrounds,arrows.meta}
 
+% Table captions sit above the table, so this is the gap between the caption
+% and the top rule. The class default leaves them touching.
+\setlength{\belowcaptionskip}{7pt}
+\setlength{\abovecaptionskip}{9pt}
+
 \newtheorem{proposition}{Proposition}
 
 % The kernel already defines \natural as a math symbol, so it is not redefined.
 \newcommand{\formal}{\textsc{Formal}}
-\newcommand{\nat}{\textsc{Natural}}
+\newcommand{\nat}{\textsc{English}}
 \newcommand{\branchproof}{\textsc{BranchProof}}
 \newcommand{\attrcon}{\textsc{AttrCon}}
 \newcommand{\logic}{\textsc{Logic}}
-\newcommand{\nl}{\textsc{Natural}}
+\newcommand{\nl}{\textsc{English}}
 \newcommand{\passk}[1]{pass@#1}
 
 \title{Proof over Prose: Program-Generated\\Formal Derivations as Midtraining Data}
@@ -301,7 +306,7 @@ experimental design. The two readings measure different things, and the sampled
 one is what matters for any system that draws more than one sample.
 
 \paragraph{Length and budget controls.}
-Formal and natural targets differ in length, which raises the possibility that
+Formal and English targets differ in length, which raises the possibility that
 the comparison measures supervision quantity. Two controls address this. Token
 budgets at generation are identical by construction, and the tokenizer audit
 confirms no truncation in either condition. Matched-token training, in which
@@ -426,7 +431,7 @@ The conditions differ only in the ten percent of loss tokens that is replaced.
 same production corpus, selected to match the token-length histogram of the
 formal traces and carrying no deep deduction.
 \item \textbf{Logic} replaces ten percent with formal derivations at depth 25.
-\item \textbf{Natural} replaces ten percent with the natural-language rendering
+\item \textbf{English} replaces ten percent with the English rendering
 of the same latent proofs.
 \item \textbf{Condensed} replaces ten percent with a compact formal rendering of
 the same latent proofs.
@@ -456,7 +461,7 @@ loader windows and training refuses to start if it fails.
 
 Because the replaced slice is fixed in tokens and the condensed rendering is
 2.6 times shorter, the condensed condition traverses its proof set 2.31 times
-where Logic and Natural traverse theirs 0.90 and 0.89 times. Any comparison
+where Logic and English traverse theirs 0.90 and 0.89 times. Any comparison
 involving the condensed condition therefore confounds rendering with exposure,
 and we treat it accordingly in Section~\ref{sec:transfer-results}.
 
@@ -498,7 +503,7 @@ inference depth & 0 & 1 & 2 & 3 & 5\\
 Control    & 44.2 & 32.8 & 44.0 & 44.4 & 46.0\\
 LongDoc    & 45.8 & 32.2 & 44.4 & 45.4 & 44.0\\
 Logic      & 48.0 & 35.8 & 49.4 & 50.0 & 50.2\\
-Natural    & 48.8 & 38.8 & 56.2 & 57.0 & 56.4\\
+English    & 48.8 & 38.8 & 56.2 & 57.0 & 56.4\\
 Condensed  & 46.0 & 34.6 & 46.0 & 48.0 & 47.4\\
 \bottomrule
 \end{tabular}

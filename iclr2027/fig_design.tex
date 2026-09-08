@@ -35,7 +35,7 @@
    \texttt{<answer> olive </answer>}};
 
 \node[nbox, below right=4.5mm and -0.5mm of proof.south, text width=0.40\linewidth, anchor=north east, xshift=0.415\linewidth] (nat)
-  {\textcolor{natcol}{\textbf{\textsc{Natural} target}}\\[1pt]
+  {\textcolor{natcol}{\textbf{\textsc{English} target}}\\[1pt]
    \texttt{<think>}\\
    \texttt{\ \ a is ruby. a is north.}\\
    \texttt{\ \ Since a is north and a is}\\
@@ -49,7 +49,7 @@
 \draw[ar] (proof.south) -- ++(0,-2mm) -| (nat.north);
 
 \node[lbl, below=1.0mm of formal.south, anchor=north] (fl) {trained on \textsc{Formal} only};
-\node[lbl, below=1.0mm of nat.south, anchor=north] (nl) {trained on \textsc{Natural} only};
+\node[lbl, below=1.0mm of nat.south, anchor=north] (nl) {trained on \textsc{English} only};
 
 \node[shared, below=8mm of proof.south, yshift=-2.75cm, text width=0.86\linewidth, align=center] (test)
   {Train through depth $D$, evaluate at depths beyond $D$.\;
