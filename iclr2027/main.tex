@@ -98,9 +98,9 @@ inference, it survives a correction for label bias, and none of the model's
 1{,}000 greedy generations on the near-transfer items reproduces the
 generator's notation, so the model retained the deduction and not the format.
 
-The second question is how the program should write. A latent proof can be
-rendered as a formal derivation with numbered lines and named inference rules,
-or as controlled English. We render every proof both ways from one source, so
+A latent proof can be rendered as a formal derivation with numbered lines and
+named inference rules, or as controlled English, and which rendering the
+program should write is the second question. We render every proof both ways from one source, so
 that the prompt, the answer and the proof graph are identical within a pair and
 only the notation differs (Figure~\ref{fig:overview}). Models trained on the
 two sides of the pair are as close to a controlled comparison as training data
@@ -133,11 +133,6 @@ is also the only one in which a trained model's reasoning can be verified by a
 checker, and verifiable-reward training converts sampled coverage into
 first-attempt accuracy \citep{yue2025does}, so we argue it is the regime worth
 training toward.
-
-Section~\ref{sec:paired} describes the generator, Section~\ref{sec:main-results}
-the controlled study with its controls, and Section~\ref{sec:transfer} the
-midtraining study. The generator, the corpora and the evaluation code will be
-released.
 
 \section{Related Work}
 
@@ -302,8 +297,7 @@ greedy & \nat{} & $\mathbf{56.3\pm8.0}$ & $\mathbf{60.0\pm8.4}$ & $\mathbf{57.4\
 \end{tabular}
 \end{table}
 
-The two decoding rules place the reversal at different depths. \passk{1}
-crosses at $D=25$ and \passk{16} at $D=15$, where the \formal{} condition
+\passk{1} crosses at $D=25$ and \passk{16} at $D=15$, where the \formal{} condition
 reaches $69.9$ percent against $56.9$. Between the two crossings the formally
 supervised model can construct a correct derivation within sixteen attempts but
 not on the first, so the set of solvable problems widens ten depth levels
@@ -404,14 +398,13 @@ leads at $98.9\pm0.8$ against $63.9\pm5.1$ percent \passk{1}, while \formal{}
 \passk{16} stays at $98.8\pm0.9$. At 32B the formal deficit is one of
 probability mass on the first sample, not of coverage. Mode conditioning at 32B
 lifts the formal mode to $85.0\pm8.7$ percent \passk{1}. Across the three base
-models, the one property of formal supervision that does not reverse is
-coverage: \formal{} \passk{16} is at or above \nat{} \passk{16} in every
+models, \formal{} \passk{16} is at or above \nat{} \passk{16} in every
 $D=25$ cell except Qwen2.5-7B, where the two are within one standard deviation.
 
 \section{Midtraining a 7B Model on Derivations from a Program}
 \label{sec:transfer}
 
-The controlled study supplies dense supervision on one task. The practical
+The controlled study supplies dense supervision on one task, and the practical
 question is whether a small share of such data improves an ordinary model when
 placed in an ordinary mixture, on benchmarks the generator never saw. We test
 this by midtraining Qwen2.5-7B \citep{qwen2025qwen25} on the Dolmino mixture
@@ -431,9 +424,15 @@ mixture, selected to match the token-length histogram of the \formal{} corpus.
 depths 1 to 25.
 \item \nat{} replaces ten percent with the English rendering of the same latent
 proofs.
-\item \condensed{} replaces ten percent with a compact formal rendering of the
-same latent proofs, 2.6 times shorter.
+\item \condensed{} replaces ten percent with a formal rendering of the same
+latent proofs that states the theory once, 2.6 times shorter.
 \end{enumerate}
+The \formal{} document states its theory twice, as the English prompt and
+again as formal premises, and then gives the proof; the \nat{} document
+states the theory once, in English. Formal premises are about 1.5 times more
+compact than controlled English for the same theory, so the two documents are
+length-matched by that offset, and \condensed{} is the formal document with
+the theory stated once.
 \longdoc{} separates two explanations of any gain, since derivations are long
 documents and long documents change what a model learns about carrying state
 across a window. Its median length is $3{,}712$ tokens against $3{,}749$ for
@@ -444,9 +443,9 @@ across windows, and a decoded-batch audit refuses to start training if any
 window contains a split document or an unmasked padding token; zero documents
 were split or excluded in any condition. Because the replaced slice is fixed
 in tokens, \condensed{} traverses its proof set 2.31 times where \formal{} and
-\nat{} traverse theirs 0.90 and 0.89 times, so comparisons involving
-\condensed{} confound rendering with exposure
-(Appendix~\ref{sec:midtrain-details}).
+\nat{} traverse theirs 0.90 and 0.89 times, so its comparison with \nat{} is
+one of a compact rendering seen more than twice against a verbose one seen
+once (Appendix~\ref{sec:midtrain-details}).
 
 All five checkpoints receive the same instruction tuning on 100{,}000 examples
 of a public instruction corpus at seed 3407, and a second replicate at seed
@@ -464,10 +463,10 @@ every setting.
 \label{sec:transfer-results}
 
 \paragraph{External transfer.}
-Table~\ref{tab:transfer-pw} reports greedy exact match on ProofWriter. At depth
-0, which requires lookup and no inference, the five conditions fall between
-44.2 and 48.8 percent. From depth 2 onward \nat{} leads \ctrl{} by 12 to 13
-points and \formal{} leads it by 5 to 6 points, and \longdoc{} stays within 1.4
+At depth 0 of ProofWriter, which requires lookup and no inference, the five
+conditions fall between 44.2 and 48.8 percent greedy exact match
+(Table~\ref{tab:transfer-pw}). From depth 2 onward \nat{} leads \ctrl{} by 10 to 13
+points and \formal{} leads it by 4 to 6 points, and \longdoc{} stays within 2
 points of \ctrl{} at every depth. The gain therefore follows from the deduction
 in the replaced slice and not from its length, and it appears only where
 inference is required.
@@ -512,7 +511,7 @@ is far above both: \nat{} between 24.5 and 52.5 percent, \formal{} between 17.5
 and 31.5, and \condensed{} between 18.5 and 34.5
 (Table~\ref{tab:transfer-passk}). The replaced slice teaches a capability
 the control mixture does not supply. Under greedy decoding \nat{} is ahead of
-\formal{} at every depth, by 4.0 to 17.5 points.
+\formal{} at every depth, by 3.0 to 21.0 points.
 
 The proportion of greedy generations that reach an answer field is 64.5 to
 78.5 percent for \ctrl{}, 79.5 to 92.5 for \longdoc{}, 94.0 to 99.5 for
@@ -524,8 +523,8 @@ midtraining often stop before concluding.
 % <|im_end|>; every sample ran to the cap and last-match extraction read the
 % tail). Do not restore those numbers.
 \paragraph{Sampled decoding.}
-Table~\ref{tab:transfer-passk} reports \passk{16} on the same items. Sampling
-raises every condition and preserves the greedy ordering. Pooled over depths,
+Sampling raises every condition and preserves the greedy ordering
+(Table~\ref{tab:transfer-passk}). Pooled over depths,
 \passk{16} is 57.0 percent for \ctrl{}, 61.4 for \longdoc{}, 81.4 for
 \formal{} and 86.4 for \nat{}, and mean single-sample accuracy is 6.9, 7.7,
 20.6 and 27.4. A paired bootstrap over the 1{,}000 documents
@@ -589,12 +588,40 @@ Each midtraining condition was trained once. An auxiliary experiment on the
 same evaluation suite, in which five instruction-tuning conditions were each
 trained under two seeds, gives a per-run standard deviation near $0.019$ in
 exact match and near $0.027$ for a difference between two independently seeded
-conditions (Appendix~\ref{sec:variance}). The contrasts against \ctrl{}, 5 to
-13 points on ProofWriter and 12 to 47 points on the near-transfer family, are
+conditions (Appendix~\ref{sec:variance}). The contrasts against \ctrl{}, 4 to
+13 points on ProofWriter and 12 to 48 points on the near-transfer family, are
 several times that. The contrast between \formal{} and \nat{} on ProofWriter,
 7 points at depth 3, is about twice it, and we report the ordering of the two
 notations at midtraining scale as observed under one seed, with the replicate
 in Appendix~\ref{sec:transfer-tables}.
+
+
+% ---------------------------------------------------------------------------
+% RL SECTION (not compiled). Six GRPO runs are queued on alex:
+%   {Formal, English} x {correct_only, correct_times_valid, correct_plus_valid}
+%   LoRA r16 on the seed-3407 post-SFT arms, 300 steps, 8 prompts x 8 rollouts,
+%   fresh BranchProof band-25 corpus (seed 20260907, disjoint from midtraining).
+% Uncomment and fill once the sweep (scripts/slurm/sweeps/rl_longwin_band25_2026-09-07.slurm)
+% has produced its readouts. Suggested placement: after \subsection{Statistical status}.
+%
+% \subsection{Verifiable-reward posttraining on the midtrained models}
+% \label{sec:rl}
+%
+% The argument of Section~\ref{sec:discussion} is that verifiable-reward
+% training converts coverage into first-attempt accuracy, so the notation
+% that supplies more coverage should gain more from it. We test this on the
+% \formal{} and \nat{} arms with GRPO on held-out problems from the generator
+% at depths 1 to 25, disjoint from the midtraining corpus, for 300 steps with
+% eight prompts and eight rollouts per step. Three rewards are compared: answer
+% correctness alone; correctness gated on a checker-valid derivation; and
+% correctness plus validity as separate unit rewards. The last two are only
+% defined for a model that writes a checkable derivation, which after
+% instruction tuning neither arm does, so they also measure whether the
+% reward can bring the notation back.
+%
+% [Table: pass@1 and pass@16 on the near-transfer family before and after
+% GRPO, by arm and reward; ProofWriter greedy before and after.]
+% ---------------------------------------------------------------------------
 
 \section{Discussion}
 \label{sec:discussion}
@@ -620,11 +647,11 @@ narrower distribution over derivations at depth, which is what the falling
 \nat{} \passk{16} curve in Table~\ref{tab:crossover} measures.
 
 \paragraph{Why the dense regime is the one to train toward.}
-Two properties appear only in the dense regime. Almost every held-out problem
-has a correct formal derivation within sixteen samples, at depths beyond the
-training range and with distractor branches at every step, and that derivation
-can be found by a checker with no labels. A system that samples and verifies
-wants exactly these two properties, and prose supervision supplies neither.
+In the dense regime almost every held-out problem has a correct formal
+derivation within sixteen samples, at depths beyond the training range and
+with distractor branches at every step, and that derivation can be found by a
+checker with no labels. A system that samples and verifies wants exactly these
+two properties, and prose supervision supplies neither.
 Verifiable-reward training principally reweights a model toward completions it
 can already sample \citep{yue2025does, matsutani2026squeezes}, so the coverage a
 model has after supervised training bounds what that stage can reach, and in
@@ -647,8 +674,9 @@ family of Horn-style deduction problems without arithmetic, ambiguity or
 retrieval, and the depth axis is proof depth alone. Proof validity for English
 traces depends on a deterministic translation into the proof engine that the
 formal condition does not need, so answer accuracy is reported alongside every
-joint metric. The \condensed{} condition is confounded with exposure, and
-ProofWriter's \emph{unknown} class is unsolved by every model. An earlier
+joint metric. The \condensed{} condition sees each of its proofs 2.6 times more often than the
+other two derivation conditions, and ProofWriter's \emph{unknown} class is
+unsolved by every model. An earlier
 configuration of the midtraining study, at sequence length 4{,}096 with a five
 percent share and derivations capped at depth 14, produced no measurable
 transfer; it differs in window, share, rendering and evaluation suite and is
