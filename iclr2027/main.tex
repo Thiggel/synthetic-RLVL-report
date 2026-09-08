@@ -29,7 +29,7 @@
 \newcommand{\nl}{\textsc{Natural}}
 \newcommand{\passk}[1]{pass@#1}
 
-\title{Proof over Prose: Programmatically Generated\\Derivations as Midtraining Data}
+\title{Proof over Prose: Program-Generated\\Formal Derivations as Midtraining Data}
 
 \author{Anonymous authors}
 
@@ -38,29 +38,31 @@
 \maketitle
 
 \begin{abstract}
-Language models learn to reason from examples of reasoning, and those examples
-are almost always written in prose. We ask whether the notation matters. A
-generator samples multi-hop deduction problems over Horn clauses, where every
-step offers four locally plausible continuations, exactly one of which follows,
-and the answer is unique by construction. Each latent proof is written out
-twice, once as a formal derivation with numbered lines and named inference
-rules and once as a controlled English explanation of the same steps. Prompt,
-answer and proof graph are identical within a pair, so two models trained on
-opposite sides differ only in the notation they were shown. Which notation
-produces the better reasoner depends on how many hops the training proofs
-contain. Through five to twenty hops English generalizes further to unseen
-depths, and at twenty-five hops the ordering reverses, with formal supervision
-at $75.0\pm9.5$ percent out-of-distribution accuracy where English reaches
-$17.8\pm4.7$. Drawing sixteen samples moves the reversal ten hops earlier, so
-formal supervision first widens the set of problems a model can solve at all
-and only later improves its first attempt. Formal derivations are mechanically
-checkable, so that wider set is usable without an answer key, and returning the
-first sample a proof checker accepts yields $97.3\pm1.1$ percent against
-$33.8\pm1.4$ percent for English traces. Midtraining Qwen2.5-7B on 2.5 billion
-tokens with ten percent of the mixture replaced by these derivations improves
-accuracy on held-out ProofWriter problems, where an equal share of ordinary
-long documents matched in length distribution leaves accuracy at the control
-level.
+Frontier language models will exhaust the public supply of human text within
+the decade, and the usual remedy is to generate more text with a language
+model, which bounds the result by what the generating model already knows. We
+test a different source. A few hundred lines of Python sample a multi-hop
+deduction problem, solve it, and write the solution out, producing text that is
+correct by construction and needs no teacher. Replacing ten percent of a 2.5
+billion token midtraining mixture for Qwen2.5-7B with these derivations raises
+accuracy on held-out ProofWriter problems from $44.4$ to $57.0$ percent at
+inference depth 3, where replacing the same share with ordinary long documents
+matched in length distribution leaves accuracy at the control level. Across a
+thousand generations the midtrained model never reproduces the generator's
+notation, so what transfers is the reasoning and not the format.
+
+How the generator writes its solutions matters as well. Each latent proof is
+rendered twice, once as a formal derivation with numbered lines and named
+inference rules and once as a controlled English explanation, holding the
+prompt, the answer and the proof graph fixed so that only the notation differs.
+Which rendering trains the better reasoner depends on how many hops the
+training proofs contain. English generalizes further through five to twenty
+hops, and at twenty-five the ordering reverses, with formal supervision at
+$75.0\pm9.5$ percent out-of-distribution accuracy against $17.8\pm4.7$. Formal
+supervision also reaches $99.6\pm0.3$ percent within sixteen samples where
+English reaches $42.5\pm5.8$, and because a formal derivation is mechanically
+checkable that breadth converts into $97.3\pm1.1$ percent single-answer
+accuracy with no answer key.
 \end{abstract}
 
 \input{fig_design}
@@ -207,7 +209,7 @@ in Section~\ref{sec:limits-outlook} and do not claim it at midtraining scale.
 Each example begins with a latent directed acyclic proof. A generator emits a
 prompt containing ground facts, rules, a query and distractor branches, then
 traverses the supporting path to produce the answer. A rendering function
-writes that path in one of two trace languages. The \formal{} rendering
+writes that path in one of two notations. The \formal{} rendering
 declares constants and predicates and applies named inference rules to numbered
 lines. The \nat{} rendering expresses the same substitutions and conclusions,
 line for line, in controlled sentences. Both targets end with the same answer
@@ -233,7 +235,7 @@ $\{5,10,15,20,25\}$ and three seeds per condition. Evaluation covers depths
 $\{1,2,5,10,12,15,18,20,25,30,35,40,45,50\}$ with 32 prompts per depth, and at
 each prompt sixteen samples at temperature 1.0 together with one greedy decode.
 Sampled coverage uses the unbiased \passk{k} estimator
-\citep{chen2021evaluating}. Both trace languages receive an identical
+\citep{chen2021evaluating}. Both notations receive an identical
 7{,}168-token generation limit inside a 16{,}384-token window, and a tokenizer
 audit confirms every gold prompt and target fits in both renderings, so neither
 condition is truncated. Depths above the maximum training depth are out of
@@ -584,7 +586,7 @@ formal against English contrast, whose interval then becomes approximately
 $[-0.015, +0.115]$ and includes zero.
 
 The contrasts against Control, between $0.176$ and $0.276$, are six to ten times the training standard deviation and are not at
-risk from single-seed training. The contrast between the two trace languages,
+risk from single-seed training. The contrast between the two notations,
 at $0.050$, is roughly twice that standard deviation and is a sign reversal
 against the greedy ordering, which is the pattern most likely to be produced by
 run-to-run variation. We therefore report the transfer-scale formal advantage

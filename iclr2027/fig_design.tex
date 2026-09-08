@@ -1,4 +1,4 @@
-% The paired-trace construction, drawn on a single worked example.
+% How the two supervised targets are produced, on a single worked example.
 \definecolor{formalcol}{RGB}{40,104,178}
 \definecolor{natcol}{RGB}{34,139,94}
 \definecolor{sharedcol}{RGB}{90,90,95}
@@ -58,10 +58,10 @@
 \draw[ar] (fl) -- (fl |- test.north);
 \draw[ar] (nl) -- (nl |- test.north);
 \end{tikzpicture}
-\caption{The paired-trace construction. A generator samples a latent proof and
-renders it as a formal derivation or as a controlled natural-language
-explanation. The prompt, the answer and the proof graph are shared, and only
-the supervised trace differs. Models are trained on one rendering and evaluated
-beyond the training depth range.}
+\caption{How the two supervised targets are produced. A generator samples a
+latent proof and writes it out as a formal derivation or as a controlled
+English explanation. The prompt, the answer and the proof graph are shared, and
+only the notation of the supervised target differs. Models are trained on one
+notation and evaluated beyond the training depth range.}
 \label{fig:overview}
 \end{figure}
