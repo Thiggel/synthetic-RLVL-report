@@ -526,12 +526,15 @@ midtraining often stop before concluding.
 Sampling raises every condition and preserves the greedy ordering
 (Table~\ref{tab:transfer-passk}). Pooled over depths,
 \passk{16} is 57.0 percent for \ctrl{}, 61.4 for \longdoc{}, 81.4 for
-\formal{} and 86.4 for \nat{}, and mean single-sample accuracy is 6.9, 7.7,
-20.6 and 27.4. A paired bootstrap over the 1{,}000 documents
-(Appendix~\ref{sec:transfer-tables}) gives \nat{} minus \formal{} at $+5.0$
-points of \passk{16}, interval $[2.1, 7.9]$, and $+6.8$ points of
-single-sample accuracy, interval $[5.2, 8.3]$; \formal{} minus \longdoc{} is
-$+20.0$ points of \passk{16}, interval $[16.3, 23.5]$. The sampled crossover of
+\formal{}, 86.4 for \nat{} and 83.5 for \condensed{}, and mean single-sample
+accuracy is 6.9, 7.7, 20.6, 27.4 and 17.5. A paired bootstrap over the
+1{,}000 documents (Appendix~\ref{sec:transfer-tables}) gives \nat{} minus
+\formal{} at $+5.0$ points of \passk{16}, interval $[2.1, 7.9]$, and $+6.8$
+points of single-sample accuracy, interval $[5.2, 8.3]$; \formal{} minus
+\longdoc{} is $+20.0$ points of \passk{16}, interval $[16.3, 23.5]$.
+\condensed{} sits between the two notations in coverage, $2.9$ points below
+\nat{}, interval $[-0.1, 5.8]$, and $9.9$ points below it in single-sample
+accuracy. The sampled crossover of
 the controlled study, where formal coverage overtook English at $D=15$, does
 not appear here. At a tenth of the mixture the formal rendering is behind the
 English rendering on the first sample and on coverage alike.
@@ -556,7 +559,7 @@ greedy & \condensed{} & 34.5 & 28.5 & 18.5 & 20.5 & 24.0\\
 \passk{16} & \longdoc{} & 63.0 & 63.5 & 61.0 & 63.5 & 56.0\\
 \passk{16} & \formal{} & 97.0 & 85.5 & 79.0 & 74.0 & 71.5\\
 \passk{16} & \nat{} & 95.5 & 91.5 & 84.5 & 78.0 & 82.5\\
-\passk{16} & \condensed{} & -- & -- & -- & -- & --\\
+\passk{16} & \condensed{} & 89.5 & 89.0 & 80.0 & 81.5 & 77.5\\
 \bottomrule
 \end{tabular}
 \end{table}
