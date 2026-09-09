@@ -320,22 +320,6 @@ Contrasts are computed by a paired bootstrap over evaluation documents with
 the same indices to every condition and depth. Reported intervals are the
 2.5th and 97.5th percentiles of the replicate distribution.
 
-\section{Estimating Training-Run Variance}
-\label{sec:variance}
-
-Training-run variability was estimated in an auxiliary experiment on the same
-evaluation suite. Five instruction-tuning conditions, differing only in which
-synthetic mixture was blended into the instruction data, were each trained
-twice from the same base checkpoint under different seeds, and all ten models
-were evaluated with the protocol of Appendix~\ref{sec:midtrain-details}. For
-each condition and task the absolute difference between the two seeds gives one
-observation of run-to-run variability. Over the fifty resulting pairs the mean
-absolute difference is $0.023$, the median $0.011$ and the maximum $0.135$.
-Treating the two runs of a condition as independent draws implies a per-run
-standard deviation near $0.019$, and near $0.027$ for a difference between two
-independently seeded conditions. The largest seed differences fall on the
-near-transfer family.
-
 \section{Per-Depth Transfer Tables}
 \label{sec:transfer-tables}
 
@@ -386,7 +370,42 @@ contrast & \passk{16} & mean single-sample\\
 \end{tabular}
 \end{table}
 
-% SEED-3408 replicate (jobs 4200590/4200591/4200592/4200593): add when complete.
+\begin{table}[h]
+\centering
+\caption{The full deduction suite under both instruction-tuning seeds, greedy
+exact match in percent. Each pair of columns is the same midtrained
+checkpoint instruction-tuned at seed 3407 and at seed 3408. ProofWriter uses
+500 items per depth and the near-transfer family 200. Over the fifty
+condition and task pairs the mean absolute difference between seeds is
+$0.015$ and the largest is $0.050$.}
+\label{tab:seedrep}
+\scriptsize\setlength{\tabcolsep}{3.5pt}
+\begin{tabular}{lcccccccccc}
+\toprule
+& \multicolumn{2}{c}{\ctrl{}} & \multicolumn{2}{c}{\longdoc{}} & \multicolumn{2}{c}{\formal{}} & \multicolumn{2}{c}{\nat{}} & \multicolumn{2}{c}{\condensed{}}\\
+\cmidrule(lr){2-3}\cmidrule(lr){4-5}\cmidrule(lr){6-7}\cmidrule(lr){8-9}\cmidrule(lr){10-11}
+task & 3407 & 3408 & 3407 & 3408 & 3407 & 3408 & 3407 & 3408 & 3407 & 3408\\
+\midrule
+ProofWriter d0 & 44.2 & 46.4 & 45.8 & 45.4 & 48.0 & 48.0 & 48.8 & 48.6 & 46.0 & 44.8\\
+ProofWriter d1 & 32.8 & 33.2 & 32.2 & 32.2 & 35.8 & 36.0 & 38.8 & 39.6 & 34.6 & 34.6\\
+ProofWriter d2 & 44.0 & 43.4 & 44.4 & 43.8 & 49.4 & 49.2 & 56.2 & 56.0 & 46.0 & 46.0\\
+ProofWriter d3 & 44.4 & 43.4 & 45.4 & 44.8 & 50.0 & 50.0 & 57.0 & 57.0 & 48.0 & 48.6\\
+ProofWriter d5 & 46.0 & 44.6 & 44.0 & 43.8 & 50.2 & 50.0 & 56.4 & 55.8 & 47.4 & 44.6\\
+\midrule
+near transfer d5 & 5.0 & 8.0 & 7.5 & 7.5 & 31.5 & 36.5 & 52.5 & 54.5 & 34.5 & 33.0\\
+near transfer d10 & 3.5 & 4.5 & 11.0 & 15.0 & 17.5 & 22.5 & 34.5 & 35.0 & 28.5 & 31.0\\
+near transfer d15 & 11.0 & 11.5 & 12.0 & 10.5 & 27.5 & 23.5 & 30.5 & 25.5 & 18.5 & 22.5\\
+near transfer d20 & 9.0 & 13.0 & 15.0 & 12.5 & 21.5 & 20.0 & 24.5 & 25.5 & 20.5 & 21.5\\
+near transfer d25 & 6.5 & 9.0 & 12.0 & 11.0 & 19.5 & 21.5 & 29.5 & 29.5 & 24.0 & 27.0\\
+\bottomrule
+\end{tabular}
+\end{table}
+
+The label-bias decomposition of Table~\ref{tab:transfer-pw} also replicates.
+Pooled over ProofWriter depths 1 to 5 at seed 3408, \ctrl{} predicts
+\emph{true} on 65.3 percent of items against 66.3 at seed 3407, and two-class
+accuracy is 53.5 against 54.4 for \ctrl{}, 60.4 against 60.3 for \formal{},
+and 68.2 against 68.2 for \nat{}.
 
 \section{An Earlier Configuration}
 \label{sec:earlier-config}

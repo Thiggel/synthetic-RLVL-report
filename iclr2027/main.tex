@@ -587,16 +587,17 @@ this scale, since no formal derivation is emitted for a checker to accept.
 \subsection{Statistical status}
 \label{sec:transfer-limits}
 
-Each midtraining condition was trained once. An auxiliary experiment on the
-same evaluation suite, in which five instruction-tuning conditions were each
-trained under two seeds, gives a per-run standard deviation near $0.019$ in
-exact match and near $0.027$ for a difference between two independently seeded
-conditions (Appendix~\ref{sec:variance}). The contrasts against \ctrl{}, 4 to
-13 points on ProofWriter and 12 to 48 points on the near-transfer family, are
-several times that. The contrast between \formal{} and \nat{} on ProofWriter,
-7 points at depth 3, is about twice it, and we report the ordering of the two
-notations at midtraining scale as observed under one seed, with the replicate
-in Appendix~\ref{sec:transfer-tables}.
+Every midtrained checkpoint was instruction-tuned twice under different seeds.
+Over the fifty condition and task pairs of the deduction suite the mean
+absolute difference between seeds is $0.015$ and the largest is $0.050$,
+implying a standard deviation of $0.021$ for a difference between two arms,
+and every contrast above survives: at inference depth 3, \nat{} minus \ctrl{}
+is $+12.6$ and $+13.6$ points across the two seeds, \formal{} minus \ctrl{}
+is $+5.6$ and $+6.6$, and \longdoc{} minus \ctrl{} is $+1.0$ and $+1.4$
+(Appendix~\ref{sec:transfer-tables}). The replicate does not address variation
+between midtraining runs, which were single, so a different midtraining seed
+could reorder arms separated by a few points. That applies to \formal{}
+against \condensed{} and not to either against \ctrl{} or \longdoc{}.
 
 
 % ---------------------------------------------------------------------------
@@ -631,10 +632,10 @@ in Appendix~\ref{sec:transfer-tables}.
 
 \paragraph{What transfers is the deduction.}
 Both renderings raise ProofWriter accuracy, the length-matched control does
-not, and the trained models write neither notation. The content of a
-program-generated derivation survives instruction tuning while its surface
-form does not, which is the property one wants from a synthetic source that
-costs nothing to run and cannot carry a generating model's errors.
+not, and the trained models write neither notation, so what survives
+instruction tuning is the content of a program-generated derivation and not
+its surface form. That is the property one wants from a source which costs
+nothing to run and cannot carry a generating model's errors.
 
 \paragraph{The formal advantage is a property of dense, deep supervision.}
 Across the settings studied, formal supervision wins the first attempt in
@@ -659,27 +660,25 @@ Verifiable-reward training principally reweights a model toward completions it
 can already sample \citep{yue2025does, matsutani2026squeezes}, so the coverage a
 model has after supervised training bounds what that stage can reach, and in
 the dense regime formal supervision moves that bound from $42.5$ to $99.6$
-percent. Ten percent of a midtraining mixture is not enough to make a model
-write derivations it can be checked on. The next step is a larger share, or an
+percent. Ten percent of a mixture is not enough to make a model write
+derivations a checker can accept. The next step is a larger share, or an
 instruction stage that preserves the notation, followed by verifiable-reward
-training on both notations. We have not run that stage. Our results establish
-that the ingredients it needs are present after dense formal supervision and
-absent after prose supervision.
+training on both notations. We have not run that stage, and our results
+establish only that the ingredients it needs are present after dense formal
+supervision and absent after prose supervision.
 
 \section{Limitations}
 
 The controlled study uses LoRA fine-tuning on one model family at 7B and 32B
-and a second at 7B. The midtraining study uses a third model, trained once per
-condition, so the ordering of the two notations at that scale rests on one
-seed plus the replicate in the appendix, and the depth thresholds it inherits
-were measured on OLMo-3-7B and not on Qwen2.5-7B. The generator produces one
-family of Horn-style deduction problems without arithmetic, ambiguity or
-retrieval, and the depth axis is proof depth alone. Proof validity for English
-traces depends on a deterministic translation into the proof engine that the
-formal condition does not need, so answer accuracy is reported alongside every
-joint metric. The \condensed{} condition sees each of its proofs 2.6 times more often than the
-other two derivation conditions, and ProofWriter's \emph{unknown} class is
-unsolved by every model. An earlier
+and a second at 7B, and the midtraining study uses a third, whose depth
+thresholds are inherited from OLMo-3-7B rather than measured on it. The
+generator produces one family of Horn-style deduction problems without
+arithmetic, ambiguity or retrieval, and the depth axis is proof depth alone.
+Proof validity for English traces depends on a deterministic translation into
+the proof engine that the formal condition does not need, so answer accuracy
+is reported alongside every joint metric. \condensed{} sees each proof 2.6
+times more often than the other derivation conditions, and ProofWriter's
+\emph{unknown} class is unsolved by every model. An earlier
 configuration of the midtraining study, at sequence length 4{,}096 with a five
 percent share and derivations capped at depth 14, produced no measurable
 transfer; it differs in window, share, rendering and evaluation suite and is
@@ -690,14 +689,13 @@ not a controlled comparison (Appendix~\ref{sec:earlier-config}).
 A program that writes out its own deductions is a usable source of midtraining
 data. At ten percent of a 2.5 billion token mixture it raises held-out
 deduction accuracy by up to 13 points, against a length-matched control that
-raises nothing, and it leaves general benchmarks unchanged. How the program
-writes matters, and the answer depends on how much of its output the model
-sees. With dense supervision through 25 hops, formal notation produces a model
-that solves nearly every held-out problem within sixteen samples and whose
-samples a checker can select without labels. At a tenth of a mixture, English
-transfers at least as well. The regime in which formal notation wins is the
-regime in which reasoning can be verified, which is a reason to train toward
-it.
+raises nothing and with general benchmarks untouched. How the program writes
+matters, and the answer depends on how much of its output the model sees.
+Trained densely through 25 hops, formal notation solves nearly every held-out
+problem within sixteen samples and lets a checker pick a correct one without
+labels; at a tenth of a mixture, English transfers at least as well. Formal
+notation wins in the regime where reasoning can be verified, which is a reason
+to train toward that regime.
 
 \bibliographystyle{iclr2027_conference}
 \bibliography{references}
