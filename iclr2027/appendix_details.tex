@@ -408,6 +408,34 @@ Pooled over ProofWriter depths 1 to 5 at seed 3408, \ctrl{} predicts
 accuracy is 53.5 against 54.4 for \ctrl{}, 60.4 against 60.3 for \formal{},
 and 68.2 against 68.2 for \nat{}.
 
+\begin{table}[h]
+\centering
+\caption{Sampled evaluation of the suites that do not ask for a derivation,
+seed 3407, sixteen completions at temperature 0.8. The multi-hop tasks use the
+tagged prompt that elicits the trained scaffold, 200 items each; GSM8K has
+1{,}319 items and MATH-500 has 500. Sampling reproduces the greedy picture: no
+derivation condition separates from \ctrl{} except on 2WikiMultihopQA.}
+\label{tab:sampled-downstream}
+\small\setlength{\tabcolsep}{5pt}
+\begin{tabular}{llccccc}
+\toprule
+task & metric & \ctrl{} & \longdoc{} & \formal{} & \nat{} & \condensed{}\\
+\midrule
+GSM8K            & \passk{16} & 97.6 & 97.8 & 97.4 & 97.6 & 97.6\\
+                 & maj@16     & 89.7 & 89.7 & 89.7 & 89.2 & 89.4\\
+MATH-500         & \passk{16} & 52.2 & 54.4 & 54.4 & 54.2 & 53.6\\
+                 & maj@16     & 13.2 & 14.6 & 14.4 & 13.2 & 13.8\\
+\midrule
+HotpotQA         & \passk{16} & 58.5 & 54.0 & 58.5 & 59.5 & 49.5\\
+                 & maj@16     & 42.5 & 35.0 & 38.5 & 35.5 & 31.5\\
+2WikiMultihopQA  & \passk{16} & 40.0 & 27.5 & 48.5 & 47.0 & 20.5\\
+                 & maj@16     & 22.0 & 18.0 & 26.0 & 22.0 & 11.5\\
+MuSiQue          & \passk{16} & 34.5 & 39.5 & 33.5 & 34.5 & 33.0\\
+                 & maj@16     & 22.0 & 18.5 & 15.0 & 12.0 & 13.0\\
+\bottomrule
+\end{tabular}
+\end{table}
+
 \section{An Earlier Configuration}
 \label{sec:earlier-config}
 

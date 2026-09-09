@@ -48,8 +48,8 @@ Qwen2.5-7B with such derivations raises accuracy on held-out ProofWriter
 problems from 44.4 to 57.0 percent at inference depth 3. Replacing the same
 share with ordinary documents of the same length distribution leaves it at
 45.4 percent. The midtrained models never reproduce the generator's notation,
-and their scores on general benchmarks stay within sampling error of the
-control. The same latent proof
+and their scores on nine general benchmarks move by about a point, apart from
+a consistent two-to-three-point loss on LogiQA. The same latent proof
 can be written as a formal derivation or as controlled English, and we generate
 both from one source so that only the notation differs. Fine-tuning OLMo-3-7B
 on either side of the pair, English supervision generalizes further when
@@ -567,14 +567,17 @@ greedy & \condensed{} & 34.5 & 28.5 & 18.5 & 20.5 & 24.0\\
 \paragraph{General benchmarks.}
 On nine general benchmarks and three long-context multi-hop tasks under
 standard prompting, the five conditions are within 1.3 points of each other on
-GSM8K, MATH-500, BBH, MMLU, HellaSwag, WinoGrande and PIQA, with GSM8K between
-78.6 and 79.8 percent and MMLU between 69.0 and 69.8
-(Table~\ref{tab:general}). The largest spread is on LogiQA, where \ctrl{}
-scores 31.2 and the derivation conditions 26.6 to 28.1 on 651 items, and on
-2WikiMultihopQA, 34.3 to 38.9 on 200 items, in both cases with \ctrl{} at or
-near the top and within two standard errors of the others. Replacing ten
-percent of the mixture does not help tasks that do not ask for a derivation,
-and any cost on them is at the level of sampling error.
+GSM8K, MATH-500, BBH, MMLU, HellaSwag, WinoGrande and PIQA, and the whole
+table reproduces under the second instruction-tuning seed to within about a
+point (Table~\ref{tab:general}). One deficit is consistent rather than
+noise: on LogiQA the derivation conditions lose two to three points to
+\ctrl{} in both seeds and on both the raw and the length-normalised metric.
+Sampling does not change the picture. Over sixteen completions, GSM8K
+\passk{16} lies between 97.4 and 97.8 percent across conditions and MATH-500
+between 52.2 and 54.4, and on tagged multi-hop the derivation conditions match
+\ctrl{} on HotpotQA and MuSiQue and exceed it on 2WikiMultihopQA
+(Appendix~\ref{sec:transfer-tables}). Ten percent of the mixture buys nothing
+on tasks that never ask for a derivation, and costs a little on LogiQA.
 
 \paragraph{The midtrained models do not write formal notation.}
 None of the 1{,}000 greedy near-transfer generations of the \formal{} arm
@@ -645,10 +648,9 @@ It loses the first attempt when training proofs are shallow, when a shortcut
 is available, when the model is larger, and when the derivations are a tenth
 of a midtraining mixture, where it is behind on coverage as well. The formal rendering is further from the pretraining
 distribution than controlled English, so a given dose of it is learned less
-thoroughly and the model falls back on prose-shaped behaviour on the first
-sample. The same dose of English is learned more thoroughly but produces a
-narrower distribution over derivations at depth, which is what the falling
-\nat{} \passk{16} curve in Table~\ref{tab:crossover} measures.
+thoroughly, while the same dose of English is learned more thoroughly but
+yields a narrower distribution over derivations at depth, which is what the
+falling \nat{} \passk{16} curve in Table~\ref{tab:crossover} measures.
 
 \paragraph{Why the dense regime is the one to train toward.}
 In the dense regime almost every held-out problem has a correct formal
@@ -689,13 +691,13 @@ not a controlled comparison (Appendix~\ref{sec:earlier-config}).
 A program that writes out its own deductions is a usable source of midtraining
 data. At ten percent of a 2.5 billion token mixture it raises held-out
 deduction accuracy by up to 13 points, against a length-matched control that
-raises nothing and with general benchmarks untouched. How the program writes
-matters, and the answer depends on how much of its output the model sees.
-Trained densely through 25 hops, formal notation solves nearly every held-out
-problem within sixteen samples and lets a checker pick a correct one without
-labels; at a tenth of a mixture, English transfers at least as well. Formal
-notation wins in the regime where reasoning can be verified, which is a reason
-to train toward that regime.
+raises nothing, at a cost of two to three points on LogiQA alone. How the
+program writes matters, and the answer depends on the dose. Trained densely
+through 25 hops, formal notation solves nearly every held-out problem within
+sixteen samples and lets a checker pick a correct one without labels; at a
+tenth of a mixture, English transfers at least as well. Formal notation wins
+where reasoning can be verified, which is a reason to train toward that
+regime.
 
 \bibliographystyle{iclr2027_conference}
 \bibliography{references}
