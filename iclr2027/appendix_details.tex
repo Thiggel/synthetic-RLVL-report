@@ -402,6 +402,36 @@ near transfer d25 & 6.5 & 9.0 & 12.0 & 11.0 & 19.5 & 21.5 & 29.5 & 29.5 & 24.0 &
 \end{tabular}
 \end{table}
 
+\begin{table}[h]
+\centering
+\caption{Near-transfer \passk{16} in percent under both instruction-tuning
+seeds, 200 items per depth, sixteen completions at temperature 0.8. The three
+contrasts between the derivation conditions agree across seeds to within
+$0.2$ points; \longdoc{} carries the largest seed spread and no contrast of
+interest.}
+\label{tab:sampled-seedrep}
+\small\setlength{\tabcolsep}{4pt}
+\begin{tabular}{lcccccccccc}
+\toprule
+& \multicolumn{2}{c}{\ctrl{}} & \multicolumn{2}{c}{\longdoc{}} & \multicolumn{2}{c}{\formal{}} & \multicolumn{2}{c}{\nat{}} & \multicolumn{2}{c}{\condensed{}}\\
+\cmidrule(lr){2-3}\cmidrule(lr){4-5}\cmidrule(lr){6-7}\cmidrule(lr){8-9}\cmidrule(lr){10-11}
+depth & 3407 & 3408 & 3407 & 3408 & 3407 & 3408 & 3407 & 3408 & 3407 & 3408\\
+\midrule
+d5  & 58.0 & 59.5 & 63.0 & 65.0 & 97.0 & 94.5 & 95.5 & 94.5 & 89.5 & 92.5\\
+d10 & 55.5 & 56.0 & 63.5 & 58.0 & 85.5 & 84.0 & 91.5 & 93.0 & 89.0 & 90.0\\
+d15 & 58.5 & 54.0 & 61.0 & 55.5 & 79.0 & 82.0 & 84.5 & 83.0 & 80.0 & 82.0\\
+d20 & 60.0 & 66.0 & 63.5 & 53.0 & 74.0 & 74.0 & 78.0 & 82.0 & 81.5 & 81.0\\
+d25 & 53.0 & 51.5 & 56.0 & 56.0 & 71.5 & 75.5 & 82.5 & 82.0 & 77.5 & 75.5\\
+\midrule
+pooled & 57.0 & 57.4 & 61.4 & 57.5 & 81.4 & 82.0 & 86.4 & 86.9 & 83.5 & 84.2\\
+\bottomrule
+\end{tabular}
+\end{table}
+
+Pooled, \nat{} minus \formal{} is $+5.0$ and $+4.9$ points across the two
+seeds, \nat{} minus \condensed{} is $+2.9$ and $+2.7$, and \formal{} minus
+\condensed{} is $-2.1$ and $-2.2$.
+
 The label-bias decomposition of Table~\ref{tab:transfer-pw} also replicates.
 Pooled over ProofWriter depths 1 to 5 at seed 3408, \ctrl{} predicts
 \emph{true} on 65.3 percent of items against 66.3 at seed 3407, and two-class
