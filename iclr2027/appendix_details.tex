@@ -144,7 +144,8 @@ What is c?
 <formal>
 <constants> a = a b = b c = c </constants>
 <predicates> Cx: x is cobalt Ex: x is east
-Mx: x is maple Sx: x is south Dx: x is cedar </predicates>
+Mx: x is maple Sx: x is south Dx: x is cedar
+</predicates>
 <premises> Ca Ea
 Ea & Ca -> Mb
 Mb -> Sb
@@ -213,9 +214,10 @@ Generation budgets are identical by construction, at a 7{,}168-token limit
 inside a 16{,}384-token window, and the tokenizer audit of
 Appendix~\ref{sec:uniqueness-audit} confirms that every gold target fits in
 both notations. Supervised token counts are equated in the token-matched run
-of Table~\ref{tab:controls} by subsampling the longer condition until the
+of the controlled study by subsampling the longer condition until the
 number of target tokens per condition is equal. The \longdoc{} condition of
-Section~\ref{sec:transfer} supplies a third control at midtraining scale.
+Appendix~\ref{sec:transfer-tables} supplies a third control at midtraining
+scale.
 
 \section{Boundary Condition Details}
 \label{sec:boundary-details}
@@ -432,7 +434,8 @@ Pooled, \nat{} minus \formal{} is $+5.0$ and $+4.9$ points across the two
 seeds, \nat{} minus \condensed{} is $+2.9$ and $+2.7$, and \formal{} minus
 \condensed{} is $-2.1$ and $-2.2$.
 
-The label-bias decomposition of Table~\ref{tab:transfer-pw} also replicates.
+The label-bias decomposition of the ProofWriter transfer tables also
+replicates.
 Pooled over ProofWriter depths 1 to 5 at seed 3408, \ctrl{} predicts
 \emph{true} on 65.3 percent of items against 66.3 at seed 3407, and two-class
 accuracy is 53.5 against 54.4 for \ctrl{}, 60.4 against 60.3 for \formal{},
@@ -469,7 +472,7 @@ MuSiQue          & \passk{16} & 34.5 & 39.5 & 33.5 & 34.5 & 33.0\\
 \section{An Earlier Configuration}
 \label{sec:earlier-config}
 
-Before the study of Section~\ref{sec:transfer}, the same three-way design was
+Before the midtraining study, the same three-way design was
 run at sequence length 4{,}096 with a five percent replacement share, a compact
 rendering, and derivations capped at depth 14 so that they fit the window, for
 the same token budget. On a ten-task general suite the three conditions scored
