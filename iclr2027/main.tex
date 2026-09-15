@@ -280,18 +280,22 @@ it.
 
 Multi-hop question answering moves much less. On HotpotQA, 2WikiMultihopQA and
 MuSiQue, reported in Table~\ref{tab:multihop} of the appendix, the English
-rendering at ten percent gains 1.1, 1.9 and 1.7 points, and no condition gains
-more than 3.1. These benchmarks retrieve from supplied passages and ask for one
-or two further inferences, so most of the work they measure is not the work the
-derivations teach.
+rendering at ten percent gains 1.1, 1.9 and 1.7 points. Splitting
+2WikiMultihopQA by question type locates even that. The 192 comparison
+questions, which retrieve two facts and then compare them, gain 6.3 points,
+while the 372 bridge questions, which chain retrievals and need no inference,
+do not move, and weighting the first by its share accounts for the movement of
+the benchmark as a whole. MMLU marks the other boundary. Its twelve logic and
+mathematics subjects lose 1.6 points where the other forty-five gain 0.1, so
+subject matter that sounds deductive predicts nothing. What the replacement
+improves is the propagation of a value through a chain at inference time.
 
-A prompt that invites the trained format exposes a cost. When we ask for the
-answer inside the tags the generated documents use, the ten percent formal
-condition falls to 11.1 percent F1 on HotpotQA against 54.1 for the control,
-because the model opens a predicate legend over the entities of the passage and
-exhausts its budget before answering. At one percent the same prompt is the
-best of all conditions. The format is therefore worth installing in small
-quantity and worth eliciting only where it fits the task.
+A prompt that invites the trained format exposes a cost. Asked for the answer
+inside the tags the generated documents use, the ten percent formal condition
+falls to 11.1 percent F1 on HotpotQA against 54.1 for the control, because it
+opens a predicate legend over the entities of the passage and exhausts its
+budget before answering, while at one percent the same prompt is the best of
+all conditions.
 
 The 27 subtasks of BIG-Bench Hard differ in whether they require the operation
 the generated data contains, so Table~\ref{tab:bbh} splits them into the eight
@@ -431,11 +435,19 @@ number of negating links in the chain sharpens this further. Every condition is
 perfect when no link negates, and the control falls to 71.7 percent when three
 do, where the formal conditions hold 97.3 percent.
 
-Two alternative explanations are ruled out by the same samples. Every condition
-emits the answer phrase on every item, so the gain is not better compliance
-with the extractor, and every condition writes about 129 words, so it is not
-more deliberation. The English conditions, whose answer rate stays near 54
-percent, gain little, which is where the two notations separate most sharply.
+The same samples rule out two alternative explanations. Every condition emits
+the answer phrase on every item, so this is not compliance with the extractor,
+and every condition writes about 129 words, so it is not deliberation. The
+English conditions hold an answer rate near 54 percent and gain little, which
+is where the notations separate most sharply.
+
+FOLIO gives a third instance. Its items carry one of three labels, and the
+control answers ``true'' on 51.7 percent of them while 35.5 percent are true.
+Accuracy on the true items is 80.1 percent and on the false items 32.3 percent.
+The replacement raises the false items to 45.2 percent and the uncertain items
+from 38.6 to 52.2 percent while the true items do not move, so the same
+correction of the same prior produces the FOLIO gain reported in
+Table~\ref{tab:dose}. Appendix~\ref{sec:folio-table} gives the split.
 
 Object tracking gains without any such prior to repair, since its answer is one
 of several positions. There the treated models simply propagate the state
