@@ -195,6 +195,24 @@ is every evaluated depth above $D$, and for $D=25$ it contains $5\times32=160$
 prompts per seed. Reported uncertainty is the standard deviation over three
 seeds.
 
+\section{Instruction-Tuning Sweep Configuration}
+\label{sec:sweep-details}
+
+Every condition trains for one epoch on $10^5$ examples of a public
+instruction corpus at a pinned revision, full-parameter under fully sharded
+data parallelism with gradient checkpointing, in bfloat16, with a global batch
+of 128 sequences, a maximum sequence length of 8{,}192, warmup ratio 0.03 and
+learning rate $5\times10^{-6}$. The learning rate is the one used by our
+earlier instruction-tuning runs on the same corpus, and it is held fixed across
+conditions, so no condition receives an optimiser setting that another does
+not. Seeds 3407, 3408 and
+3409 give the three replicates, and only the final checkpoint is kept.
+
+Before training starts, a gate tokenizes the mixture and counts the examples
+whose target would be cut by the sequence length. The run aborts if that count
+exceeds 0.5 percent, which prevents a condition from training on derivations
+whose conclusions have been removed. No run in the sweep aborted.
+
 \section{Metric Definitions}
 \label{sec:metrics}
 
@@ -297,7 +315,7 @@ Each midtrained checkpoint is converted to the Hugging Face format and
 instruction-tuned on 100{,}000 examples of a public instruction corpus at a
 pinned revision, for one epoch at learning rate $5\times10^{-6}$ with warmup
 ratio 0.03, maximum sequence length 4{,}096, per-device batch size 1, and seed
-3407 (replicate: seed 3408), full-parameter under fully sharded data
+3407 with a replicate at seed 3408, full-parameter under fully sharded data
 parallelism with gradient checkpointing. Only the final checkpoint is written.
 
 \paragraph{Evaluation.}

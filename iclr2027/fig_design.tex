@@ -1,127 +1,108 @@
-% Panel (a): how the two supervised targets are produced from one latent proof.
-% Panel (b): the headline dose curves. Numbers match Table 1.
+% (a) one generated example in both renderings, (b) the headline accuracy curve.
 \definecolor{formalcol}{RGB}{40,104,178}
 \definecolor{natcol}{RGB}{34,139,94}
 
 \begin{figure}[t]
 \centering
-\begin{subfigure}{\linewidth}
+\begin{subfigure}[t]{0.63\linewidth}
 \centering
 \begin{tikzpicture}[
-  font=\scriptsize,
-  box/.style={rounded corners=2pt, draw=gray!55, line width=0.5pt, inner sep=3pt, align=left},
+  font=\tiny,
+  box/.style={rounded corners=2pt, draw=gray!55, line width=0.5pt, inner sep=2.5pt, align=left},
   shared/.style={box, fill=gray!7},
   fbox/.style={box, draw=formalcol!65, fill=formalcol!5},
   nbox/.style={box, draw=natcol!65, fill=natcol!5},
   ar/.style={-{Latex[length=4pt,width=3.5pt]}, draw=gray!60, line width=0.5pt},
 ]
-\node[shared, text width=0.92\linewidth] (prompt)
+\node[shared, text width=0.93\linewidth] (prompt)
   {\textbf{Prompt}\quad \texttt{c3 is ruby. c3 is north. c7 is olive.}\\
    \texttt{If c3 is north and c3 is ruby, then c9 is teal.}\\
    \texttt{If c9 is teal, then c9 is west.}\\
-   \texttt{If c9 is west and c7 is olive, then c4 is amber.}\quad\texttt{What is c4?}};
+   \texttt{If c9 is west and c7 is olive, then c4 is amber.}\\
+   \texttt{What is c4?}};
 
-\node[shared, below=2.5mm of prompt, text width=0.92\linewidth] (proof)
+\node[shared, below=2mm of prompt, text width=0.93\linewidth] (proof)
   {\textbf{Latent proof}\quad
-   \texttt{Rc3}, \texttt{Nc3} $\Rightarrow$ \texttt{Tc9} $\Rightarrow$ \texttt{Wc9};
-   \texttt{Wc9}, \texttt{Oc7} $\Rightarrow$ \texttt{Ac4}};
+   \texttt{Rc3}, \texttt{Nc3} $\Rightarrow$ \texttt{Tc9} $\Rightarrow$ \texttt{Wc9},
+   with \texttt{Oc7} $\Rightarrow$ \texttt{Ac4}};
 
-\node[fbox, below=5mm of proof.south west, anchor=north west, text width=0.43\linewidth] (formal)
+\node[fbox, below=4mm of proof.south west, anchor=north west, text width=0.44\linewidth] (formal)
   {\textcolor{formalcol}{\textbf{\textsc{Formal} target}}\\[1pt]
    \texttt{<premises>}\\
-   \texttt{\ \ R c3 ; N c3 ; O c7}\\
-   \texttt{\ \ N c3 \& R c3 -> T c9}\\
-   \texttt{\ \ T c9 -> W c9}\\
-   \texttt{\ \ W c9 \& O c7 -> A c4 </premises>}\\
+   \texttt{\ R c3 ; N c3 ; O c7}\\
+   \texttt{\ N c3 \& R c3 -> T c9}\\
+   \texttt{\ T c9 -> W c9}\\
+   \texttt{\ W c9 \& O c7 -> A c4}\\
+   \texttt{</premises>}\\
    \texttt{<proof> R c3 ; premise}\\
-   \texttt{\ \ N c3 ; premise}\\
-   \texttt{\ \ N c3 \& R c3 ; \&I,2,1}\\
-   \texttt{\ \ T c9 ; ->E,3}\\
-   \texttt{\ \ W c9 ; ->E,4}\\
-   \texttt{\ \ O c7 ; premise}\\
-   \texttt{\ \ W c9 \& O c7 ; \&I,5,6}\\
-   \texttt{\ \ A c4 ; ->E,7 </proof>}\\
+   \texttt{\ N c3 ; premise}\\
+   \texttt{\ N c3 \& R c3 ; \&I,2,1}\\
+   \texttt{\ T c9 ; ->E,3}\\
+   \texttt{\ W c9 ; ->E,4}\\
+   \texttt{\ O c7 ; premise}\\
+   \texttt{\ W c9 \& O c7 ; \&I,5,6}\\
+   \texttt{\ A c4 ; ->E,7 </proof>}\\
    \texttt{<answer> amber </answer>}};
 
-\node[nbox, below=5mm of proof.south east, anchor=north east, text width=0.43\linewidth] (nat)
+\node[nbox, below=4mm of proof.south east, anchor=north east, text width=0.44\linewidth] (nat)
   {\textcolor{natcol}{\textbf{\textsc{English} target}}\\[1pt]
    \texttt{<think>}\\
-   \texttt{\ \ c3 is ruby and c3 is north.}\\
-   \texttt{\ \ Since c3 is north and c3 is}\\
-   \texttt{\ \ ruby, c9 is teal.}\\
-   \texttt{\ \ Since c9 is teal, c9 is west.}\\
-   \texttt{\ \ c7 is olive.}\\
-   \texttt{\ \ Since c9 is west and c7 is}\\
-   \texttt{\ \ olive, c4 is amber.}\\
-   \texttt{\ \ Therefore, c4 is amber.}\\
+   \texttt{\ c3 is ruby and c3 is north.}\\
+   \texttt{\ Since c3 is north and c3 is}\\
+   \texttt{\ ruby, c9 is teal.}\\
+   \texttt{\ Since c9 is teal, c9 is west.}\\
+   \texttt{\ c7 is olive.}\\
+   \texttt{\ Since c9 is west and c7 is}\\
+   \texttt{\ olive, c4 is amber.}\\
+   \texttt{\ Therefore, c4 is amber.}\\
    \texttt{</think>}\\
    \texttt{<answer> amber </answer>}};
 
 \draw[ar] (prompt) -- (proof);
-\draw[ar] (proof.south) -- ++(0,-2.5mm) -| (formal.north);
-\draw[ar] (proof.south) -- ++(0,-2.5mm) -| (nat.north);
+\draw[ar] (proof.south) -- ++(0,-2mm) -| (formal.north);
+\draw[ar] (proof.south) -- ++(0,-2mm) -| (nat.north);
 \end{tikzpicture}
-\caption{One example of the generated data. The generator samples a latent
-proof and writes it out in either notation. The prompt, the answer and the
-proof graph are shared by the two renderings.}
+\caption{One generated example. The program samples a latent proof and writes
+it out in either notation, so the prompt, the answer and the proof graph are
+common to the two renderings.}
 \label{fig:overview-a}
 \end{subfigure}
-
-\vspace{3mm}
-
-\begin{subfigure}{\linewidth}
+\hfill
+\begin{subfigure}[t]{0.34\linewidth}
 \centering
+\vspace{0pt}
 \begin{tikzpicture}
 \begin{axis}[
-  width=0.44\linewidth, height=4.4cm, name=doseacc,
-  xmin=-0.3, xmax=4.3, ymin=0.34, ymax=0.58,
+  width=\linewidth, height=5.4cm,
+  scale only axis=false,
+  xmin=-0.3, xmax=4.3, ymin=0.35, ymax=0.57,
   xtick={0,1,2,3,4}, xticklabels={0,1,5,10,25},
   ytick={0.35,0.40,0.45,0.50,0.55},
   tick align=outside, tick pos=left,
-  xlabel={replacement share (percent)},
+  xlabel={replaced share of the mixture (\%)},
   ylabel={ProofWriter accuracy},
   grid=major, grid style={gray!16, line width=0.3pt},
   axis line style={gray!55},
-  label style={font=\footnotesize}, tick label style={font=\scriptsize},
-  legend style={at={(0.97,0.03)}, anchor=south east, draw=none, fill=none,
-                font=\scriptsize, row sep=-1pt},
+  label style={font=\scriptsize}, tick label style={font=\tiny},
+  legend style={at={(0.97,0.04)}, anchor=south east, draw=none, fill=none,
+                font=\tiny, row sep=-2pt},
   every axis plot/.append style={line width=1.0pt},
 ]
   \addplot [name path=ctlu, draw=none, forget plot] coordinates {(-0.3,0.402) (4.3,0.402)};
   \addplot [name path=ctll, draw=none, forget plot] coordinates {(-0.3,0.388) (4.3,0.388)};
   \addplot [gray, opacity=0.25, forget plot] fill between [of=ctlu and ctll];
-  \addplot [formalcol, mark=*, mark size=1.4pt] coordinates {(0,0.393) (1,0.405) (2,0.500) (3,0.486) (4,0.516)};
-  \addplot [natcol, mark=square*, mark size=1.4pt] coordinates {(0,0.393) (1,0.403) (2,0.490) (3,0.532)};
+  \addplot [formalcol, mark=*, mark size=1.3pt] coordinates {(0,0.393) (1,0.405) (2,0.500) (3,0.486) (4,0.516)};
+  \addplot [natcol, mark=square*, mark size=1.3pt] coordinates {(0,0.393) (1,0.403) (2,0.490) (3,0.532)};
   \legend{Formal, English}
 \end{axis}
-\begin{axis}[
-  width=0.44\linewidth, height=4.4cm,
-  at={($(doseacc.east)+(1.0cm,0)$)}, anchor=west,
-  xmin=-0.3, xmax=4.3, ymin=-0.05, ymax=1.05,
-  xtick={0,1,2,3,4}, xticklabels={0,1,5,10,25},
-  ytick={0,0.25,0.5,0.75,1.0},
-  tick align=outside, tick pos=left,
-  xlabel={replacement share (percent)},
-  ylabel={accepted derivations},
-  grid=major, grid style={gray!16, line width=0.3pt},
-  axis line style={gray!55},
-  label style={font=\footnotesize}, tick label style={font=\scriptsize},
-  every axis plot/.append style={line width=1.0pt},
-]
-  \addplot [formalcol, mark=*, mark size=1.4pt] coordinates {(0,0.003) (1,0.932) (2,0.993) (3,0.995) (4,1.000)};
-  \addplot [natcol, mark=square*, mark size=1.4pt] coordinates {(0,0.003) (1,0.983) (2,0.995) (3,1.000)};
-\end{axis}
 \end{tikzpicture}
-\caption{What the replacement buys. On the left, accuracy on ProofWriter at
-inference depth three, with the grey band giving the range over the three
-seeds of the unmodified control. On the right, the fraction of the generator's
-own problems at chain length twenty-five for which a forward-chaining checker
-accepts the proof the model writes.}
+\caption{Accuracy on ProofWriter at inference depth 3. The grey band gives the
+range over the three seeds of the unmodified control.}
 \label{fig:overview-b}
 \end{subfigure}
-\caption{The data we add to the instruction mixture and the effect of adding
-it. Replacing one percent of the mixture is enough for the model to write
-derivations that a checker accepts, and five percent is enough for the full
-gain in accuracy on a held-out deduction benchmark.}
+\caption{The data added to the instruction mixture and the accuracy it buys.
+Replacing 1\% of the mixture already lets the model write derivations that a
+checker accepts, and 5\% gives the full gain on a held-out deduction
+benchmark.}
 \label{fig:overview}
 \end{figure}
