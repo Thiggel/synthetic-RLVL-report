@@ -220,6 +220,32 @@ matched no completion for any condition, including the control, so the suite
 scored zero everywhere and measures the extractor instead of the models. We
 exclude it and report the remaining seven benchmarks.
 
+\section{Log-Likelihood Probe}
+\label{sec:probe-table}
+
+\begin{table}[t]
+\caption{Ranking of decidable ProofWriter items by the log-likelihood margin
+between ``true'' and ``false'', for the midtrained and instruction-tuned arms,
+seed 3407 with seed 3408 in parentheses. The pooled column mixes the two
+polarities and the next two columns rank within a polarity. \longdoc{} is the
+length-matched control.}
+\label{tab:probe}
+\begin{center}
+\small
+\begin{tabular}{lcccc}
+\toprule
+Arm & AUC pooled & AUC negated & AUC positive & $P(\text{argmax}=\text{true})$ \\
+\midrule
+\ctrl{}    & $.662$ ($.654$) & $.872$ ($.869$) & $.860$ ($.858$) & $.64$ ($.63$) \\
+\longdoc{} & $.663$ ($.664$) & $.876$ ($.877$) & $.867$ ($.867$) & $.64$ ($.64$) \\
+\formal{}  & $.711$ ($.707$) & $.889$ ($.889$) & $.868$ ($.868$) & $.55$ ($.54$) \\
+\nat{}     & $.770$          & $.898$          & $.873$          & $.48$ \\
+\bottomrule
+\end{tabular}
+\end{center}
+\end{table}
+
+
 \section{Metric Definitions}
 \label{sec:metrics}
 

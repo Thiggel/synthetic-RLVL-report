@@ -20,8 +20,8 @@
 \usetikzlibrary{calc,positioning,fit,backgrounds,arrows.meta}
 
 % Table captions sit above the table; this is the gap between caption and rule.
-\setlength{\belowcaptionskip}{7pt}
-\setlength{\abovecaptionskip}{9pt}
+\setlength{\belowcaptionskip}{5pt}
+\setlength{\abovecaptionskip}{7pt}
 
 \newcommand{\formal}{\textsc{Formal}}
 \newcommand{\nat}{\textsc{English}}
@@ -110,19 +110,16 @@ from the effect of the content.
 
 Two effects emerge, and they appear at different shares of the mixture. One
 percent, which amounts to a thousand documents, is enough for the model to
-write a derivation that a mechanical checker accepts. The proofs run to 51
-lines at chain length 25, the checker accepts more than nine in ten of them,
-and the ability extends to chains of length 45, about twice the longest chain
-in training, while a model trained on the same mixture without the replacement
-writes no acceptable derivation in six hundred attempts. Benchmark accuracy
-needs a larger share. At five percent, accuracy on ProofWriter at inference
-depth 3 rises from 39.3 to 50.0 percent, ten percent of English-rendered
-derivations reaches 53.2 percent, and accuracy on FOLIO \citep{han2024folio}
-rises by 6.4 points. Figure~\ref{fig:overview-b} shows the curve, which is flat
-above five percent, so a quarter of the mixture buys nothing that a twentieth
-does not already provide. On seven general benchmarks the conditions stay close
-to the control, and the two that move by more than the seed-to-seed range of
-the control, ARC-Challenge and LogiQA, move upward.
+write a derivation that a mechanical checker accepts, at chain lengths about
+twice the longest one in training, where a model trained on the same mixture
+without the replacement writes no acceptable derivation in six hundred
+attempts. Benchmark accuracy needs a larger share. At five percent, accuracy
+on ProofWriter at inference depth 3 rises from 39.3 to 50.0 percent, ten
+percent of English-rendered derivations reaches 53.2 percent, and accuracy on
+FOLIO \citep{han2024folio} rises by 6.4 points. Figure~\ref{fig:overview-b}
+shows the curve, which is flat above five percent. On seven general benchmarks
+the conditions stay close to the control, and the two that move by more than
+its seed-to-seed range, ARC-Challenge and LogiQA, move upward.
 
 The origin of the gain is narrower than the headline numbers suggest, and more
 useful. Splitting the held-out problems by the polarity of the claim and by the
@@ -164,8 +161,7 @@ rewrite existing text from the web \citep{maini2024rephrasing,
 maini2025beyondweb, su2025nemotroncc}. The quality of the result is bounded by
 the generating model, and repeated training on such text degrades the
 distribution of the trained model \citep{shumailov2024collapse,
-dohmatob2025strong}. The source studied here contains no model at all, so the
-ceiling of the data is the ceiling of the program that writes it.
+dohmatob2025strong}. The source studied here contains no model at all.
 
 \paragraph{Synthetic deduction corpora.} Several corpora present deduction
 problems to language models for training or for evaluation, among them
@@ -181,10 +177,9 @@ turns out to depend on the depth of the training proofs.
 \paragraph{Verifiable rewards and checkable traces.} Training a model against a
 verifier has become a standard recipe in mathematics and in code
 \citep{lambert2025tulu, yue2025does}, and formal systems allow a machine to
-check a proof \citep{trinh2024alphageometry}. The derivations generated here are
-checkable by a small forward-chaining program, which makes it possible to ask
-whether a checker can select a correct sample without an answer key, and to
-measure how far that selection carries to a benchmark written by people.
+check a proof \citep{trinh2024alphageometry}. A small forward-chaining program
+checks the derivations generated here, which makes it possible to ask whether a
+checker can select a correct sample without an answer key.
 
 \paragraph{Answer priors in tuned models.} Instruction-tuned models acquire
 response biases that are separable from their underlying competence
@@ -196,6 +191,7 @@ answer prior installed by instruction tuning, and the repair appears as a
 change in that prior while accuracy on the remaining items stays where it was.
 
 \section{Generated data}
+\label{sec:data}
 
 The generator samples a set of constants, a set of unary predicates and a set
 of implication rules, chooses a target chain length, and constructs a problem
@@ -289,9 +285,7 @@ draw no conclusion from it.
 Figure~\ref{fig:depth} resolves the ProofWriter result by the inference depth
 of the item. The replacement raises accuracy at every depth, the control is
 worst on the items that need one or two inference steps, and the conditions
-with five percent or more recover 9 to 11 points there. Depth 0, where the
-claim is decided by a premise alone, also improves, which fits the reading in
-Section~\ref{sec:analysis} that the change is a change in the answer rule.
+with five percent or more recover 9 to 11 points there.
 
 \input{fig_depth}
 
@@ -370,6 +364,52 @@ Share & negated, false & negated, true & positive, false & positive, true & $P(\
 \end{center}
 \end{table}
 
+\subsection{Where the change sits in the model's scores}
+\label{sec:probes}
+
+The polarity split shows which items change, and three further probes show what
+changes inside the model's scores. We run them on the midtrained and
+instruction-tuned arms of Section~\ref{sec:midtraining}, which carry a
+length-matched control that the sweep does not have.
+
+The first probe forms the log-likelihood margin between ``true'' and ``false''
+and ranks the decidable items by it, which gives the areas under the curve in
+Table~\ref{tab:probe} of the appendix. The control already ranks items well inside each
+polarity and its pooled figure is far lower, because the margin of every
+negated claim is displaced toward ``true''. The derivation arms remove most of
+that displacement, raising the pooled figure by 0.05 for the formal rendering
+and 0.11 for the English one, and they add a little genuine discrimination
+within negated claims. The length-matched control moves nothing, so the effect
+is a calibration of negation with a minor discrimination component.
+
+
+The same probe applied before instruction tuning locates the origin of the
+displacement. The midtrained control scores 0.755 pooled, and ordinary
+instruction tuning lowers it to 0.662, while the arm midtrained on English
+derivations holds 0.78 through the same instruction tuning and arrives at
+0.770. Instruction tuning is what installs the offset, and the derivations are
+what resists it.
+
+The second probe toggles the polarity of the claim and leaves the theory
+untouched, so an arm that ignores negation answers both versions identically.
+The control does so on 37.6 percent of decidable items and the length-matched
+control on 37.6 percent, against 28.5 percent for the formal arm and 24.2
+percent for the English one, with the second seed within half a point
+throughout. Every arm answers the positive version of a negated and false item
+correctly about 68 percent of the time, so the arms separate on the negated
+version alone.
+
+The third probe removes the premises that support the claim, which makes the
+gold label unknown, and asks whether the extra ``false'' survives. It largely
+does not, which is what a premise-grounded answer predicts. The probability
+that the formal arm answers ``false'' on these items falls from 0.53 to 0.27
+once the supporting facts are gone, and the control falls from 0.35 to 0.20.
+The English arm retains more, falling from 0.67 to 0.46, so about two thirds of
+its advantage on this cell survives the removal of the evidence for it. The
+formal rendering therefore buys a smaller gain that is more firmly tied to the
+premises, and the English rendering a larger gain of which part is a shifted
+default for negated claims.
+
 \subsection{Control conditions}
 
 Three controls bound what else could produce the effect.
@@ -381,9 +421,8 @@ condition is indistinguishable from the control on ProofWriter, with a paired
 test giving $p=0.62$ and $p=1.00$ in two seeds, while the derivation condition
 gains 12.6 points. Length and domain therefore do not explain the gain.
 
-The second concerns memorisation. No evaluation item shares an eight-gram with
-any training derivation, and the vocabulary overlap is four words among the two
-hundred most frequent.
+The second concerns memorisation, which the overlap audit of
+Section~\ref{sec:data} rules out.
 
 The third concerns the role of deductive order. A further midtraining condition that we run
 uses the same derivations with the lines of each proof shuffled, which
@@ -422,13 +461,12 @@ never sees the gold answer therefore matches sixteen-sample coverage.
 
 On ProofWriter the same rule is much weaker. Among sixteen derivations per item
 sampled at temperature 0.8, between 28 and 37 percent carry a proof that the
-checker accepts, against none for the control, and the accuracy of an accepted
-derivation lies between 53 and 69 percent, so checker selection trails majority
-voting over the same samples. The structure of the task accounts for the
-difference. The checker certifies that the written steps follow from the
-premises, and a third of the items of ProofWriter ask whether a claim is
-underivable, which a forward chain never demonstrates. A checker becomes useful
-once it is complete with respect to the task, and soundness on its own is
+checker accepts, against none for the control, and an accepted derivation is
+correct between 53 and 69 percent of the time, so checker selection trails
+majority voting over the same samples. The structure of the task accounts for
+the difference, since a third of the items ask whether a claim is underivable
+and a forward chain never demonstrates that. A checker becomes useful once it
+is complete with respect to the task, and soundness on its own is
 insufficient.
 
 \section{Notation}
@@ -457,12 +495,12 @@ Appendix~\ref{sec:boundary-details} reports.
 
 The two settings agree once the regime of each is stated. The advantage of the
 formal rendering appears under supervision that is both dense and deep, and an
-instruction mixture with a tenth of its examples replaced is neither dense nor
-deep in that sense. The formal rendering therefore carries no recommendation
-from the controlled study, and at the shares a practitioner would plausibly use
-the two notations are interchangeable.
+instruction mixture with a tenth of its examples replaced is neither. At the
+shares a practitioner would plausibly use, the two notations are
+interchangeable.
 
 \section{Midtraining}
+\label{sec:midtraining}
 
 The same derivations can enter during midtraining. We midtrained Qwen2.5-7B on 2.5 billion
 tokens with a tenth of the mixture replaced and then applied the same
@@ -475,32 +513,28 @@ replicates across seeds.
 Between the two routes, midtraining is the more expensive one and buys no more.
 The instruction-tuning route reaches the same accuracy, generalises further on
 long chains, and carries no cost on LogiQA. Applying both in sequence adds
-nothing to either, and on the problems of the generator a model trained in both
-stages performs as the midtrained model alone performs. One ability survives
-midtraining that instruction tuning without derivations removes completely.
-Prompted in the format of its training documents, the midtrained model writes
-checkable proofs up to chain length 25, and after ordinary instruction tuning
-it writes none.
+nothing to either. One ability survives midtraining that instruction tuning
+without derivations removes completely, since the midtrained model writes
+checkable proofs up to chain length 25 when prompted in the format of its
+training documents, and writes none after ordinary instruction tuning.
 
 \section{Checkable traces as a substrate for chain of thought}
 
 A chain of thought is ordinarily assessed by reading it, and its steps carry no
 form that a program can evaluate. The derivations studied here differ in that
-respect, and the results above show that the difference is cheap to obtain. One
-percent of an instruction mixture installs the format, the model keeps writing
-in it at chain lengths twice those it was trained on, and no general benchmark
-loses more than 1.3 points, so the format is close to free by the measures
-available here.
+respect, and the difference is cheap to obtain. One percent of an instruction
+mixture installs the format, the model keeps writing in it at chain lengths
+twice those it was trained on, and no general benchmark loses more than 1.3
+points.
 
 Once the format is present, validity and correctness become coupled. On the
 problems of the generator, a derivation the checker accepts carries the correct
 answer in 99 percent of samples, and a selection rule that never reads a gold
 answer recovers the accuracy of sixteen-sample coverage. A coupling of that
-strength changes what an explanation is worth. It converts a trace that a
-reader has to trust into a claim that a machine can test, and it supplies a
-training signal that requires no reference answer, which is the property that
-makes reinforcement learning from verifiable rewards practical in mathematics
-and in code \citep{lambert2025tulu}.
+strength converts a trace a reader has to trust into a claim a machine can
+test, and it supplies a training signal that requires no reference answer,
+which is the property that makes reinforcement learning from verifiable rewards
+practical in mathematics and in code \citep{lambert2025tulu}.
 
 The coupling weakens in proportion to the incompleteness of the checker. On
 ProofWriter, where a third of the items ask whether a claim is underivable and
@@ -529,36 +563,29 @@ The gains we report are confined to deduction. ProofWriter and FOLIO
 improve, the seven general benchmarks move by at most a few points, and we have
 no evidence that bears on a task that does not ask for a chain of inferences.
 
-The mechanism we identify is a correction of an answer prior. The effect is real
-and it replicates, and the claim it supports is narrower than a claim about an
-improvement in reasoning capability. A model whose prior is already balanced
-may gain less than the model we study.
+The mechanism we identify is a correction of an answer prior, which is a
+narrower claim than an improvement in reasoning capability, and a model whose
+prior is already balanced may gain less than the model we study.
 
-Our checker is sound and incomplete. It certifies that written steps follow
-from the premises, and it cannot certify that a fact is underivable, which
-limits the benefit of checker-based selection on benchmarks whose answers are
-open-world.
-
-We train one model family at one scale. The affirmative prior that the
-derivations repair is a property of the instruction corpus we use, and a
-different instruction corpus may leave a different pathology behind.
+Our checker is sound and incomplete, since it cannot certify that a fact is
+underivable, which limits checker-based selection on benchmarks whose answers
+are open-world. We also train one model family at one scale, and the
+affirmative prior that the derivations repair is a property of the instruction
+corpus we use, so a different corpus may leave a different pathology behind.
 
 \section{Conclusion}
 
 A program that writes deduction problems together with their solutions produces
 training data with no teacher model in it, and a small quantity of that data
 changes what an instruction-tuned language model does. One percent of an
-ordinary mixture suffices for the model to write proofs that a checker accepts,
-at chain lengths about twice those seen in training, where a model trained
-without the replacement writes none. Five percent suffices for the full
-improvement on held-out deduction benchmarks, and larger shares add nothing
-measurable. The improvement is a correction of an affirmative answer prior left
-behind by instruction tuning, it is confined to the claims on which that prior
-does damage, and it costs at most 1.3 points on any general benchmark we
-measure. The
-practical reading is that an instruction corpus can leave a decision rule half
-specified, that the missing half is cheap to supply when a program can
-enumerate it, and that no teacher model is required to do so.
+ordinary mixture suffices for the model to write proofs that a checker accepts
+at chain lengths about twice those seen in training, five percent suffices for
+the full improvement on held-out deduction benchmarks, and larger shares add
+nothing measurable. The improvement is a correction of an affirmative answer
+prior left behind by instruction tuning, and it costs at most 1.3 points on any
+general benchmark we measure. An instruction corpus can leave a decision rule
+half specified, and the missing half is cheap to supply when a program can
+enumerate it.
 
 \bibliographystyle{iclr2027/iclr2027_conference}
 \bibliography{iclr2027/references}
