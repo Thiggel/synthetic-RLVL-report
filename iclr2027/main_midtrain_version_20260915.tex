@@ -1,0 +1,709 @@
+\documentclass{article}
+
+\usepackage{iclr2027_conference,times}
+\usepackage{booktabs}
+\usepackage{graphicx}
+\usepackage{microtype}
+\usepackage{multirow}
+\usepackage{siunitx}
+\usepackage{xcolor}
+\usepackage{hyperref}
+\usepackage{url}
+\usepackage{amsmath}
+\usepackage{amsthm}
+\usepackage{amssymb}
+\usepackage{tikz}
+\usepackage{pgfplots}
+\pgfplotsset{compat=1.18}
+\usepgfplotslibrary{fillbetween}
+\usetikzlibrary{calc,positioning,fit,backgrounds,arrows.meta}
+
+% Table captions sit above the table; this is the gap between caption and rule.
+\setlength{\belowcaptionskip}{7pt}
+\setlength{\abovecaptionskip}{9pt}
+
+\newcommand{\formal}{\textsc{Formal}}
+\newcommand{\nat}{\textsc{English}}
+\newcommand{\branchproof}{\textsc{BranchProof}}
+\newcommand{\passk}[1]{pass@#1}
+\newcommand{\ctrl}{\textsc{Control}}
+\newcommand{\longdoc}{\textsc{LongDoc}}
+\newcommand{\condensed}{\textsc{Condensed}}
+
+\title{Proofs from a Program: Teacher-Free Derivations as Midtraining Data,\\and the Depth at Which Formal Notation Wins}
+
+\author{Anonymous authors}
+
+\begin{document}
+
+\maketitle
+
+\begin{abstract}
+Synthetic pretraining data is almost always written by a language model, which
+bounds it by what that model knows and passes on its errors. We study a source
+with no model in it: a program samples a multi-hop deduction problem, solves
+it, and writes the solution out, so every document is correct by construction.
+Replacing ten percent of a 2.5 billion token midtraining mixture for
+Qwen2.5-7B with such derivations raises accuracy on held-out ProofWriter
+problems from 44.4 to 57.0 percent at inference depth 3. Replacing the same
+share with ordinary documents of the same length distribution leaves it at
+45.4 percent. The midtrained models never reproduce the generator's notation,
+and their scores on nine general benchmarks move by about a point, apart from
+a consistent two-to-three-point loss on LogiQA. The same latent proof
+can be written as a formal derivation or as controlled English, and we generate
+both from one source so that only the notation differs. Fine-tuning OLMo-3-7B
+on either side of the pair, English supervision generalizes further when
+training proofs are at most 20 hops deep; at 25 hops the ordering reverses,
+with formal supervision at $75.0\pm9.5$ percent out-of-distribution accuracy
+against $17.8\pm4.7$ and $99.6\pm0.3$ percent within sixteen samples against
+$42.5\pm5.8$. Because a formal derivation is checkable, a proof checker selects
+a correct sample without an answer key, at $97.3\pm1.1$ percent single-answer
+accuracy against $33.8\pm1.4$ for English traces. In the midtraining mixture,
+where derivations are a small fraction of the data, English transfers at least
+as well as formal. The formal advantage is a property of dense, deep
+supervision, which is also the regime in which a model's reasoning can be
+verified, and we argue it is the regime worth training toward.
+\end{abstract}
+
+\input{fig_design}
+
+\section{Introduction}
+
+The public supply of human-written text is finite, and current projections
+place its exhaustion for frontier training runs within this decade
+\citep{villalobos2024position}. The standard remedy is synthetic text, and in
+nearly every published recipe a language model writes it: textbook-style
+corpora \citep{gunasekar2023textbooks, eldan2023tinystories}, rephrased web
+documents \citep{maini2024rephrasing, maini2025beyondweb, su2025nemotroncc},
+and expansions of a small domain corpus by prompting \citep{yang2025synthetic}.
+Such data inherits the generating model's errors and blind spots, and training
+on it repeatedly narrows the distribution
+\citep{shumailov2024collapse, dohmatob2025strong}. Verified synthetic data
+avoids this in theory \citep{feng2025verification}, and a few systems have
+trained on program-generated, mechanically checked derivations at scale
+\citep{trinh2024alphageometry}. Whether such data belongs in the pretraining
+mixture of a general language model has not been tested under controls.
+
+A few hundred lines of Python can sample a multi-hop deduction problem, solve
+it, and write the solution out. The result is correct by construction,
+unlimited in quantity, and free of any teacher. It is also narrow and unlike
+the web. We test whether it is worth including. Replacing ten percent of a 2.5
+billion token midtraining mixture for Qwen2.5-7B \citep{qwen2025qwen25} with
+program-generated derivations raises accuracy on held-out ProofWriter problems
+\citep{tafjord2021proofwriter} from 44.4 to 57.0 percent at inference depth 3
+(Table~\ref{tab:transfer-pw}). Replacing the same ten percent with long
+documents from the same corpus, matched to the derivations in length
+distribution, gives 45.4 percent. The gain is confined to items that require
+inference, it survives a correction for label bias, and none of the model's
+1{,}000 greedy generations on the near-transfer items reproduces the
+generator's notation, so the model retained the deduction and not the format.
+
+A latent proof can be rendered as a formal derivation with numbered lines and
+named inference rules, or as controlled English, and which rendering the
+program should write is the second question. We render every proof both ways from one source, so
+that the prompt, the answer and the proof graph are identical within a pair and
+only the notation differs (Figure~\ref{fig:overview}). Models trained on the
+two sides of the pair are as close to a controlled comparison as training data
+permits. Prior synthetic deduction corpora render their proofs in English only
+\citep{morishita2023fld, morishita2024alt}, and the one study that compared
+symbolic and English supervision on matched problems found English to
+generalize better \citep{zhou2025finelogic}.
+
+We find that both orderings occur, and that training depth decides between
+them. Fine-tuning OLMo-3-7B \citep{olmo2025olmo2} on 50{,}000 paired examples
+per condition, English supervision generalizes further when training proofs
+reach at most 20 hops. At 25 hops the ordering reverses, with formal
+supervision at $75.0\pm9.5$ percent out-of-distribution accuracy against
+$17.8\pm4.7$ (Table~\ref{tab:crossover}). Sixteen samples instead of one move
+the reversal to 15 hops, so formal supervision widens the set of problems the
+model can solve before it improves the first attempt, and because a formal
+derivation is checkable, a proof checker turns that wider set into
+$97.3\pm1.1$ percent single-answer accuracy with no answer key, against
+$33.8\pm1.4$ for English traces. The reversal is not unconditional. A spurious
+marker planted in training removes it, and a 32B model prefers English on the
+first attempt while keeping formal coverage at 98.8 percent.
+
+In the midtraining mixture the derivations are a tenth of the data and the
+model is instruction-tuned afterwards, and there the English rendering
+transfers at least as well as the formal one, 57.0 against 50.0 percent on
+ProofWriter at depth 3. Read together, the three settings say that the formal
+advantage is a property of dense, deep supervision: a small dose of formal
+traces is learned less thoroughly than the same dose of prose. The dense regime
+is also the only one in which a trained model's reasoning can be verified by a
+checker, and verifiable-reward training converts sampled coverage into
+first-attempt accuracy \citep{yue2025does}, so we argue it is the regime worth
+training toward.
+
+\section{Related Work}
+
+\paragraph{Synthetic data for pretraining.}
+Small models pretrained on generated textbooks reach far above their size
+\citep{gunasekar2023textbooks, eldan2023tinystories}, rephrased web text speeds
+pretraining severalfold \citep{maini2024rephrasing}, and the recipe has been
+scaled to trillions of tokens \citep{maini2025beyondweb, su2025nemotroncc} and
+into production mixtures \citep{abdin2024phi4, benallal2025smollm2,
+olmo2025olmo2}. Continued pretraining on generated expansions of a small
+corpus gives log-linear gains \citep{yang2025synthetic}, and the gains from
+synthetic data are largest at modest mixing fractions
+\citep{kang2025demystifying}. All of these use a language model as the
+generator. Training on model output degrades the tail of the distribution
+\citep{shumailov2024collapse, dohmatob2024tale, alemohammad2024mad}, at
+fractions as low as one percent in the scaling regime
+\citep{dohmatob2025strong}, unless real data accumulates alongside
+\citep{gerstgrasser2024collapse} or a verifier filters the synthetic samples
+\citep{feng2025verification}. Our generator is a program with a built-in
+checker, so its output cannot carry a model's errors.
+
+\paragraph{Procedural data without a generator model.}
+Pretraining on structured non-linguistic data transfers to language
+\citep{papadimitriou2020music, chiang2022transferability}, a large share of
+pretraining's benefit is reproduced by trivially simple synthetic tasks
+\citep{wu2022insights, krishna2021nonsense}, and pre-pretraining on formal
+languages lowers natural-language loss at a smaller token budget
+\citep{hu2025circuits}. Program-generated, verified geometry proofs have
+trained an olympiad-level prover with no human data
+\citep{trinh2024alphageometry}, and program-generated grade-school math with
+controlled dependency depth teaches a reasoning skill that generalizes to
+deeper problems \citep{ye2025physics21}. Influence functions attribute
+reasoning to procedural documents in pretraining \citep{ruis2025procedural},
+midtraining helps most for domains far from web prose
+\citep{liu2025midtraining}, and upsampling reasoning-dense data late in
+training yields large gains at small cost \citep{blakeney2024sparkjoy,
+wang2025octothinker}. Procedural generators with verifiers are standard for reinforcement learning
+\citep{stojanovski2025reasoninggym, liu2025synlogic, chen2025enigmata,
+xie2025logicrl}, and concurrent work supplies procedural corpora for
+pretraining \citep{lacombe2026reasoningcore, jiang2026proceduralpretraining}.
+None of this work places a program-generated deduction corpus into a
+production midtraining mixture under a length-matched control.
+
+\paragraph{Synthetic deduction corpora.}
+RuleTaker \citep{clark2020softreasoners} and ProofWriter
+\citep{tafjord2021proofwriter} generate rule-and-fact theories and render them
+in English, with depth generalization degrading beyond the training range.
+PrOntoQA generates problems from a first-order world model so that a chain of
+thought can be parsed back into a proof \citep{saparov2023language,
+saparov2023ood}. FLD grounds a deduction corpus in a complete set of inference
+rules \citep{morishita2023fld}, and additional training on its successor
+improves a 70B model on logic, mathematics and code \citep{morishita2024alt}.
+Statistical shortcuts can satisfy such corpora in distribution and fail out of
+it \citep{zhang2023paradox}. Each of these corpora renders its proofs in
+English. Prolog solver traces \citep{feng2024logipt} and Hilbert-style Boolean
+proofs \citep{xia2025formallogic} have been used as fine-tuning targets without
+a matched English arm. The closest study fine-tunes on one English and three
+symbolic supervision styles for the same problems and concludes that English
+generalizes better to long chains \citep{zhou2025finelogic}, which matches our
+result at training depths up to 20 and reverses at 25.
+
+\paragraph{The language of reasoning traces.}
+Intermediate steps improve multi-step accuracy \citep{wei2022chain,
+kojima2022large, nye2021show}, rationales are an efficient supervision signal
+\citep{hsieh2023distilling, li2023scotd}, and constant-depth transformers need
+serial tokens to carry out serial computation \citep{feng2023towards,
+merrill2024expressive, li2024chain}. Format governs length generalization
+\citep{anil2022exploring, zhou2024rasp, zhou2024notrobustly, hu2024casebased}.
+At inference time, writing reasoning as code or as a formal specification and
+executing it beats prose \citep{gao2023pal, chen2023program, li2024chainofcode,
+ye2023satlm, pan2023logiclm, olausson2023linc, lyu2023faithfulcot}, and the
+formal surface helps even without execution \citep{puerto2024codeprompting}.
+As training data, program-format solutions beat chain-of-thought for small
+math models because programs can be executed and filtered \citep{zhu2024pad,
+yue2024mammoth}. Prose rationales can misrepresent what drove an answer
+\citep{turpin2023language, lanham2023measuring, chen2025reasoningmodels},
+which a checked derivation cannot. None of these studies holds the latent
+proof fixed while varying the notation.
+
+\paragraph{Coverage, verification and verifiable rewards.}
+Coverage grows with the number of samples and converts into accuracy only where
+an automatic verifier exists \citep{brown2024large}, with verifiers trained
+\citep{cobbe2021training, lightman2024lets} or replaced by agreement
+\citep{wang2023selfconsistency}. Reinforcement learning from verifiable rewards
+mostly sharpens a model toward what it could already sample
+\citep{yue2025does, shao2025spurious, agarwal2025entropymin}, supervised
+fine-tuning expands the set of correct trajectories where reinforcement
+learning compresses the incorrect ones \citep{matsutani2026squeezes}, and
+prolonged training can widen coverage again \citep{liu2025prorl,
+cheng2025entropyexploration}. In formal theorem proving the checker is the
+reward \citep{xin2025deepseekprover, lin2025goedelprover, wang2025kimina,
+hubert2025alphaproof}.
+
+\section{Paired Derivations from One Generator}
+\label{sec:paired}
+
+Each example begins with a latent directed acyclic proof. The generator emits a
+prompt containing ground facts, rules, a query and distractor branches, then
+traverses the supporting path to produce the answer. A rendering function
+writes that path in one of two notations. The \formal{} rendering declares
+constants and predicates and applies named inference rules to numbered lines.
+The \nat{} rendering expresses the same substitutions and conclusions, line for
+line, in controlled sentences. Both targets end with the same answer field, and
+the prompt is English in both conditions.
+
+\branchproof{} composes Horn-style inferences in which every step offers four
+locally plausible branches, exactly one derivable from the current state, with
+a fresh constant introduced at every layer. The generator computes the full
+Horn closure of each example and accepts it only when exactly one candidate
+answer is derivable, which an independent solver confirms over 3{,}000
+instances (Appendix~\ref{sec:uniqueness-audit}). The branching factor is 4 and
+the distractor ratio 0.5 in every experiment, depths are sampled round-robin,
+and corpus seeds are disjoint across training, evaluation and sampling.
+Appendices~\ref{sec:grammar} to~\ref{sec:paired-example} give the grammar, the
+generator, the validators and complete paired targets.
+
+The controlled study fine-tunes OLMo-3-7B \citep{olmo2025olmo2} with LoRA on
+50{,}000 examples per condition, with maximum training depth $D \in
+\{5,10,15,20,25\}$ and three seeds per cell. Evaluation covers depths 1 to 50
+with 32 prompts per depth, sixteen samples at temperature 1.0 per prompt and one
+greedy decode, and the unbiased \passk{k} estimator \citep{chen2021evaluating}.
+Depths above $D$ are out of distribution. Both notations receive the same
+7{,}168-token generation limit inside a 16{,}384-token window, and a tokenizer
+audit confirms that every gold target fits in both renderings. Joint metrics
+require a correct answer and a mechanically valid proof, with formal traces
+checked directly and English traces checked after a deterministic translation
+into the same engine. Appendices~\ref{sec:training-details}
+and~\ref{sec:metrics} give the configuration and the metric definitions.
+
+\section{Training Depth Decides Which Notation Is Better}
+\label{sec:main-results}
+
+\input{fig_crossover}
+
+Figure~\ref{fig:crossover} and Table~\ref{tab:crossover} report
+out-of-distribution answer accuracy as a function of the maximum training depth
+$D$. Through $D=20$ the \nat{} condition leads under every decoding rule. At
+$D=25$ the \formal{} condition reaches $75.0\pm9.5$ percent \passk{1} against
+$17.8\pm4.7$, and $99.6\pm0.3$ percent \passk{16} against $42.5\pm5.8$. Greedy
+decoding gives the same ordering as \passk{1} at every depth.
+
+\begin{table}[t]
+\centering
+\caption{Out-of-distribution answer accuracy on \branchproof{} in percent, mean
+and standard deviation over three seeds, by maximum training depth $D$. The
+better condition per cell is in bold. Greedy decoding and \passk{1} cross at
+$D=25$; \passk{16} crosses at $D=15$.}
+\label{tab:crossover}
+\begin{tabular}{llccccc}
+\toprule
+decoding & condition & $D=5$ & $D=10$ & $D=15$ & $D=20$ & $D=25$\\
+\midrule
+greedy & \formal{} & $10.8\pm5.9$ & $33.1\pm2.2$ & $28.1\pm3.5$ & $22.0\pm11.3$ & $\mathbf{82.1\pm7.0}$\\
+greedy & \nat{} & $\mathbf{56.3\pm8.0}$ & $\mathbf{60.0\pm8.4}$ & $\mathbf{57.4\pm5.0}$ & $\mathbf{68.4\pm19.8}$ & $48.8\pm21.7$\\
+\midrule
+\passk{1} & \formal{} & $9.8\pm4.8$ & $30.8\pm1.7$ & $26.1\pm2.9$ & $23.2\pm11.3$ & $\mathbf{75.0\pm9.5}$\\
+\passk{1} & \nat{} & $\mathbf{52.4\pm6.7}$ & $\mathbf{58.0\pm8.1}$ & $\mathbf{49.5\pm1.0}$ & $\mathbf{31.2\pm5.4}$ & $17.8\pm4.7$\\
+\midrule
+\passk{16} & \formal{} & $50.0\pm15.7$ & $67.8\pm2.9$ & $\mathbf{69.9\pm6.6}$ & $\mathbf{80.4\pm12.5}$ & $\mathbf{99.6\pm0.3}$\\
+\passk{16} & \nat{} & $\mathbf{73.5\pm9.6}$ & $\mathbf{71.2\pm10.8}$ & $56.9\pm5.9$ & $45.3\pm16.6$ & $42.5\pm5.8$\\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\passk{1} crosses at $D=25$ and \passk{16} at $D=15$, where the \formal{} condition
+reaches $69.9$ percent against $56.9$. Between the two crossings the formally
+supervised model can construct a correct derivation within sixteen attempts but
+not on the first, so the set of solvable problems widens ten depth levels
+before single-sample reliability improves. A study reporting greedy accuracy
+alone would describe $D=15$ and $D=20$ as showing no formal advantage. The two
+conditions also respond to deeper training proofs in opposite directions:
+\nat{} \passk{16} falls from $73.5$ percent at $D=5$ to $42.5$ at $D=25$, and
+\formal{} \passk{16} rises from $50.0$ to $99.6$. Neither notation is better in
+general. The ordering flips with training depth, and where it flips depends on
+the decoding rule.
+
+\paragraph{Supervision quantity.}
+Formal targets are longer than English targets, so the comparison could measure
+the number of supervised tokens. Equating supervised target tokens across
+conditions by subsampling gives $41.0\pm20.1$ percent \passk{1} and
+$69.8\pm34.9$ percent \passk{16} for the token-matched \nat{} condition at
+$D=25$ (Table~\ref{tab:controls}), against $99.6\pm0.3$ \passk{16} for
+\formal{}. The ordering is unchanged. The variance of this control is large,
+and we report it as bounding the explanation and not as a precise estimate.
+
+\subsection{A checker selects the correct sample without labels}
+\label{sec:verifier}
+
+A model whose sixteen samples contain a correct proof is only useful if that
+proof can be found without the answer. For formal derivations it can, since
+validity is decided by the same engine that generated the problem. Drawing
+sixteen samples, checking each in order and returning the answer of the first
+one the checker accepts gives $97.3\pm1.1$ percent single-answer accuracy at
+$D=25$, against a joint \passk{16} ceiling of $98.1\pm0.5$ percent. The $0.8$
+point gap is the cost of derivations the checker accepts that reach a wrong
+answer. No reward model and no gold labels enter the procedure. The same
+selector applied to translated \nat{} traces recovers $33.8\pm1.4$ percent,
+mainly because long English derivations fail to terminate inside the
+generation budget, so there is no checkable derivation to accept.
+
+\subsection{Where the reversal holds and where it does not}
+\label{sec:ablations}
+
+Table~\ref{tab:controls} collects controls run on the same generator at $D=25$.
+
+\begin{table}[t]
+\centering
+\caption{Out-of-distribution answer accuracy in percent at maximum training
+depth 25, mean and standard deviation over three seeds. All rows use the same
+generator and evaluation as Table~\ref{tab:crossover}.}
+\label{tab:controls}
+\begin{tabular}{lcc}
+\toprule
+condition & \passk{1} & \passk{16}\\
+\midrule
+\multicolumn{3}{l}{\emph{reference}}\\
+\quad \formal{} & $75.0\pm9.5$ & $99.6\pm0.3$\\
+\quad \nat{} & $17.8\pm4.7$ & $42.5\pm5.8$\\
+\midrule
+\multicolumn{3}{l}{\emph{supervised tokens equated}}\\
+\quad \nat{}, token-matched & $41.0\pm20.1$ & $69.8\pm34.9$\\
+\midrule
+\multicolumn{3}{l}{\emph{spurious marker in training, absent at test}}\\
+\quad \formal{} & $43.1\pm7.7$ & $87.3\pm7.5$\\
+\quad \nat{} & $78.5\pm14.9$ & $99.4\pm0.9$\\
+\midrule
+\multicolumn{3}{l}{\emph{both notations in one model}}\\
+\quad concatenated, \formal{} first & $0.5\pm0.4$ & $7.1\pm5.5$\\
+\quad concatenated, \nat{} first & $0.2\pm0.1$ & $2.3\pm1.6$\\
+\quad mode-conditioned, \formal{} mode & $50.3\pm6.4$ & $87.1\pm3.9$\\
+\quad mode-conditioned, \nat{} mode & $18.1\pm2.0$ & $24.8\pm3.7$\\
+\midrule
+\multicolumn{3}{l}{\emph{other base models}}\\
+\quad Qwen2.5-7B, \formal{} & $69.9\pm11.1$ & $77.3\pm5.2$\\
+\quad Qwen2.5-7B, \nat{} & $74.9\pm7.0$ & $76.0\pm5.6$\\
+\quad OLMo-3-32B, \formal{} & $63.9\pm5.1$ & $98.8\pm0.9$\\
+\quad OLMo-3-32B, \nat{} & $98.9\pm0.8$ & $99.8\pm0.3$\\
+\quad OLMo-3-32B conditioned, \formal{} mode & $85.0\pm8.7$ & $99.8\pm0.3$\\
+\quad OLMo-3-32B conditioned, \nat{} mode & $77.2\pm11.7$ & $88.8\pm7.7$\\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\paragraph{Shortcuts.}
+A spurious marker that identifies the active branch on 80 percent of training
+examples and is removed at test time \citep{geirhos2020shortcut} reverses the
+comparison. The \nat{} condition is barely affected, at $99.4\pm0.9$ percent
+\passk{16} and $76.1$ percent at depth 50, while the \formal{} condition falls
+to $87.3\pm7.5$ and to $11.7$ percent at depth 50. The formal advantage is
+therefore not a general robustness to distribution shift. A model trained on
+rigid syntax binds more readily to a rigid spurious feature.
+
+\paragraph{Both notations in one model.}
+Concatenating the two renderings into one target fails, at $0.5\pm0.4$ and
+$0.2\pm0.1$ percent \passk{1}, because the model copies one or both long traces
+and exhausts its budget. Separate examples with an output-mode tag reach
+$50.3\pm6.4$ percent \passk{1} in formal mode, below single-notation training.
+
+\paragraph{Base model.}
+On Qwen2.5-7B the conditions are within variance of each other, at
+$69.9\pm11.1$ against $74.9\pm7.0$ percent \passk{1}. On OLMo-3-32B \nat{}
+leads at $98.9\pm0.8$ against $63.9\pm5.1$ percent \passk{1}, while \formal{}
+\passk{16} stays at $98.8\pm0.9$. At 32B the formal deficit is one of
+probability mass on the first sample, not of coverage. Mode conditioning at 32B
+lifts the formal mode to $85.0\pm8.7$ percent \passk{1}. Across the three base
+models, \formal{} \passk{16} is at or above \nat{} \passk{16} in every
+$D=25$ cell except Qwen2.5-7B, where the two are within one standard deviation.
+
+\section{Midtraining a 7B Model on Derivations from a Program}
+\label{sec:transfer}
+
+The controlled study supplies dense supervision on one task, and the practical
+question is whether a small share of such data improves an ordinary model when
+placed in an ordinary mixture, on benchmarks the generator never saw. We test
+this by midtraining Qwen2.5-7B \citep{qwen2025qwen25} on the Dolmino mixture
+\citep{olmo2025olmo2} with a fixed fraction replaced.
+
+\subsection{Design}
+
+Five conditions share every hyperparameter, every data path outside the
+replaced slice, and a token budget of $2{,}500{,}853{,}760$ training tokens,
+reached as 2{,}385 steps of global batch 128 at sequence length 8{,}192. They
+differ in the ten percent of loss tokens that is replaced.
+\begin{enumerate}
+\item \ctrl{} trains on the unmodified mixture.
+\item \longdoc{} replaces ten percent with long documents drawn from the same
+mixture, selected to match the token-length histogram of the \formal{} corpus.
+\item \formal{} replaces ten percent with formal derivations generated at
+depths 1 to 25.
+\item \nat{} replaces ten percent with the English rendering of the same latent
+proofs.
+\item \condensed{} replaces ten percent with a formal rendering of the same
+latent proofs that states the theory once, 2.6 times shorter.
+\end{enumerate}
+The \formal{} document states its theory twice, as the English prompt and
+again as formal premises, and then gives the proof; the \nat{} document
+states the theory once, in English. Formal premises are about 1.5 times more
+compact than controlled English for the same theory, so the two documents are
+length-matched by that offset, and \condensed{} is the formal document with
+the theory stated once.
+\longdoc{} separates two explanations of any gain, since derivations are long
+documents and long documents change what a model learns about carrying state
+across a window. Its median length is $3{,}712$ tokens against $3{,}749$ for
+\formal{}, and all thirty populated 250-token bins agree within three percent.
+The three derivation corpora contain 72{,}000 documents each and render the
+same latent proofs. A document-preserving packer never splits a document
+across windows, and a decoded-batch audit refuses to start training if any
+window contains a split document or an unmasked padding token; zero documents
+were split or excluded in any condition. Because the replaced slice is fixed
+in tokens, \condensed{} traverses its proof set 2.31 times where \formal{} and
+\nat{} traverse theirs 0.90 and 0.89 times, so its comparison with \nat{} is
+one of a compact rendering seen more than twice against a verbose one seen
+once (Appendix~\ref{sec:midtrain-details}).
+
+All five checkpoints receive the same instruction tuning on 100{,}000 examples
+of a public instruction corpus at seed 3407, and a second replicate at seed
+3408 is reported where available. Evaluation uses two families. The external
+family is ProofWriter under the open-world assumption at inference depths 0, 1,
+2, 3 and 5, with 500 items per depth, which the generator never produced. The
+near-transfer family asks for a written derivation on held-out problems from
+the generator at depths 5 to 25, with 200 items per depth. A ten-task general
+suite and three multi-hop question-answering tasks check for regressions.
+Sampled measurements draw sixteen completions at temperature 0.8 on the
+prompts logged by the greedy run. Appendix~\ref{sec:midtrain-details} gives
+every setting.
+
+\subsection{Results}
+\label{sec:transfer-results}
+
+\paragraph{External transfer.}
+At depth 0 of ProofWriter, which requires lookup and no inference, the five
+conditions fall between 44.2 and 48.8 percent greedy exact match
+(Table~\ref{tab:transfer-pw}). From depth 2 onward \nat{} leads \ctrl{} by 10 to 13
+points and \formal{} leads it by 4 to 6 points, and \longdoc{} stays within 2
+points of \ctrl{} at every depth. The gain therefore follows from the deduction
+in the replaced slice and not from its length, and it appears only where
+inference is required.
+
+\begin{table}[t]
+\centering
+\caption{Greedy exact match on ProofWriter by inference depth, in percent, 500
+items per depth, one training run per condition at instruction-tuning seed
+3407. Depth 0 requires lookup only. The right-hand block pools depths 1 to 5
+(2{,}000 items) and splits accuracy by gold label; \emph{two-class} is accuracy
+on the 1{,}527 items whose gold label is true or false.}
+\label{tab:transfer-pw}
+\small\setlength{\tabcolsep}{3.5pt}
+\begin{tabular}{lccccc|cccc}
+\toprule
+& \multicolumn{5}{c|}{inference depth} & \multicolumn{4}{c}{pooled depths 1--5}\\
+condition & 0 & 1 & 2 & 3 & 5 & pred.\ true & gold true & gold false & two-class\\
+\midrule
+\ctrl{}     & 44.2 & 32.8 & 44.0 & 44.4 & 46.0 & 66.3 & 70.4 & 38.5 & 54.4\\
+\longdoc{}  & 45.8 & 32.2 & 44.4 & 45.4 & 44.0 & 65.9 & 69.5 & 38.6 & 54.0\\
+\formal{}   & 48.0 & 35.8 & 49.4 & 50.0 & 50.2 & 56.4 & 66.5 & 54.2 & 60.3\\
+\nat{}      & 48.8 & 38.8 & 56.2 & 57.0 & 56.4 & 49.5 & 68.3 & 68.0 & 68.2\\
+\condensed{} & 46.0 & 34.6 & 46.0 & 48.0 & 47.4 & 56.8 & 64.0 & 50.9 & 57.4\\
+\bottomrule
+\end{tabular}
+\end{table}
+
+The right-hand block of Table~\ref{tab:transfer-pw} splits the pooled items by
+gold label. \ctrl{} and \longdoc{} predict \emph{true} on 66 percent of items.
+The derivation conditions predict it on 50 to 57 percent, their accuracy on
+gold-true items stays within 6 points of \ctrl{}, and their accuracy on
+gold-false items rises from 38.5 to between 50.9 and 68.0 percent, so the gain
+is a gain in rejecting false claims and not a shift of the prior. No condition
+answers the \emph{unknown} class correctly on more than 1.3 percent of its 473
+items, so the result is a two-class deduction gain.
+
+\paragraph{Near transfer.}
+On held-out problems from the generator, prompted to write a derivation before
+answering, \ctrl{} scores between 3.5 and 11.0 percent greedy exact match
+across depths and \longdoc{} between 7.5 and 15.0. Every derivation condition
+is far above both: \nat{} between 24.5 and 52.5 percent, \formal{} between 17.5
+and 31.5, and \condensed{} between 18.5 and 34.5
+(Table~\ref{tab:transfer-passk}). The replaced slice teaches a capability
+the control mixture does not supply. Under greedy decoding \nat{} is ahead of
+\formal{} at every depth, by 3.0 to 21.0 points.
+
+The proportion of greedy generations that reach an answer field is 64.5 to
+78.5 percent for \ctrl{}, 79.5 to 92.5 for \longdoc{}, 94.0 to 99.5 for
+\formal{}, and 100 for \nat{}, so models that never saw a derivation in
+midtraining often stop before concluding.
+
+% SAMPLED READOUT: fill from qwen25_longwin_passk_20260908_eosfix once complete.
+% The 2026-09-07 sampled readout is superseded (sampler did not stop on
+% <|im_end|>; every sample ran to the cap and last-match extraction read the
+% tail). Do not restore those numbers.
+\paragraph{Sampled decoding.}
+Sampling raises every condition and preserves the greedy ordering
+(Table~\ref{tab:transfer-passk}). Pooled over depths,
+\passk{16} is 57.0 percent for \ctrl{}, 61.4 for \longdoc{}, 81.4 for
+\formal{}, 86.4 for \nat{} and 83.5 for \condensed{}, and mean single-sample
+accuracy is 6.9, 7.7, 20.6, 27.4 and 17.5. A paired bootstrap over the
+1{,}000 documents (Appendix~\ref{sec:transfer-tables}) gives \nat{} minus
+\formal{} at $+5.0$ points of \passk{16}, interval $[2.1, 7.9]$, and $+6.8$
+points of single-sample accuracy, interval $[5.2, 8.3]$; \formal{} minus
+\longdoc{} is $+20.0$ points of \passk{16}, interval $[16.3, 23.5]$.
+\condensed{} sits between the two notations in coverage, $2.9$ points below
+\nat{}, interval $[-0.1, 5.8]$. All three notation contrasts reproduce under
+the second instruction-tuning seed, at $+4.9$, $+2.7$ and $-2.2$ points
+(Appendix~\ref{sec:transfer-tables}). The sampled crossover of
+the controlled study, where formal coverage overtook English at $D=15$, does
+not appear here. At a tenth of the mixture the formal rendering is behind the
+English rendering on the first sample and on coverage alike.
+
+\begin{table}[t]
+\centering
+\caption{Near-transfer accuracy in percent by inference depth and decoding
+rule, 200 items per depth, sixteen samples at temperature 0.8. Greedy values
+come from the instruction-tuned checkpoints at seed 3407.}
+\label{tab:transfer-passk}
+\begin{tabular}{llccccc}
+\toprule
+decoding & condition & d5 & d10 & d15 & d20 & d25\\
+\midrule
+greedy & \ctrl{} & 5.0 & 3.5 & 11.0 & 9.0 & 6.5\\
+greedy & \longdoc{} & 7.5 & 11.0 & 12.0 & 15.0 & 12.0\\
+greedy & \formal{} & 31.5 & 17.5 & 27.5 & 21.5 & 19.5\\
+greedy & \nat{} & 52.5 & 34.5 & 30.5 & 24.5 & 29.5\\
+greedy & \condensed{} & 34.5 & 28.5 & 18.5 & 20.5 & 24.0\\
+\midrule
+\passk{16} & \ctrl{} & 58.0 & 55.5 & 58.5 & 60.0 & 53.0\\
+\passk{16} & \longdoc{} & 63.0 & 63.5 & 61.0 & 63.5 & 56.0\\
+\passk{16} & \formal{} & 97.0 & 85.5 & 79.0 & 74.0 & 71.5\\
+\passk{16} & \nat{} & 95.5 & 91.5 & 84.5 & 78.0 & 82.5\\
+\passk{16} & \condensed{} & 89.5 & 89.0 & 80.0 & 81.5 & 77.5\\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\paragraph{General benchmarks.}
+On nine general benchmarks and three long-context multi-hop tasks under
+standard prompting, the five conditions are within 1.3 points of each other on
+GSM8K, MATH-500, BBH, MMLU, HellaSwag, WinoGrande and PIQA, and the whole
+table reproduces under the second instruction-tuning seed to within about a
+point (Table~\ref{tab:general}). One deficit is consistent rather than
+noise: on LogiQA the derivation conditions lose two to three points to
+\ctrl{} in both seeds and on both the raw and the length-normalised metric.
+Sampling does not change the picture. Over sixteen completions, GSM8K
+\passk{16} lies between 97.4 and 97.8 percent across conditions and MATH-500
+between 52.2 and 54.4, and on tagged multi-hop the derivation conditions match
+\ctrl{} on HotpotQA and MuSiQue and exceed it on 2WikiMultihopQA
+(Appendix~\ref{sec:transfer-tables}). Ten percent of the mixture buys nothing
+on tasks that never ask for a derivation, and costs a little on LogiQA.
+
+\paragraph{The midtrained models do not write formal notation.}
+None of the 1{,}000 greedy near-transfer generations of the \formal{} arm
+contains any marker of the training rendering, and the same holds for every
+other condition. After instruction tuning all five models answer in prose. The
+gain reported above is therefore not an effect of adopting formal notation, and
+the checker-based selection of Section~\ref{sec:verifier} does not apply at
+this scale, since no formal derivation is emitted for a checker to accept.
+
+\subsection{Statistical status}
+\label{sec:transfer-limits}
+
+Every midtrained checkpoint was instruction-tuned twice under different seeds.
+Over the fifty condition and task pairs of the deduction suite the mean
+absolute difference between seeds is $0.015$ and the largest is $0.050$,
+implying a standard deviation of $0.021$ for a difference between two arms,
+and every contrast above survives: at inference depth 3, \nat{} minus \ctrl{}
+is $+12.6$ and $+13.6$ points across the two seeds, \formal{} minus \ctrl{}
+is $+5.6$ and $+6.6$, and \longdoc{} minus \ctrl{} is $+1.0$ and $+1.4$
+(Appendix~\ref{sec:transfer-tables}). The replicate does not address variation
+between midtraining runs, which were single, so a different midtraining seed
+could reorder arms separated by a few points. That applies to \formal{}
+against \condensed{} and not to either against \ctrl{} or \longdoc{}.
+
+
+% ---------------------------------------------------------------------------
+% RL SECTION (not compiled). Six GRPO runs are queued on alex:
+%   {Formal, English} x {correct_only, correct_times_valid, correct_plus_valid}
+%   LoRA r16 on the seed-3407 post-SFT arms, 300 steps, 8 prompts x 8 rollouts,
+%   fresh BranchProof band-25 corpus (seed 20260907, disjoint from midtraining).
+% Uncomment and fill once the sweep (scripts/slurm/sweeps/rl_longwin_band25_2026-09-07.slurm)
+% has produced its readouts. Suggested placement: after \subsection{Statistical status}.
+%
+% \subsection{Verifiable-reward posttraining on the midtrained models}
+% \label{sec:rl}
+%
+% The argument of Section~\ref{sec:discussion} is that verifiable-reward
+% training converts coverage into first-attempt accuracy, so the notation
+% that supplies more coverage should gain more from it. We test this on the
+% \formal{} and \nat{} arms with GRPO on held-out problems from the generator
+% at depths 1 to 25, disjoint from the midtraining corpus, for 300 steps with
+% eight prompts and eight rollouts per step. Three rewards are compared: answer
+% correctness alone; correctness gated on a checker-valid derivation; and
+% correctness plus validity as separate unit rewards. The last two are only
+% defined for a model that writes a checkable derivation, which after
+% instruction tuning neither arm does, so they also measure whether the
+% reward can bring the notation back.
+%
+% [Table: pass@1 and pass@16 on the near-transfer family before and after
+% GRPO, by arm and reward; ProofWriter greedy before and after.]
+% ---------------------------------------------------------------------------
+
+\section{Discussion}
+\label{sec:discussion}
+
+\paragraph{What transfers is the deduction.}
+Both renderings raise ProofWriter accuracy, the length-matched control does
+not, and the trained models write neither notation, so what survives
+instruction tuning is the content of a program-generated derivation and not
+its surface form. That is the property one wants from a source which costs
+nothing to run and cannot carry a generating model's errors.
+
+\paragraph{The formal advantage is a property of dense, deep supervision.}
+Across the settings studied, formal supervision wins the first attempt in
+exactly one: 50{,}000 examples on a single task, training proofs through 25
+hops, on a 7B model. It wins coverage more broadly, at $D \geq 15$ and at 32B.
+It loses the first attempt when training proofs are shallow, when a shortcut
+is available, when the model is larger, and when the derivations are a tenth
+of a midtraining mixture, where it is behind on coverage as well. The formal rendering is further from the pretraining
+distribution than controlled English, so a given dose of it is learned less
+thoroughly, while the same dose of English is learned more thoroughly but
+yields a narrower distribution over derivations at depth, which is what the
+falling \nat{} \passk{16} curve in Table~\ref{tab:crossover} measures.
+
+\paragraph{Why the dense regime is the one to train toward.}
+In the dense regime almost every held-out problem has a correct formal
+derivation within sixteen samples, at depths beyond the training range and
+with distractor branches at every step, and that derivation can be found by a
+checker with no labels. A system that samples and verifies wants exactly these
+two properties, and prose supervision supplies neither.
+Verifiable-reward training principally reweights a model toward completions it
+can already sample \citep{yue2025does, matsutani2026squeezes}, so the coverage a
+model has after supervised training bounds what that stage can reach, and in
+the dense regime formal supervision moves that bound from $42.5$ to $99.6$
+percent. Ten percent of a mixture is not enough to make a model write
+derivations a checker can accept. The next step is a larger share, or an
+instruction stage that preserves the notation, followed by verifiable-reward
+training on both notations. We have not run that stage, and our results
+establish only that the ingredients it needs are present after dense formal
+supervision and absent after prose supervision.
+
+\section{Limitations}
+
+The controlled study uses LoRA fine-tuning on one model family at 7B and 32B
+and a second at 7B, and the midtraining study uses a third, whose depth
+thresholds are inherited from OLMo-3-7B rather than measured on it. The
+generator produces one family of Horn-style deduction problems without
+arithmetic, ambiguity or retrieval, and the depth axis is proof depth alone.
+Proof validity for English traces depends on a deterministic translation into
+the proof engine that the formal condition does not need, so answer accuracy
+is reported alongside every joint metric. \condensed{} sees each proof 2.6
+times more often than the other derivation conditions, and ProofWriter's
+\emph{unknown} class is unsolved by every model. An earlier
+configuration of the midtraining study, at sequence length 4{,}096 with a five
+percent share and derivations capped at depth 14, produced no measurable
+transfer; it differs in window, share, rendering and evaluation suite and is
+not a controlled comparison (Appendix~\ref{sec:earlier-config}).
+
+\section{Conclusion}
+
+A program that writes out its own deductions is a usable source of midtraining
+data. At ten percent of a 2.5 billion token mixture it raises held-out
+deduction accuracy by up to 13 points, against a length-matched control that
+raises nothing, at a cost of two to three points on LogiQA alone. How the
+program writes matters, and the answer depends on the dose. Trained densely
+through 25 hops, formal notation solves nearly every held-out problem within
+sixteen samples and lets a checker pick a correct one without labels; at a
+tenth of a mixture, English transfers at least as well. Formal notation wins
+where reasoning can be verified, which is a reason to train toward that
+regime.
+
+\bibliographystyle{iclr2027_conference}
+\bibliography{references}
+
+\appendix
+\input{appendix_details}
+
+\end{document}
