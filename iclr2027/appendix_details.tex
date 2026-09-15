@@ -78,8 +78,8 @@ boundaries, declarations, formulas, proof-line references and rule
 applications. Common failures are malformed block structure, undeclared
 symbols, references to unavailable lines, applying implication elimination to
 the wrong antecedent, and stopping before the queried conclusion. English
-validation adds one failure mode: the controlled sentence must translate back
-into a formal step before the checker can evaluate it.
+validation adds one further failure mode, in which the controlled sentence must
+translate back into a formal step before the checker can evaluate it.
 
 \section{Paired Target Examples}
 \label{sec:paired-example}
@@ -191,7 +191,7 @@ Evaluation uses vLLM with top-$p$ 0.95, temperature 1.0, sixteen samples per
 prompt and one greedy decode, at depths
 $\{1,2,5,10,12,15,18,20,25,30,35,40,45,50\}$ with 32 prompts per depth per
 seed. The out-of-distribution band for a run with maximum training depth $D$
-is every evaluated depth above $D$; for $D=25$ it contains $5\times32=160$
+is every evaluated depth above $D$, and for $D=25$ it contains $5\times32=160$
 prompts per seed. Reported uncertainty is the standard deviation over three
 seeds.
 
@@ -204,8 +204,8 @@ sixteen samples. Formal joint validity requires a correct answer and a
 mechanically valid formal trace. English joint validity requires a correct
 answer and a successful translation of the trace into a valid formal proof.
 Checker selection draws the sixteen samples in a fixed order, accepts the first
-whose derivation the checker validates, and scores its answer; if none is
-accepted the item is scored incorrect. The selector never sees the gold answer.
+whose derivation the checker validates, and scores its answer. If no sample is
+accepted, the item is scored incorrect. The selector never sees the gold answer.
 
 \section{Length and Token-Budget Controls}
 \label{sec:length-controls}
@@ -225,16 +225,17 @@ scale.
 \paragraph{Shortcut.}
 A spurious schema marker identifies the active branch on 80 percent of
 training examples and is removed at test time. Out-of-distribution \passk{1} is
-$43.1\pm7.7$ percent for \formal{} and $78.5\pm14.9$ for \nat{}; at depth 50
+$43.1\pm7.7$ percent for \formal{} and $78.5\pm14.9$ for \nat{}, and at depth 50
 the two are $11.7$ and $76.1$ percent.
 
 \paragraph{Mode conditioning.}
 Concatenating both renderings into one target gives $0.5\pm0.4$ percent
 out-of-distribution \passk{1} with the formal rendering first and $0.2\pm0.1$
-with the English rendering first; generations copy one or both traces and
+with the English rendering first, and generations copy one or both traces and
 exhaust the budget. Mode-conditioned training places an output-mode tag on
 separate examples. At 7B it reaches $50.3\pm6.4$ percent \passk{1} in formal
-mode and $18.1\pm2.0$ in English mode; at 32B, $85.0\pm8.7$ and $77.2\pm11.7$.
+mode and $18.1\pm2.0$ in English mode, and at 32B it reaches $85.0\pm8.7$ and
+$77.2\pm11.7$ percent.
 Raw generations separate cleanly by mode.
 
 \paragraph{Capacity.}
@@ -283,7 +284,7 @@ efficiencies.
 
 \paragraph{Packing and audit.}
 Documents are packed by a document-preserving packer at sequence length
-8{,}192 under a fixed shuffle seed. The packer never splits a document; a
+8{,}192 under a fixed shuffle seed. The packer never splits a document, and a
 document exceeding one window is excluded and counted. Tail padding uses a
 dedicated token masked out of the loss. Overlength and split counts are zero
 for every condition. Before training begins, a decoded-batch audit
@@ -328,9 +329,9 @@ the same indices to every condition and depth. Reported intervals are the
 \begin{table}[h]
 \centering
 \caption{General-benchmark scores of the five midtrained and instruction-tuned
-models at seed 3407, in percent. GSM8K is strict-match exact match; MATH-500
-is scored by a post-hoc answer-prefix checker; BBH is exact match over the
-chain-of-thought few-shot suite; the multi-hop tasks report F1 under standard
+models at seed 3407, in percent. GSM8K is strict-match exact match, MATH-500
+is scored by a post-hoc answer-prefix checker, BBH is exact match over the
+chain-of-thought few-shot suite, and the multi-hop tasks report F1 under standard
 prompting.}
 \label{tab:general}
 \scriptsize\setlength{\tabcolsep}{3pt}
@@ -352,7 +353,7 @@ condition & GSM8K & MATH & BBH & MMLU & ARC & HSwag & WinoG & PIQA & LogiQA & Ho
 \caption{Near-transfer contrasts pooled over inference depths 5 to 25 (1{,}000
 documents), in percentage points, with 95 percent intervals from a paired
 bootstrap over documents with 4{,}000 resamples. Intervals cover evaluation
-sampling error only; the two-seed comparison in Table~\ref{tab:seedrep} gives
+sampling error only, and the two-seed comparison in Table~\ref{tab:seedrep} gives
 the training-run term.}
 \label{tab:transfer-boot}
 \begin{tabular}{lrr}
@@ -409,7 +410,7 @@ near transfer d25 & 6.5 & 9.0 & 12.0 & 11.0 & 19.5 & 21.5 & 29.5 & 29.5 & 24.0 &
 \caption{Near-transfer \passk{16} in percent under both instruction-tuning
 seeds, 200 items per depth, sixteen completions at temperature 0.8. The three
 contrasts between the derivation conditions agree across seeds to within
-$0.2$ points; \longdoc{} carries the largest seed spread and no contrast of
+$0.2$ points, and \longdoc{} carries the largest seed spread and no contrast of
 interest.}
 \label{tab:sampled-seedrep}
 \small\setlength{\tabcolsep}{4pt}
@@ -445,9 +446,10 @@ and 68.2 against 68.2 for \nat{}.
 \centering
 \caption{Sampled evaluation of the suites that do not ask for a derivation,
 seed 3407, sixteen completions at temperature 0.8. The multi-hop tasks use the
-tagged prompt that elicits the trained scaffold, 200 items each; GSM8K has
-1{,}319 items and MATH-500 has 500. Sampling reproduces the greedy picture: no
-derivation condition separates from \ctrl{} except on 2WikiMultihopQA.}
+tagged prompt that elicits the trained scaffold with 200 items each, GSM8K has
+1{,}319 items and MATH-500 has 500. Sampling reproduces the greedy picture, in
+which no derivation condition separates from \ctrl{} except on
+2WikiMultihopQA.}
 \label{tab:sampled-downstream}
 \small\setlength{\tabcolsep}{5pt}
 \begin{tabular}{llccccc}
@@ -482,3 +484,12 @@ under fallback answer extraction. That configuration had no length-matched
 control and no deduction benchmark, and its derivations never reached the
 depths at which the controlled study locates the formal advantage, so it
 motivated the present design without constraining it.
+
+\section{Notation Crossover Curves}
+\label{sec:crossover-figure}
+
+Figure~\ref{fig:crossover} reports the controlled study of the two notations on
+the problems of the generator alone, across the range of maximum training
+depths and for three decoding rules.
+
+\input{fig_crossover}
