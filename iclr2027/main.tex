@@ -272,11 +272,10 @@ inside the range spanned by the three control seeds. The three that leave it
 move upward, BIG-Bench Hard by up to 2.7 points against a control range of
 0.9, ARC-Challenge by up to 2.8 against 0.8 and LogiQA by up to 2.1 against
 0.6, while accuracy on GSM8K falls by at most 1.3 points against a control
-range of 0.3. GPQA-Diamond, which we score outside the general suite, moves in
-the same direction, from 31.8 percent for the control to 33.8 percent at five
-percent of formal derivations and 36.9 percent at 25 percent, although its 198
-items make two points worth about four items and we draw no conclusion from
-it.
+range of 0.3. GPQA-Diamond, which we score outside the general
+suite, shows no measurable effect, since its 198 items give the control a seed
+spread of 3.5 points and no condition departs from the control by more than
+that.
 
 Multi-hop question answering moves much less. On HotpotQA, 2WikiMultihopQA and
 MuSiQue, reported in Table~\ref{tab:multihop} of the appendix, the English
@@ -424,33 +423,37 @@ whether the last person does, and Table~\ref{tab:wol} of the appendix reports
 the same quantities as Table~\ref{tab:mechanism}.
 
 The control carries the same affirmative prior. It answers ``yes'' on 56.7
-percent of items while the gold answers are ``yes'' on 48.8 percent, and its
-accuracy is 93.2 percent where the answer is ``yes'' against 78.1 percent where
-it is ``no''. The formal conditions move the answer rate to 48.4 and 48.5
-percent, which is the gold rate, and the accuracy they add falls almost
-entirely in the negative cell, which reaches 97.9 percent. Resolving by the
-number of negating links in the chain sharpens this further. Every condition is
-perfect when no link negates, and the control falls to 71.7 percent when three
-do, where the formal conditions hold 97.3 percent.
+percent of items while 48.8 percent are ``yes'', and it is right on 93.2
+percent of the positive items against 78.1 of the negative ones. The formal
+conditions move the answer rate to the gold rate and lift the negative cell to
+97.9 percent.
 
 The same samples rule out two alternative explanations. Every condition emits
 the answer phrase on every item, so this is not compliance with the extractor,
-and every condition writes about 129 words, so it is not deliberation. The
-English conditions hold an answer rate near 54 percent and gain little, which
-is where the notations separate most sharply.
+and every condition writes about 129 words, so it is not deliberation.
+
+The task supports a stronger statement than a corrected prior, because the
+model writes one numbered line per person and each line states the truth value
+it is carrying. Reading that value at every position and comparing it with the
+value the chain implies gives Table~\ref{tab:steps}. Every condition is correct
+at the second position, and the control then decays, holding the right value on
+98.1, 92.1 and 85.5 percent of items at the third, fourth and fifth, where the
+ten percent formal condition holds 99.3, 97.7 and 97.6. The two rightmost
+columns close the account, since every condition answers correctly on
+essentially every item whose intermediate values are all correct and almost
+never on an item where one is wrong. Accuracy here is the probability of
+carrying the value to the end, and the replacement raises it from 0.849 to
+0.975 without changing what the model does with the value once it has it.
+
+\input{tab_steps}
 
 FOLIO gives a third instance. The control answers ``true'' on 51.7 percent of
-its items while 35.5 percent are true, and it is right on 80.1 percent of the
-true items against 32.3 percent of the false ones. The replacement raises the
-false items to 45.2 percent and the uncertain items from 38.6 to 52.2 percent
-while the true items stay put, so the same correction produces the FOLIO gain
-of Table~\ref{tab:dose}. Appendix~\ref{sec:folio-table} gives the split.
-
-Object tracking has no such prior to repair, since its answer is one of several
-positions, and there the treated models propagate the state correctly more
-often, 76.3 percent against 62.3, with length again unchanged. The derivations
-therefore supply two things, a corrected decision rule where an answer can be
-negative and a more reliable procedure for carrying a value along a chain.
+its items while 35.5 percent are true, and the replacement raises the false
+items from 32.3 to 45.2 percent and the uncertain items from 38.6 to 52.2 while
+the true ones stay put. Appendix~\ref{sec:folio-table} gives the split. Object tracking has no such
+prior to repair, since its answer is one of several positions, and there the
+treated models simply propagate the state correctly more often, 76.3 percent
+against 62.3.
 
 
 \subsection{Control conditions}
@@ -602,10 +605,8 @@ is a property of the instruction corpus we use.
 A program that writes deduction problems and their solutions produces training
 data with no teacher model in it, and a small quantity of it changes what an
 instruction-tuned model does. One percent installs checkable derivations at
-twice the training chain length, five percent gives the full gain on held-out
-deduction benchmarks, and that gain is a correction of an affirmative answer
-prior which reaches a general benchmark wherever the task propagates a value
-along a chain.
+twice the training chain length and five percent gives the full benchmark gain.
+What improves is the probability of carrying a value to the end of a chain.
 
 \bibliographystyle{iclr2027/iclr2027_conference}
 \bibliography{iclr2027/references}

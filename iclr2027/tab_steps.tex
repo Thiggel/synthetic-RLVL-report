@@ -1,0 +1,27 @@
+\begin{table}[t]
+\caption{Where the reasoning loses the value, over all 250 web of lies items
+and every seed. The model writes one numbered line per person, so the truth
+value it carries can be read at each position and compared with the value the
+chain implies. Accuracy at each position is the fraction of items whose value
+is still correct there. The last two columns give the final answer accuracy
+when every intermediate value is correct and when at least one is not.}
+\label{tab:steps}
+\begin{center}
+\small
+\begin{tabular}{llccccccc}
+\toprule
+ & & \multicolumn{4}{c}{value still correct at position} & all steps & \multicolumn{2}{c}{final answer} \\
+\cmidrule(lr){3-6}\cmidrule(lr){8-9}
+Notation & Share & 2 & 3 & 4 & 5 & correct & steps ok & steps wrong \\
+\midrule
+none    & 0\%  & $1.000$ & $.981$ & $.921$ & $.855$ & $.849$ & $1.000$ & $.035$ \\
+formal  & 1\%  & $1.000$ & $.987$ & $.952$ & $.928$ & $.924$ & $.999$ & $.053$ \\
+formal  & 5\%  & $1.000$ & $.987$ & $.965$ & $.959$ & $.955$ & $1.000$ & $.088$ \\
+formal  & 10\% & $1.000$ & $.993$ & $.977$ & $\mathbf{.976}$ & $\mathbf{.975}$ & $1.000$ & $.053$ \\
+English & 1\%  & $1.000$ & $.979$ & $.919$ & $.841$ & $.836$ & $1.000$ & $.033$ \\
+English & 5\%  & $1.000$ & $.973$ & $.919$ & $.845$ & $.841$ & $1.000$ & $.025$ \\
+English & 10\% & $1.000$ & $.984$ & $.932$ & $.875$ & $.871$ & $1.000$ & $.031$ \\
+\bottomrule
+\end{tabular}
+\end{center}
+\end{table}
