@@ -1,0 +1,32 @@
+% ProofWriter accuracy by inference depth, means over seeds. Numbers match Table 1.
+\begin{figure}[t]
+\centering
+\begin{tikzpicture}
+\begin{axis}[
+  width=0.62\linewidth, height=5.2cm,
+  xmin=-0.3, xmax=4.3, ymin=0.28, ymax=0.68,
+  xtick={0,1,2,3,4}, xticklabels={0,1,2,3,5},
+  ytick={0.30,0.40,0.50,0.60},
+  tick align=outside, tick pos=left,
+  xlabel={inference depth of the ProofWriter item},
+  ylabel={accuracy},
+  grid=major, grid style={gray!16, line width=0.3pt},
+  axis line style={gray!55},
+  label style={font=\footnotesize}, tick label style={font=\scriptsize},
+  legend style={at={(1.03,0.5)}, anchor=west, draw=none, fill=none,
+                font=\scriptsize, row sep=-1pt},
+  every axis plot/.append style={line width=1.0pt},
+]
+  \addplot [gray, mark=o, mark size=1.5pt, dashed] coordinates {(0,0.506) (1,0.309) (2,0.391) (3,0.393) (4,0.412)};
+  \addplot [formalcol, mark=*, mark size=1.5pt] coordinates {(0,0.536) (1,0.362) (2,0.491) (3,0.500) (4,0.489)};
+  \addplot [natcol, mark=square*, mark size=1.5pt] coordinates {(0,0.543) (1,0.373) (2,0.504) (3,0.532) (4,0.514)};
+  \addplot [formalcol, mark=triangle*, mark size=2pt, densely dotted] coordinates {(0,0.636) (1,0.426) (2,0.510) (3,0.516) (4,0.498)};
+  \legend{control, Formal 5\%, English 10\%, Formal 25\%}
+\end{axis}
+\end{tikzpicture}
+\caption{Accuracy on ProofWriter by the inference depth of the item, averaged
+over seeds. The control is the mixture with no derivations in it. The
+replacement helps at every depth, and the largest relative gains fall on the
+items that need two or more inference steps.}
+\label{fig:depth}
+\end{figure}

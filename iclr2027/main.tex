@@ -120,8 +120,9 @@ depth 3 rises from 39.3 to 50.0 percent, ten percent of English-rendered
 derivations reaches 53.2 percent, and accuracy on FOLIO \citep{han2024folio}
 rises by 6.4 points. Figure~\ref{fig:overview-b} shows the curve, which is flat
 above five percent, so a quarter of the mixture buys nothing that a twentieth
-does not already provide. Eight general benchmarks, among them GSM8K, MMLU and
-ARC, stay where they were.
+does not already provide. On seven general benchmarks the conditions stay close
+to the control, and the two that move by more than the seed-to-seed range of
+the control, ARC-Challenge and LogiQA, move upward.
 
 The origin of the gain is narrower than the headline numbers suggest, and more
 useful. Splitting the held-out problems by the polarity of the claim and by the
@@ -242,7 +243,7 @@ Appendix~\ref{sec:sweep-details} gives the remaining hyperparameters.
 
 We evaluate on ProofWriter under the open-world assumption at inference depths
 0 through 5, on FOLIO, on the deduction problems of the generator at chain
-lengths 5 through 25, and on eight general benchmarks. For the problems of the
+lengths 5 through 25, and on seven general benchmarks. For the problems of the
 generator we prompt the model in the document format on which it was trained,
 since a derivation has to be requested before a checker can read it.
 
@@ -270,9 +271,25 @@ rises from 51.4 to 57.8 percent. Above five percent the curve is flat, and a
 condition with a quarter of the mixture replaced scores 51.6 percent, inside
 the noise of the five percent condition.
 
-No cost of the intervention is measurable in this evaluation. Across GSM8K,
-BBH, MMLU, ARC-Challenge, LogiQA, HellaSwag, PIQA and WinoGrande, no condition
-differs from the control by more than the spread between the control seeds.
+Table~\ref{tab:general} reports seven general benchmarks. Four of them stay
+inside the range spanned by the three control seeds, and the three that leave
+it are small and mostly favourable. Accuracy on ARC-Challenge rises by up to
+2.8 points and accuracy on LogiQA by up to 2.1 points, against control ranges
+of 0.8 and 0.6, while accuracy on GSM8K falls by at most 1.3 points against a
+control range of 0.3. Set beside gains of 10 to 14 points on deduction, the
+intervention costs little and the two benchmarks it helps are the two with a
+deductive component.
+
+\input{tab_general}
+
+Figure~\ref{fig:depth} resolves the ProofWriter result by the inference depth
+of the item. The replacement raises accuracy at every depth, the control is
+worst on the items that need one or two inference steps, and the conditions
+with five percent or more recover 9 to 11 points there. Depth 0, where the
+claim is decided by a premise alone, also improves, which fits the reading in
+Section~\ref{sec:analysis} that the change is a change in the answer rule.
+
+\input{fig_depth}
 
 \begin{table}[t]
 \caption{Effect of the replaced share on Qwen2.5-7B. Every condition trains on
@@ -301,6 +318,7 @@ English  & 10\%  & $.546$ / $.528$ / $.522$ & $\mathbf{.532}$ & $.550$ & $1.000$
 \end{table}
 
 \section{Analysis}
+\label{sec:analysis}
 
 \subsection{Accuracy by claim polarity and gold label}
 
@@ -466,9 +484,9 @@ A chain of thought is ordinarily assessed by reading it, and its steps carry no
 form that a program can evaluate. The derivations studied here differ in that
 respect, and the results above show that the difference is cheap to obtain. One
 percent of an instruction mixture installs the format, the model keeps writing
-in it at chain lengths twice those it was trained on, and eight general
-benchmarks stay where they were, so the format costs nothing that this
-evaluation can detect.
+in it at chain lengths twice those it was trained on, and no general benchmark
+loses more than 1.3 points, so the format is close to free by the measures
+available here.
 
 Once the format is present, validity and correctness become coupled. On the
 problems of the generator, a derivation the checker accepts carries the correct
@@ -504,8 +522,8 @@ explanation whose validity a machine can establish.
 \section{Limitations}
 
 The gains we report are confined to deduction. ProofWriter and FOLIO
-improve, the eight general benchmarks do not move, and we have no evidence that bears
-on a task that does not ask for a chain of inferences.
+improve, the seven general benchmarks move by at most a few points, and we have
+no evidence that bears on a task that does not ask for a chain of inferences.
 
 The mechanism we identify is a correction of an answer prior. The effect is real
 and it replicates, and the claim it supports is narrower than a claim about an
@@ -532,7 +550,8 @@ without the replacement writes none. Five percent suffices for the full
 improvement on held-out deduction benchmarks, and larger shares add nothing
 measurable. The improvement is a correction of an affirmative answer prior left
 behind by instruction tuning, it is confined to the claims on which that prior
-does damage, and it costs nothing on the general benchmarks we measure. The
+does damage, and it costs at most 1.3 points on any general benchmark we
+measure. The
 practical reading is that an instruction corpus can leave a decision rule half
 specified, that the missing half is cheap to supply when a program can
 enumerate it, and that no teacher model is required to do so.

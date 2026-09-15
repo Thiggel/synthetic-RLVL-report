@@ -213,6 +213,13 @@ whose target would be cut by the sequence length. The run aborts if that count
 exceeds 0.5 percent, which prevents a condition from training on derivations
 whose conclusions have been removed. No run in the sweep aborted.
 
+\paragraph{Excluded benchmark.} The general suite also ran BIG-Bench Hard in
+its chain-of-thought few-shot configuration. Under the chat template that the
+harness applies to every instruction-tuned condition, the answer extractor
+matched no completion for any condition, including the control, so the suite
+scored zero everywhere and measures the extractor instead of the models. We
+exclude it and report the remaining seven benchmarks.
+
 \section{Metric Definitions}
 \label{sec:metrics}
 
