@@ -273,23 +273,22 @@ move upward, BIG-Bench Hard by up to 2.7 points against a control range of
 0.9, ARC-Challenge by up to 2.8 against 0.8 and LogiQA by up to 2.1 against
 0.6, while accuracy on GSM8K falls by at most 1.3 points against a control
 range of 0.3. GPQA-Diamond, which we score outside the general
-suite, is suggestive without being conclusive. Pooling its 20 treated runs
-against 3 control runs on the same 198 items, 94 items improve and 61 worsen,
-which a sign test puts at $p=0.010$, while the difference in means is 1.7
-points with a permutation test at $p=0.13$ and no relation to the replaced
-share. We therefore report a direction and no magnitude.
+suite, moves by 1.7 points overall, and splitting it explains why the figure is
+small. Its 73 items that ask for a computed value rise from 22.8 percent for
+the control to 35.6, with 46 items improving and 19 worsening across the pooled
+treated runs, which a sign test puts at $p=0.001$. Its 125 recall items do not
+move, at 37.1 against 37.6, with a sign test at $p=0.60$. A benchmark that
+mixes the two therefore reports the average of a real gain and none.
 
-Multi-hop question answering moves much less. On HotpotQA, 2WikiMultihopQA and
-MuSiQue, reported in Table~\ref{tab:multihop} of the appendix, the English
-rendering at ten percent gains 1.1, 1.9 and 1.7 points. Splitting
-2WikiMultihopQA by question type locates even that. The 192 comparison
-questions, which retrieve two facts and then compare them, gain 6.3 points,
-while the 372 bridge questions, which chain retrievals and need no inference,
-do not move, and weighting the first by its share accounts for the movement of
-the benchmark as a whole. MMLU marks the other boundary. Its twelve logic and
-mathematics subjects lose 1.6 points where the other forty-five gain 0.1, so
-subject matter that sounds deductive predicts nothing. What the replacement
-improves is the propagation of a value through a chain at inference time.
+Multi-hop question answering moves much less, and splitting it shows the same
+pattern. On HotpotQA, 2WikiMultihopQA and MuSiQue the English rendering at ten
+percent gains 1.1, 1.9 and 1.7 points, reported in
+Table~\ref{tab:multihop} of the appendix. Within 2WikiMultihopQA the 192
+comparison questions, which retrieve two facts and then compare them, gain 6.3
+points, while the 372 bridge questions, which chain retrievals and need no
+inference, do not move. MMLU marks the boundary from the other side, since its
+twelve logic and mathematics subjects lose 1.6 points where the other
+forty-five gain 0.1, so subject matter that sounds deductive predicts nothing.
 
 A prompt that invites the trained format exposes a cost. Asked for the answer
 inside the tags the generated documents use, the ten percent formal condition
