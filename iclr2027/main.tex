@@ -441,13 +441,12 @@ and every condition writes about 129 words, so it is not deliberation. The
 English conditions hold an answer rate near 54 percent and gain little, which
 is where the notations separate most sharply.
 
-FOLIO gives a third instance. Its items carry one of three labels, and the
-control answers ``true'' on 51.7 percent of them while 35.5 percent are true.
-Accuracy on the true items is 80.1 percent and on the false items 32.3 percent.
-The replacement raises the false items to 45.2 percent and the uncertain items
-from 38.6 to 52.2 percent while the true items do not move, so the same
-correction of the same prior produces the FOLIO gain reported in
-Table~\ref{tab:dose}. Appendix~\ref{sec:folio-table} gives the split.
+FOLIO gives a third instance. The control answers ``true'' on 51.7 percent of
+its items while 35.5 percent are true, and it is right on 80.1 percent of the
+true items against 32.3 percent of the false ones. The replacement raises the
+false items to 45.2 percent and the uncertain items from 38.6 to 52.2 percent
+while the true items stay put, so the same correction produces the FOLIO gain
+of Table~\ref{tab:dose}. Appendix~\ref{sec:folio-table} gives the split.
 
 Object tracking gains without any such prior to repair, since its answer is one
 of several positions. There the treated models simply propagate the state
@@ -484,11 +483,12 @@ same measures.
 If the improvement consisted of the model reasoning more, asking the control to
 reason aloud would close the gap, and it does not. Under a prompt that requests
 a chain of reasoning before the answer, the control reaches 39.9 percent on
-ProofWriter at inference depth 3, the five percent condition reaches 45.3
-percent and the ten percent condition reaches 49.4 percent. A condition with a
-quarter of the mixture replaced reaches 55.8 percent, so the advantage grows
-with the share in exactly the regime where a well-prompted baseline is the
-natural objection.
+ProofWriter at inference depth 3, while the formal conditions reach 45.3, 49.5
+and 55.8 percent at five, ten and 25 percent of the mixture and the English
+conditions reach 44.1, 43.8 and 47.0. The advantage therefore grows with the
+share in exactly the regime where a well-prompted baseline is the natural
+objection, and it is the largest gap we measure anywhere, which also makes the
+formal rendering the stronger one once the model reasons aloud.
 
 \section{Checking the derivations}
 
