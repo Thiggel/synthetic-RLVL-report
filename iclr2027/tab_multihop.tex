@@ -1,0 +1,26 @@
+\begin{table}[t]
+\caption{Multi-hop question answering, F1 in percent, mean over seeds. The
+three benchmarks retrieve from supplied passages and ask a question that
+requires two or three hops. The bottom row gives the range over the three
+control seeds. Gains are present and small, and the English rendering at ten
+percent is the only condition above that range on all three.}
+\label{tab:multihop}
+\begin{center}
+\begin{tabular}{llccc}
+\toprule
+Notation & Share & HotpotQA & 2WikiMultihopQA & MuSiQue \\
+\midrule
+none    & 0\%  & $55.5$ & $39.7$ & $31.1$ \\
+formal  & 1\%  & $54.6$ & $39.7$ & $31.3$ \\
+formal  & 5\%  & $56.1$ & $41.3$ & $32.7$ \\
+formal  & 10\% & $54.8$ & $41.3$ & $31.0$ \\
+formal  & 25\% & $55.2$ & $40.3$ & $31.6$ \\
+English & 1\%  & $55.4$ & $40.0$ & $32.2$ \\
+English & 5\%  & $55.4$ & $41.2$ & $\mathbf{34.2}$ \\
+English & 10\% & $\mathbf{56.6}$ & $\mathbf{41.6}$ & $32.8$ \\
+\midrule
+\multicolumn{2}{l}{control seed range} & $0.1$ & $1.1$ & $1.5$ \\
+\bottomrule
+\end{tabular}
+\end{center}
+\end{table}

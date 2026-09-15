@@ -278,6 +278,21 @@ percent of formal derivations and 36.9 percent at 25 percent, although its 198
 items make two points worth about four items and we draw no conclusion from
 it.
 
+Multi-hop question answering moves much less. On HotpotQA, 2WikiMultihopQA and
+MuSiQue, reported in Table~\ref{tab:multihop} of the appendix, the English
+rendering at ten percent gains 1.1, 1.9 and 1.7 points, and no condition gains
+more than 3.1. These benchmarks retrieve from supplied passages and ask for one
+or two further inferences, so most of the work they measure is not the work the
+derivations teach.
+
+A prompt that invites the trained format exposes a cost. When we ask for the
+answer inside the tags the generated documents use, the ten percent formal
+condition falls to 11.1 percent F1 on HotpotQA against 54.1 for the control,
+because the model opens a predicate legend over the entities of the passage and
+exhausts its budget before answering. At one percent the same prompt is the
+best of all conditions. The format is therefore worth installing in small
+quantity and worth eliciting only where it fits the task.
+
 The 27 subtasks of BIG-Bench Hard differ in whether they require the operation
 the generated data contains, so Table~\ref{tab:bbh} splits them into the eight
 whose answer follows by propagating a truth value or a state along a sequence
