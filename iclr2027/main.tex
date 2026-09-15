@@ -411,18 +411,27 @@ insufficient.
 
 \section{Notation}
 
-The two notations transfer about equally across the conditions, with the English
-rendering ahead at ten percent and the formal rendering ahead at five. A
-controlled study on the generator alone shows that the ordering is not fixed
-and that the depth of the training proofs decides it. When we fine-tune OLMo-3-7B on 50{,}000 paired examples per condition, English
-supervision generalises
-further as long as the training proofs reach at most 20 hops. At 25 hops the
-ordering reverses, and formal supervision reaches $75.0\pm9.5$ percent
-out-of-distribution accuracy against $17.8\pm4.7$ percent for English
+The two notations transfer about equally across the conditions, with the
+English rendering ahead at ten percent and the formal rendering ahead at five.
+A controlled study on the generator alone shows that the ordering is not fixed
+and that the depth of the training proofs decides it. We fine-tune OLMo-3-7B on
+50{,}000 paired examples per condition, one condition per notation, and we
+evaluate at chain lengths beyond the longest one seen in training.
+Figure~\ref{fig:crossover} gives the resulting curves. English supervision
+generalises further as long as the training proofs reach at most 20 hops. At 25
+hops the ordering reverses, and formal supervision reaches $75.0\pm9.5$
+percent out-of-distribution accuracy against $17.8\pm4.7$ percent for English
 supervision. Sixteen samples move the reversal to 15 hops, so formal
 supervision first widens the set of problems the model can reach and only later
-improves its first attempt. Appendix~\ref{sec:crossover-figure} reports the
-full curves.
+improves its first attempt.
+
+\input{fig_crossover}
+
+The crossover follows from the supervision alone, since the prompt, the answer
+and the latent proof are identical in the two conditions at every depth. It also survives a control that equates the number of supervised
+target tokens, a control that removes a schema marker the model could otherwise
+exploit, and a replication at a second seed, all of which
+Appendix~\ref{sec:boundary-details} reports.
 
 The two settings agree once the regime of each is stated. The advantage of the
 formal rendering appears under supervision that is both dense and deep, and an
@@ -450,6 +459,47 @@ midtraining that instruction tuning without derivations removes completely.
 Prompted in the format of its training documents, the midtrained model writes
 checkable proofs up to chain length 25, and after ordinary instruction tuning
 it writes none.
+
+\section{Checkable traces as a substrate for chain of thought}
+
+A chain of thought is ordinarily assessed by reading it, and its steps carry no
+form that a program can evaluate. The derivations studied here differ in that
+respect, and the results above show that the difference is cheap to obtain. One
+percent of an instruction mixture installs the format, the model keeps writing
+in it at chain lengths twice those it was trained on, and eight general
+benchmarks stay where they were, so the format costs nothing that this
+evaluation can detect.
+
+Once the format is present, validity and correctness become coupled. On the
+problems of the generator, a derivation the checker accepts carries the correct
+answer in 99 percent of samples, and a selection rule that never reads a gold
+answer recovers the accuracy of sixteen-sample coverage. A coupling of that
+strength changes what an explanation is worth. It converts a trace that a
+reader has to trust into a claim that a machine can test, and it supplies a
+training signal that requires no reference answer, which is the property that
+makes reinforcement learning from verifiable rewards practical in mathematics
+and in code \citep{lambert2025tulu}.
+
+The coupling weakens in proportion to the incompleteness of the checker. On
+ProofWriter, where a third of the items ask whether a claim is underivable and
+a forward chain never settles such a question, an accepted derivation is
+correct between 53 and 69 percent of the time. On GSM8K it nearly disappears. A
+checker that verifies every arithmetic line of a derivation separates correct
+answers from incorrect ones by 3 to 8 points, against the 99 points it achieves
+on the generator's own problems, because only about half of the derivations
+state their arithmetic as checkable equations and a wrong answer usually
+follows from correct arithmetic inside a wrong plan.
+
+These observations point to a direction for further work. The substrate is
+inexpensive, it survives contact with a general instruction mixture, and where
+the checker is complete it makes a model's reasoning auditable step by step.
+What is missing is a rendering whose checker covers the claims that tasks
+actually turn on, which includes the plan a solution follows and the assertion
+that something does not follow, beyond the individual inference steps that a
+forward chain already settles. We
+regard the construction of such renderings as the most promising continuation
+of this work, because what a complete checker buys goes beyond accuracy to an
+explanation whose validity a machine can establish.
 
 \section{Limitations}
 
