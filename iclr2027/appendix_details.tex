@@ -250,6 +250,30 @@ exploit, and a replication at a second seed, all of which
 Appendix~\ref{sec:boundary-details} reports.
 
 
+\section{Midtraining}
+\label{sec:midtrain-detail}
+
+
+The same derivations can enter during midtraining. We midtrained Qwen2.5-7B on
+2.5 billion tokens with a tenth of the mixture replaced and then applied the
+same instruction tuning to every condition. That route also produces the gain
+on ProofWriter, 12.6 points for the English rendering at inference depth 3 with
+two instruction-tuning seeds, and it also leaves the general benchmarks flat
+apart from a loss of two to three points on LogiQA that replicates across
+seeds. Midtraining is the more expensive route and buys no more, since the
+instruction-tuning route reaches the same accuracy, generalises further on long
+chains, carries no cost on LogiQA, and adds nothing when the two are applied in
+sequence. One ability survives midtraining that instruction tuning without
+derivations removes completely, since the midtrained model writes checkable
+proofs up to chain length 25 when prompted in the format of its training
+documents, and writes none after ordinary instruction tuning.
+
+
+\section{Web of Lies by Gold Answer}
+\label{sec:wol-table}
+
+\input{tab_wol}
+
 \section{FOLIO by Gold Label}
 \label{sec:folio-table}
 

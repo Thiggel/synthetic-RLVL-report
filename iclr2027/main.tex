@@ -20,8 +20,8 @@
 \usetikzlibrary{calc,positioning,fit,backgrounds,arrows.meta}
 
 % Table captions sit above the table; this is the gap between caption and rule.
-\setlength{\belowcaptionskip}{5pt}
-\setlength{\abovecaptionskip}{7pt}
+\setlength{\belowcaptionskip}{4pt}
+\setlength{\abovecaptionskip}{6pt}
 
 \newcommand{\formal}{\textsc{Formal}}
 \newcommand{\nat}{\textsc{English}}
@@ -420,8 +420,8 @@ Appendix~\ref{sec:perturbation} gives both in full.
 
 Web of lies repeats the analysis of Section~\ref{sec:analysis} outside our own
 evaluation. It states a chain of assertions about who tells the truth and asks
-whether the last person does, and Table~\ref{tab:wol} reports the same
-quantities as Table~\ref{tab:mechanism}.
+whether the last person does, and Table~\ref{tab:wol} of the appendix reports
+the same quantities as Table~\ref{tab:mechanism}.
 
 The control carries the same affirmative prior. It answers ``yes'' on 56.7
 percent of items while the gold answers are ``yes'' on 48.8 percent, and its
@@ -446,14 +446,12 @@ false items to 45.2 percent and the uncertain items from 38.6 to 52.2 percent
 while the true items stay put, so the same correction produces the FOLIO gain
 of Table~\ref{tab:dose}. Appendix~\ref{sec:folio-table} gives the split.
 
-Object tracking gains without any such prior to repair, since its answer is one
-of several positions. There the treated models simply propagate the state
-correctly more often, at 76.3 percent against 62.3, with output length again
-unchanged. The generated derivations therefore supply two things, a corrected
-decision rule where an answer can be negative and a more reliable procedure for
-carrying a value along a chain.
+Object tracking has no such prior to repair, since its answer is one of several
+positions, and there the treated models propagate the state correctly more
+often, 76.3 percent against 62.3, with length again unchanged. The derivations
+therefore supply two things, a corrected decision rule where an answer can be
+negative and a more reliable procedure for carrying a value along a chain.
 
-\input{tab_wol}
 
 \subsection{Control conditions}
 
@@ -502,8 +500,7 @@ decided, so the checker under-credits the model.
 On the problems of the generator the checker behaves almost as an oracle. A
 derivation it accepts carries the correct answer in 99 percent of samples, and
 selecting the first accepted derivation out of sixteen matches the accuracy of
-asking whether any of the sixteen is correct, without ever reading a gold
-answer.
+asking whether any of them is correct, without reading a gold answer.
 
 On ProofWriter the same rule is much weaker. Among sixteen derivations per item
 sampled at temperature 0.8, between 28 and 37 percent carry a proof the checker
@@ -538,19 +535,17 @@ needs.
 \section{Midtraining}
 \label{sec:midtraining}
 
-The same derivations can enter during midtraining. We midtrained Qwen2.5-7B on
-2.5 billion tokens with a tenth of the mixture replaced and then applied the
-same instruction tuning to every condition. That route also produces the gain
-on ProofWriter, 12.6 points for the English rendering at inference depth 3 with
-two instruction-tuning seeds, and it also leaves the general benchmarks flat
-apart from a loss of two to three points on LogiQA that replicates across
-seeds. Midtraining is the more expensive route and buys no more, since the
-instruction-tuning route reaches the same accuracy, generalises further on long
-chains, carries no cost on LogiQA, and adds nothing when the two are applied in
-sequence. One ability survives midtraining that instruction tuning without
-derivations removes completely, since the midtrained model writes checkable
-proofs up to chain length 25 when prompted in the format of its training
-documents, and writes none after ordinary instruction tuning.
+The same derivations can enter during midtraining instead. Midtraining
+Qwen2.5-7B on 2.5 billion tokens with a tenth of the mixture replaced, then
+instruction tuning every condition alike, produces the same gain on ProofWriter
+of 12.6 points. That route is the more expensive one and buys no more, since
+the instruction-tuning route reaches the same accuracy, generalises further on
+long chains, and avoids the two to three points the midtraining route loses on
+LogiQA. Applying both in sequence adds nothing to either.
+Appendix~\ref{sec:midtrain-detail} reports the comparison, including the one
+ability midtraining leaves behind, which is that the midtrained model writes
+checkable proofs when prompted in the format of its training documents and
+writes none after ordinary instruction tuning.
 
 \section{Checkable traces as a substrate for chain of thought}
 
@@ -570,13 +565,10 @@ which is the property that makes reinforcement learning from verifiable rewards
 practical in mathematics and in code \citep{lambert2025tulu}.
 
 The coupling weakens in proportion to the incompleteness of the checker. On
-ProofWriter, where a third of the items ask whether a claim is underivable and
-a forward chain never settles such a question, an accepted derivation is
-correct between 53 and 69 percent of the time. On GSM8K it nearly disappears. A
-checker that verifies every arithmetic line of a derivation separates correct
-answers from incorrect ones by 3 to 8 points, against the 99 points it achieves
-on the generator's own problems, because only about half of the derivations
-state their arithmetic as checkable equations and a wrong answer usually
+ProofWriter an accepted derivation is correct between 53 and 69 percent of the
+time, and on GSM8K the coupling nearly disappears, since arithmetic validity
+separates correct answers from incorrect ones by 3 to 8 points against the 99
+it achieves on the generator's own problems. A wrong answer there usually
 follows from correct arithmetic inside a wrong plan.
 
 These observations point to a direction for further work. The substrate is
@@ -601,23 +593,19 @@ narrower claim than an improvement in reasoning capability, and a model whose
 prior is already balanced may gain less than the model we study.
 
 Our checker is sound and incomplete, since it cannot certify that a fact is
-underivable, which limits checker-based selection on benchmarks whose answers
-are open-world. We also train one model family at one scale, and the
-affirmative prior that the derivations repair is a property of the instruction
-corpus we use, so a different corpus may leave a different pathology behind.
+underivable, which limits checker-based selection on open-world benchmarks. We
+also train one model family at one scale, and the prior the derivations repair
+is a property of the instruction corpus we use.
 
 \section{Conclusion}
 
-A program that writes deduction problems together with their solutions produces
-training data with no teacher model in it, and a small quantity of that data
-changes what an instruction-tuned language model does. One percent of an
-ordinary mixture suffices for the model to write proofs that a checker accepts
-at chain lengths about twice those seen in training, and five percent suffices
-for the full improvement on held-out deduction benchmarks. The improvement is a
-correction of an affirmative answer prior left behind by instruction tuning,
-and it reaches a general benchmark only where the task propagates a truth value
-along a chain. An instruction corpus can leave a decision rule half specified,
-and the missing half is cheap to supply when a program can enumerate it.
+A program that writes deduction problems and their solutions produces training
+data with no teacher model in it, and a small quantity of it changes what an
+instruction-tuned model does. One percent installs checkable derivations at
+twice the training chain length, five percent gives the full gain on held-out
+deduction benchmarks, and that gain is a correction of an affirmative answer
+prior which reaches a general benchmark wherever the task propagates a value
+along a chain.
 
 \bibliographystyle{iclr2027/iclr2027_conference}
 \bibliography{iclr2027/references}
