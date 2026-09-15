@@ -392,28 +392,17 @@ Share & negated, false & negated, true & positive, false & positive, true & $P(\
 \subsection{Where the change sits in the model's scores}
 \label{sec:probes}
 
-The polarity split shows which items change, and three further probes show what
-changes inside the model's scores. We run them on the midtrained and
-instruction-tuned arms of Section~\ref{sec:midtraining}, which carry a
-length-matched control that the sweep does not have.
-
-The first probe forms the log-likelihood margin between ``true'' and ``false''
-and ranks the decidable items by it, which gives the areas under the curve in
-Table~\ref{tab:probe} of the appendix. The control already ranks items well inside each
-polarity and its pooled figure is far lower, because the margin of every
-negated claim is displaced toward ``true''. The derivation arms remove most of
-that displacement, raising the pooled figure by 0.05 for the formal rendering
-and 0.11 for the English one, and they add a little genuine discrimination
-within negated claims. The length-matched control moves nothing, so the effect
-is a calibration of negation with a minor discrimination component.
-
-
-The same probe applied before instruction tuning locates the origin of the
-displacement. The midtrained control scores 0.755 pooled, and ordinary
-instruction tuning lowers it to 0.662, while the arm midtrained on English
-derivations holds 0.78 through the same instruction tuning and arrives at
-0.770. Instruction tuning is what installs the offset, and the derivations are
-what resists it.
+The polarity split shows which items change, and three probes show what changes
+inside the model's scores. We run them on the midtrained and instruction-tuned
+arms of Section~\ref{sec:midtraining}, which carry a length-matched control
+that the sweep does not have. The first ranks decidable items by the
+log-likelihood margin between ``true'' and ``false''. The control ranks well
+inside each polarity, at 0.872 and 0.860, and far worse pooled, at 0.662,
+because the margin of every negated claim is displaced toward ``true''. The
+derivation arms remove most of that displacement, raising the pooled figure by
+0.05 for the formal rendering and 0.11 for the English one, while the
+length-matched control moves nothing. Appendix~\ref{sec:probe-table} gives the
+table.
 
 The second and third probes intervene on the item instead of reading scores.
 Toggling the polarity of the claim and leaving the theory untouched, the
@@ -423,6 +412,39 @@ premises that support the claim collapses most of the extra negative answer,
 from 0.53 to 0.27 for the formal arm, which is what a premise-grounded answer
 predicts, while the English arm retains more of it.
 Appendix~\ref{sec:perturbation} gives both probes in full.
+
+\subsection{The same mechanism on a benchmark we did not design}
+
+Web of lies allows the analysis of Section~\ref{sec:analysis} to be repeated
+outside our own evaluation. The task states a chain of assertions about who
+tells the truth and asks whether the last person does, the model writes its
+reasoning under greedy decoding, and an extractor reads the answer.
+Table~\ref{tab:wol} reports the same quantities as Table~\ref{tab:mechanism}.
+
+The control carries the same affirmative prior. It answers ``yes'' on 56.7
+percent of items while the gold answers are ``yes'' on 48.8 percent, and its
+accuracy is 93.2 percent where the answer is ``yes'' against 78.1 percent where
+it is ``no''. The formal conditions move the answer rate to 48.4 and 48.5
+percent, which is the gold rate, and the accuracy they add falls almost
+entirely in the negative cell, which reaches 97.9 percent. Resolving by the
+number of negating links in the chain sharpens this further. Every condition is
+perfect when no link negates, and the control falls to 71.7 percent when three
+do, where the formal conditions hold 97.3 percent.
+
+Two alternative explanations are ruled out by the same samples. Every condition
+emits the answer phrase on every item, so the gain is not better compliance
+with the extractor, and every condition writes about 129 words, so it is not
+more deliberation. The English conditions, whose answer rate stays near 54
+percent, gain little, which is where the two notations separate most sharply.
+
+Object tracking gains without any such prior to repair, since its answer is one
+of several positions. There the treated models simply propagate the state
+correctly more often, at 76.3 percent against 62.3, with output length again
+unchanged. The generated derivations therefore supply two things, a corrected
+decision rule where an answer can be negative and a more reliable procedure for
+carrying a value along a chain.
+
+\input{tab_wol}
 
 \subsection{Control conditions}
 
@@ -474,38 +496,23 @@ asking whether any of the sixteen is correct, without ever reading a gold
 answer.
 
 On ProofWriter the same rule is much weaker. Among sixteen derivations per item
-sampled at temperature 0.8, between 28 and 37 percent carry a proof that the
-checker accepts, against none for the control, and an accepted derivation is
-correct between 53 and 69 percent of the time, so checker selection trails
-majority voting over the same samples. The structure of the task accounts for
-the difference, since a third of the items ask whether a claim is underivable
-and a forward chain never demonstrates that. A checker becomes useful once it
-is complete with respect to the task, and soundness on its own is
-insufficient.
+sampled at temperature 0.8, between 28 and 37 percent carry a proof the checker
+accepts, against none for the control, and an accepted derivation is correct
+between 53 and 69 percent of the time, so checker selection trails majority
+voting. A third of the items ask whether a claim is underivable, which a
+forward chain never demonstrates, so a checker becomes useful only once it is
+complete with respect to the task.
 
 \section{Notation}
 
-The two notations transfer about equally across the conditions, with the
+The two notations transfer about equally on the deduction benchmarks, with the
 English rendering ahead at ten percent and the formal rendering ahead at five.
-A controlled study on the generator alone shows that the ordering is not fixed
-and that the depth of the training proofs decides it. We fine-tune OLMo-3-7B on
-50{,}000 paired examples per condition, one condition per notation, and we
-evaluate at chain lengths beyond the longest one seen in training.
-Figure~\ref{fig:crossover} gives the resulting curves. English supervision
-generalises further as long as the training proofs reach at most 20 hops. At 25
-hops the ordering reverses, and formal supervision reaches $75.0\pm9.5$
-percent out-of-distribution accuracy against $17.8\pm4.7$ percent for English
-supervision. Sixteen samples move the reversal to 15 hops, so formal
-supervision first widens the set of problems the model can reach and only later
-improves its first attempt.
-
-\input{fig_crossover}
-
-The crossover follows from the supervision alone, since the prompt, the answer
-and the latent proof are identical in the two conditions at every depth. It also survives a control that equates the number of supervised
-target tokens, a control that removes a schema marker the model could otherwise
-exploit, and a replication at a second seed, all of which
-Appendix~\ref{sec:boundary-details} reports.
+A controlled study on the generator alone shows that the ordering there is not
+fixed and that the depth of the training proofs decides it, since English
+supervision generalises further up to 20 training hops and formal supervision
+reverses the ordering at 25, reaching $75.0\pm9.5$ percent out-of-distribution
+accuracy against $17.8\pm4.7$. Appendix~\ref{sec:crossover} reports that study
+with its controls.
 
 The general benchmarks separate the two notations where the deduction
 benchmarks do not. On the chain subtasks of BIG-Bench Hard in
@@ -521,21 +528,19 @@ needs.
 \section{Midtraining}
 \label{sec:midtraining}
 
-The same derivations can enter during midtraining. We midtrained Qwen2.5-7B on 2.5 billion
-tokens with a tenth of the mixture replaced and then applied the same
-instruction tuning to every condition. That route also produces the
-gain on ProofWriter, 12.6 points for the English rendering at inference depth 3
-with two instruction-tuning seeds, and it also leaves the general benchmarks
-flat, with the exception of a loss of two to three points on LogiQA that
-replicates across seeds.
-
-Between the two routes, midtraining is the more expensive one and buys no more.
-The instruction-tuning route reaches the same accuracy, generalises further on
-long chains, and carries no cost on LogiQA. Applying both in sequence adds
-nothing to either. One ability survives midtraining that instruction tuning
-without derivations removes completely, since the midtrained model writes
-checkable proofs up to chain length 25 when prompted in the format of its
-training documents, and writes none after ordinary instruction tuning.
+The same derivations can enter during midtraining. We midtrained Qwen2.5-7B on
+2.5 billion tokens with a tenth of the mixture replaced and then applied the
+same instruction tuning to every condition. That route also produces the gain
+on ProofWriter, 12.6 points for the English rendering at inference depth 3 with
+two instruction-tuning seeds, and it also leaves the general benchmarks flat
+apart from a loss of two to three points on LogiQA that replicates across
+seeds. Midtraining is the more expensive route and buys no more, since the
+instruction-tuning route reaches the same accuracy, generalises further on long
+chains, carries no cost on LogiQA, and adds nothing when the two are applied in
+sequence. One ability survives midtraining that instruction tuning without
+derivations removes completely, since the midtrained model writes checkable
+proofs up to chain length 25 when prompted in the format of its training
+documents, and writes none after ordinary instruction tuning.
 
 \section{Checkable traces as a substrate for chain of thought}
 

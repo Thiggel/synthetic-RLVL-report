@@ -1,0 +1,26 @@
+\begin{table}[t]
+\caption{Web of lies, the BIG-Bench Hard subtask that chains assertions about
+who tells the truth, mean over seeds on 250 items. Gold answers are ``yes'' on
+48.8 percent of items. The control answers ``yes'' on 56.7 percent, and the
+formal conditions bring that rate to the gold rate while the English conditions
+do not. Accuracy rises almost entirely on the items whose answer is ``no'' and
+on the items whose chain contains three negating links. Every condition emits
+the answer phrase on every item and writes about 129 words, so neither
+extraction nor length explains the difference.}
+\label{tab:wol}
+\begin{center}
+\begin{tabular}{llccccc}
+\toprule
+Notation & Share & $P(\text{answers yes})$ & gold yes & gold no & 3 negating links & accuracy \\
+\midrule
+none    & 0\%  & $.567$ & $.932$ & $.781$ & $.717$ & $.855$ \\
+formal  & 1\%  & $.500$ & $.937$ & $.917$ & $.888$ & $.927$ \\
+formal  & 5\%  & $.484$ & $.954$ & $.964$ & $.957$ & $.959$ \\
+formal  & 10\% & $.485$ & $.973$ & $\mathbf{.979}$ & $\mathbf{.973}$ & $\mathbf{.976}$ \\
+English & 1\%  & $.569$ & $.921$ & $.766$ & $.690$ & $.841$ \\
+English & 5\%  & $.571$ & $.926$ & $.768$ & $.690$ & $.845$ \\
+English & 10\% & $.539$ & $.923$ & $.828$ & $.775$ & $.875$ \\
+\bottomrule
+\end{tabular}
+\end{center}
+\end{table}

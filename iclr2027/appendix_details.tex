@@ -224,6 +224,32 @@ without the template and report it in Table~\ref{tab:bbh}.
 
 \input{tab_general}
 
+\section{Notation Crossover on the Generator}
+\label{sec:crossover}
+
+The two notations transfer about equally across the conditions, with the
+English rendering ahead at ten percent and the formal rendering ahead at five.
+A controlled study on the generator alone shows that the ordering is not fixed
+and that the depth of the training proofs decides it. We fine-tune OLMo-3-7B on
+50{,}000 paired examples per condition, one condition per notation, and we
+evaluate at chain lengths beyond the longest one seen in training.
+Figure~\ref{fig:crossover} gives the resulting curves. English supervision
+generalises further as long as the training proofs reach at most 20 hops. At 25
+hops the ordering reverses, and formal supervision reaches $75.0\pm9.5$
+percent out-of-distribution accuracy against $17.8\pm4.7$ percent for English
+supervision. Sixteen samples move the reversal to 15 hops, so formal
+supervision first widens the set of problems the model can reach and only later
+improves its first attempt.
+
+\input{fig_crossover}
+
+The crossover follows from the supervision alone, since the prompt, the answer
+and the latent proof are identical in the two conditions at every depth. It also survives a control that equates the number of supervised
+target tokens, a control that removes a schema marker the model could otherwise
+exploit, and a replication at a second seed, all of which
+Appendix~\ref{sec:boundary-details} reports.
+
+
 \section{Multi-Hop Question Answering}
 \label{sec:multihop-table}
 
