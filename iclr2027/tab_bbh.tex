@@ -1,0 +1,27 @@
+\begin{table}[t]
+\caption{BIG-Bench Hard resolved by subtask, in percent, mean over seeds.
+``Chain'' pools the eight subtasks whose answer follows from propagating a
+truth value or a state along a sequence of steps, which are web of lies, the
+three object-tracking subtasks, the three logical-deduction subtasks and formal
+fallacies. ``Others'' pools the remaining nineteen. The rightmost column gives
+web of lies alone, the subtask closest in form to the generated data. The gain
+is confined to the chain subtasks and grows with the replaced share.}
+\label{tab:bbh}
+\begin{center}
+\begin{tabular}{llcccc}
+\toprule
+Notation & Share & macro & chain (8) & others (19) & web of lies \\
+\midrule
+none    & 0\%  & $65.0$ & $62.2$ & $66.1$ & $85.5$ \\
+formal  & 1\%  & $66.2$ & $66.1$ & $66.3$ & $92.7$ \\
+formal  & 5\%  & $67.2$ & $67.6$ & $67.1$ & $95.9$ \\
+formal  & 10\% & $\mathbf{67.7}$ & $\mathbf{68.9}$ & $67.2$ & $\mathbf{97.6}$ \\
+formal  & 25\% & $66.9$ & $67.6$ & $66.5$ & $98.0$ \\
+English & 1\%  & $65.3$ & $63.2$ & $66.1$ & $84.1$ \\
+English & 5\%  & $66.6$ & $65.2$ & $67.2$ & $84.5$ \\
+English & 10\% & $66.9$ & $66.4$ & $67.2$ & $87.5$ \\
+English & 25\% & $66.6$ & $65.6$ & $67.0$ & $87.6$ \\
+\bottomrule
+\end{tabular}
+\end{center}
+\end{table}

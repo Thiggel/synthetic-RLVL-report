@@ -1,27 +1,28 @@
 \begin{table}[t]
-\caption{Seven general benchmarks, in percent, averaged over the seeds of each
+\caption{Eight general benchmarks, in percent, averaged over the seeds of each
 condition. The bottom row gives the range over the three seeds of the control,
-which is the noise floor of a single cell. Accuracy on ARC-Challenge and on
-LogiQA rises by more than that range, accuracy on GSM8K falls by at most 1.3
-points, and the remaining four benchmarks stay inside it.}
+which is the noise floor of a single cell. BIG-Bench Hard, ARC-Challenge and
+LogiQA rise by more than that range, accuracy on GSM8K falls by at most 1.3
+points, and the remaining four benchmarks stay inside it.
+Table~\ref{tab:bbh} resolves the BIG-Bench Hard column by subtask.}
 \label{tab:general}
 \begin{center}
 \small
-\begin{tabular}{llccccccc}
+\begin{tabular}{llcccccccc}
 \toprule
-Notation & Share & GSM8K & MMLU & ARC-C & LogiQA & HellaS. & PIQA & WinoG. \\
+Notation & Share & GSM8K & BBH & MMLU & ARC-C & LogiQA & HellaS. & PIQA & WinoG. \\
 \midrule
-none    & 0\%  & $77.0$ & $70.3$ & $49.6$ & $36.8$ & $73.2$ & $80.5$ & $71.0$ \\
-formal  & 1\%  & $76.5$ & $70.2$ & $52.4$ & $38.0$ & $73.4$ & $81.0$ & $70.6$ \\
-formal  & 5\%  & $76.7$ & $69.7$ & $50.7$ & $36.8$ & $73.2$ & $80.8$ & $70.3$ \\
-formal  & 10\% & $76.2$ & $70.0$ & $50.4$ & $38.9$ & $73.2$ & $80.9$ & $71.0$ \\
-formal  & 25\% & $76.8$ & $69.5$ & $49.8$ & $38.4$ & $73.6$ & $80.7$ & $71.3$ \\
-English & 1\%  & $76.5$ & $70.2$ & $51.1$ & $37.5$ & $73.3$ & $80.6$ & $71.3$ \\
-English & 5\%  & $75.7$ & $70.2$ & $51.9$ & $36.6$ & $73.6$ & $81.0$ & $70.2$ \\
-English & 10\% & $76.4$ & $70.3$ & $49.9$ & $38.5$ & $73.5$ & $80.8$ & $70.7$ \\
-English & 25\% & $78.2$ & $69.9$ & $50.7$ & $37.6$ & $73.5$ & $80.5$ & $71.4$ \\
+none    & 0\%  & $77.0$ & $65.0$ & $70.3$ & $49.6$ & $36.8$ & $73.2$ & $80.5$ & $71.0$ \\
+formal  & 1\%  & $76.5$ & $66.2$ & $70.2$ & $52.4$ & $38.0$ & $73.4$ & $81.0$ & $70.6$ \\
+formal  & 5\%  & $76.7$ & $67.2$ & $69.7$ & $50.7$ & $36.8$ & $73.2$ & $80.8$ & $70.3$ \\
+formal  & 10\% & $76.2$ & $\mathbf{67.7}$ & $70.0$ & $50.4$ & $38.9$ & $73.2$ & $80.9$ & $71.0$ \\
+formal  & 25\% & $76.8$ & $66.9$ & $69.5$ & $49.8$ & $38.4$ & $73.6$ & $80.7$ & $71.3$ \\
+English & 1\%  & $76.5$ & $65.3$ & $70.2$ & $51.1$ & $37.5$ & $73.3$ & $80.6$ & $71.3$ \\
+English & 5\%  & $75.7$ & $66.6$ & $70.2$ & $51.9$ & $36.6$ & $73.6$ & $81.0$ & $70.2$ \\
+English & 10\% & $76.4$ & $66.9$ & $70.3$ & $49.9$ & $38.5$ & $73.5$ & $80.8$ & $70.7$ \\
+English & 25\% & $78.2$ & $66.6$ & $69.9$ & $50.7$ & $37.6$ & $73.5$ & $80.5$ & $71.4$ \\
 \midrule
-\multicolumn{2}{l}{control seed range} & $0.3$ & $0.1$ & $0.8$ & $0.6$ & $0.0$ & $0.4$ & $1.0$ \\
+\multicolumn{2}{l}{control seed range} & $0.3$ & $0.9$ & $0.1$ & $0.8$ & $0.6$ & $0.0$ & $0.4$ & $1.0$ \\
 \bottomrule
 \end{tabular}
 \end{center}

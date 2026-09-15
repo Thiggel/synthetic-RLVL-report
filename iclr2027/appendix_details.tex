@@ -213,12 +213,44 @@ whose target would be cut by the sequence length. The run aborts if that count
 exceeds 0.5 percent, which prevents a condition from training on derivations
 whose conclusions have been removed. No run in the sweep aborted.
 
-\paragraph{Excluded benchmark.} The general suite also ran BIG-Bench Hard in
-its chain-of-thought few-shot configuration. Under the chat template that the
-harness applies to every instruction-tuned condition, the answer extractor
-matched no completion for any condition, including the control, so the suite
-scored zero everywhere and measures the extractor instead of the models. We
-exclude it and report the remaining seven benchmarks.
+\paragraph{BIG-Bench Hard.} The suite ships as a chain-of-thought few-shot
+task whose answer extractor reads a plain continuation. Applying the chat
+template wraps every shot and the extractor then matches nothing, which scores
+every condition at zero, including the control. We therefore run this one suite
+without the template and report it in Table~\ref{tab:bbh}.
+
+\section{General Benchmarks}
+\label{sec:general-table}
+
+\input{tab_general}
+
+\section{ProofWriter by Inference Depth}
+\label{sec:depth-figure}
+
+\input{fig_depth}
+
+\section{Perturbation Probes}
+\label{sec:perturbation}
+
+The second probe toggles the polarity of the claim and leaves the theory
+untouched, so an arm that ignores negation answers both versions identically.
+The control does so on 37.6 percent of decidable items and the length-matched
+control on 37.6 percent, against 28.5 percent for the formal arm and 24.2
+percent for the English one, with the second seed within half a point
+throughout. Every arm answers the positive version of a negated and false item
+correctly about 68 percent of the time, so the arms separate on the negated
+version alone.
+
+The third probe removes the premises that support the claim, which makes the
+gold label unknown, and asks whether the extra ``false'' survives. It largely
+does not, which is what a premise-grounded answer predicts. The probability
+that the formal arm answers ``false'' on these items falls from 0.53 to 0.27
+once the supporting facts are gone, and the control falls from 0.35 to 0.20.
+The English arm retains more, falling from 0.67 to 0.46, so about two thirds of
+its advantage on this cell survives the removal of the evidence for it. The
+formal rendering therefore buys a smaller gain that is more firmly tied to the
+premises, and the English rendering a larger gain of which part is a shifted
+default for negated claims.
 
 \section{Log-Likelihood Probe}
 \label{sec:probe-table}

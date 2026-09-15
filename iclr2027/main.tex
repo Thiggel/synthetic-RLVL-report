@@ -267,27 +267,37 @@ rises from 51.4 to 57.8 percent. Above five percent the curve is flat, and a
 condition with a quarter of the mixture replaced scores 51.6 percent, inside
 the noise of the five percent condition.
 
-Table~\ref{tab:general} reports seven general benchmarks. Four of them stay
-inside the range spanned by the three control seeds, and the three that leave
-it are small and mostly favourable. Accuracy on ARC-Challenge rises by up to
-2.8 points and accuracy on LogiQA by up to 2.1 points, against control ranges
-of 0.8 and 0.6, while accuracy on GSM8K falls by at most 1.3 points against a
-control range of 0.3. Set beside gains of 10 to 14 points on deduction, the
-intervention costs little and the two benchmarks it helps are the two with a
-deductive component. GPQA-Diamond, which we score outside the general suite,
-moves in the same direction, from 31.8 percent for the control to 33.8 percent
-at five percent of formal derivations and 36.9 percent at 25 percent, although
-its 198 items make a difference of two points worth about four items and we
-draw no conclusion from it.
+Table~\ref{tab:general} in the appendix reports eight general benchmarks. Five of them stay
+inside the range spanned by the three control seeds. The three that leave it
+move upward, BIG-Bench Hard by up to 2.7 points against a control range of
+0.9, ARC-Challenge by up to 2.8 against 0.8 and LogiQA by up to 2.1 against
+0.6, while accuracy on GSM8K falls by at most 1.3 points against a control
+range of 0.3. GPQA-Diamond, which we score outside the general suite, moves in
+the same direction, from 31.8 percent for the control to 33.8 percent at five
+percent of formal derivations and 36.9 percent at 25 percent, although its 198
+items make two points worth about four items and we draw no conclusion from
+it.
 
-\input{tab_general}
+The 27 subtasks of BIG-Bench Hard differ in whether they require the operation
+the generated data contains, so Table~\ref{tab:bbh} splits them into the eight
+whose answer follows by propagating a truth value or a state along a sequence
+of steps and the nineteen that do not. The control scores 62.2 on the first
+group and 66.1 on the second, so it is worse at exactly what the derivations
+teach. The replacement lifts the first group to 68.9 and leaves the second
+within a point, and on web of lies, which chains assertions about who tells the
+truth through negations, accuracy rises from 85.5 to 97.6 percent and grows
+monotonically with the share. Word sorting, navigation and object counting do
+not move. The mechanism of Section~\ref{sec:analysis} therefore predicts where
+a benchmark we did not design will improve.
 
-Figure~\ref{fig:depth} resolves the ProofWriter result by the inference depth
-of the item. The replacement raises accuracy at every depth, the control is
-worst on the items that need one or two inference steps, and the conditions
-with five percent or more recover 9 to 11 points there.
+\input{tab_bbh}
 
-\input{fig_depth}
+
+Figure~\ref{fig:depth} in the appendix resolves this by the inference depth of
+the item. The replacement raises accuracy at every depth, and the conditions
+with five percent or more recover 9 to 11 points on the items that need one or
+two inference steps, where the control is weakest.
+
 
 \begin{table}[t]
 \caption{Effect of the replaced share on Qwen2.5-7B. Every condition trains on
@@ -390,25 +400,14 @@ derivations holds 0.78 through the same instruction tuning and arrives at
 0.770. Instruction tuning is what installs the offset, and the derivations are
 what resists it.
 
-The second probe toggles the polarity of the claim and leaves the theory
-untouched, so an arm that ignores negation answers both versions identically.
-The control does so on 37.6 percent of decidable items and the length-matched
-control on 37.6 percent, against 28.5 percent for the formal arm and 24.2
-percent for the English one, with the second seed within half a point
-throughout. Every arm answers the positive version of a negated and false item
-correctly about 68 percent of the time, so the arms separate on the negated
-version alone.
-
-The third probe removes the premises that support the claim, which makes the
-gold label unknown, and asks whether the extra ``false'' survives. It largely
-does not, which is what a premise-grounded answer predicts. The probability
-that the formal arm answers ``false'' on these items falls from 0.53 to 0.27
-once the supporting facts are gone, and the control falls from 0.35 to 0.20.
-The English arm retains more, falling from 0.67 to 0.46, so about two thirds of
-its advantage on this cell survives the removal of the evidence for it. The
-formal rendering therefore buys a smaller gain that is more firmly tied to the
-premises, and the English rendering a larger gain of which part is a shifted
-default for negated claims.
+The second and third probes intervene on the item instead of reading scores.
+Toggling the polarity of the claim and leaving the theory untouched, the
+control answers both versions identically on 37.6 percent of decidable items
+against 28.5 for the formal arm and 24.2 for the English one. Removing the
+premises that support the claim collapses most of the extra negative answer,
+from 0.53 to 0.27 for the formal arm, which is what a premise-grounded answer
+predicts, while the English arm retains more of it.
+Appendix~\ref{sec:perturbation} gives both probes in full.
 
 \subsection{Control conditions}
 
@@ -455,9 +454,9 @@ decided, so the checker under-credits the model.
 
 On the problems of the generator the checker behaves almost as an oracle. A
 derivation it accepts carries the correct answer in 99 percent of samples, and
-selecting the first accepted derivation out of sixteen samples gives the same
-accuracy as asking whether any of the sixteen is correct. A selection rule that
-never sees the gold answer therefore matches sixteen-sample coverage.
+selecting the first accepted derivation out of sixteen matches the accuracy of
+asking whether any of the sixteen is correct, without ever reading a gold
+answer.
 
 On ProofWriter the same rule is much weaker. Among sixteen derivations per item
 sampled at temperature 0.8, between 28 and 37 percent carry a proof that the
@@ -493,11 +492,16 @@ target tokens, a control that removes a schema marker the model could otherwise
 exploit, and a replication at a second seed, all of which
 Appendix~\ref{sec:boundary-details} reports.
 
-The two settings agree once the regime of each is stated. The advantage of the
-formal rendering appears under supervision that is both dense and deep, and an
-instruction mixture with a tenth of its examples replaced is neither. At the
-shares a practitioner would plausibly use, the two notations are
-interchangeable.
+The general benchmarks separate the two notations where the deduction
+benchmarks do not. On the chain subtasks of BIG-Bench Hard in
+Table~\ref{tab:bbh}, the formal rendering gains 3.9 to 6.7 points over the
+control at every share while the English rendering gains 1.0 to 4.2, and on web
+of lies the formal rendering reaches 97.6 percent against 87.5. The advantage of
+the formal rendering therefore appears wherever the supervision has to transfer
+as a procedure for propagating truth values, and it is absent on ProofWriter,
+where the English rendering is ahead at ten percent. A practitioner choosing
+between them should weigh which of the two kinds of transfer the application
+needs.
 
 \section{Midtraining}
 \label{sec:midtraining}
@@ -521,11 +525,10 @@ training documents, and writes none after ordinary instruction tuning.
 \section{Checkable traces as a substrate for chain of thought}
 
 A chain of thought is ordinarily assessed by reading it, and its steps carry no
-form that a program can evaluate. The derivations studied here differ in that
-respect, and the difference is cheap to obtain. One percent of an instruction
-mixture installs the format, the model keeps writing in it at chain lengths
-twice those it was trained on, and no general benchmark loses more than 1.3
-points.
+form that a program can evaluate. The derivations studied here differ, and the
+difference is cheap. One percent of an instruction mixture installs the format,
+the model keeps writing in it at twice the training chain length, and no
+general benchmark loses more than 1.3 points.
 
 Once the format is present, validity and correctness become coupled. On the
 problems of the generator, a derivation the checker accepts carries the correct
@@ -579,13 +582,12 @@ A program that writes deduction problems together with their solutions produces
 training data with no teacher model in it, and a small quantity of that data
 changes what an instruction-tuned language model does. One percent of an
 ordinary mixture suffices for the model to write proofs that a checker accepts
-at chain lengths about twice those seen in training, five percent suffices for
-the full improvement on held-out deduction benchmarks, and larger shares add
-nothing measurable. The improvement is a correction of an affirmative answer
-prior left behind by instruction tuning, and it costs at most 1.3 points on any
-general benchmark we measure. An instruction corpus can leave a decision rule
-half specified, and the missing half is cheap to supply when a program can
-enumerate it.
+at chain lengths about twice those seen in training, and five percent suffices
+for the full improvement on held-out deduction benchmarks. The improvement is a
+correction of an affirmative answer prior left behind by instruction tuning,
+and it reaches a general benchmark only where the task propagates a truth value
+along a chain. An instruction corpus can leave a decision rule half specified,
+and the missing half is cheap to supply when a program can enumerate it.
 
 \bibliographystyle{iclr2027/iclr2027_conference}
 \bibliography{iclr2027/references}
