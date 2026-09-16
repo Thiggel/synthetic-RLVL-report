@@ -471,12 +471,17 @@ gains 12.6 points. Length and domain therefore do not explain the gain.
 The second concerns memorisation, which the overlap audit of
 Section~\ref{sec:data} rules out.
 
-The third concerns the role of deductive order. A further midtraining condition that we run
-uses the same derivations with the lines of each proof shuffled, which
-preserves every token, the vocabulary, the length and the conclusion, and
-destroys only the order in which the facts follow from one another. This
-condition is in training at the time of writing and will be reported with the
-same measures.
+The third concerns the role of deductive order. A further midtraining condition
+uses the same derivations with the lines of each proof shuffled, which preserves
+every token, the vocabulary, the length and the conclusion, and destroys only
+the order in which the facts follow from one another. Most of the gain survives
+the shuffle. At inference depth 3 the ordered English derivations gain 12.6
+points over the control and the shuffled ones gain 7.8, against 1.0 for the
+length-matched documents, so about three fifths of the effect does not require
+the steps to follow from one another. The derivations therefore work partly by
+exhibiting an inference procedure and substantially by supplying a distribution
+of conclusions, since a shuffled derivation still ends in a verdict and still
+carries negated conclusions.
 
 \subsection{Chain-of-thought prompting}
 
