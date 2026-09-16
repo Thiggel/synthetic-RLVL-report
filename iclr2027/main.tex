@@ -474,14 +474,15 @@ Section~\ref{sec:data} rules out.
 The third concerns the role of deductive order. A further midtraining condition
 uses the same derivations with the lines of each proof shuffled, which preserves
 every token, the vocabulary, the length and the conclusion, and destroys only
-the order in which the facts follow from one another. Most of the gain survives
-the shuffle. At inference depth 3 the ordered English derivations gain 12.6
-points over the control and the shuffled ones gain 7.8, against 1.0 for the
-length-matched documents, so about three fifths of the effect does not require
-the steps to follow from one another. The derivations therefore work partly by
-exhibiting an inference procedure and substantially by supplying a distribution
-of conclusions, since a shuffled derivation still ends in a verdict and still
-carries negated conclusions.
+the order in which the facts follow from one another. The two benchmarks answer
+differently. On ProofWriter at inference depth 3 the ordered English
+derivations gain 12.6 points over the control and the shuffled ones gain 7.8,
+against 1.0 for the length-matched documents, so three fifths of that effect
+survives the shuffle. On FOLIO almost none of it does, since the ordered arms
+gain 5.4 and 4.4 points and the shuffled arm gains 1.5. The derivations
+therefore carry two things, an inference procedure that the shuffle destroys
+and a distribution of conclusions that it preserves, and the benchmarks differ
+in how much they reward each.
 
 \subsection{Chain-of-thought prompting}
 
