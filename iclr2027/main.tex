@@ -52,15 +52,17 @@ and they come apart under every test we apply. The first is a procedure. One
 percent of the mixture takes a model from writing no derivation that a checker
 accepts to writing 51-line derivations accepted in more than nine cases out of
 ten, at chain lengths twice those seen in training, and this holds across four
-model families, three scales and a sparse architecture, where no instruction
-corpus alone produces a single accepted derivation below 14B parameters. The
+dense model families and three scales, where no instruction corpus alone
+produces a single accepted derivation below 14B parameters. It does not hold
+on a mixture of experts. The
 second is a correction of the answer prior that instruction tuning installs. On
 Qwen2.5-7B accuracy on ProofWriter rises from 39.3 to 53.2 percent and the
 entire gain lies in negated claims that are false, where the control answers
 ``true''. We show by manipulation that the prior belongs to the instruction
 corpus, since a second corpus installs the opposite prior and the same
 derivations correct it, and we show that the correction can reverse sign on
-models whose prior already leans the other way. The two effects separate on
+models whose prior already leans the other way, and that on the sparse model
+both renderings harm accuracy. The two effects separate on
 three further axes. Shuffling the proof lines preserves most of the accuracy
 gain on ProofWriter and destroys it on FOLIO, training depth decides how far
 the procedure extends but leaves accuracy untouched, and training on
@@ -105,9 +107,10 @@ same number of examples. At one percent, which amounts to a thousand documents,
 the model writes a derivation that a mechanical checker accepts on more than
 nine problems in ten at chain length 25, and the ability extends to chains
 twice that long. We repeat the treatment on Qwen2.5 at 3B, 7B and 14B
-parameters, on Llama-3.1-8B, on OLMo-2-7B and on a mixture of experts, and the
-procedure appears in all but OLMo-2, where it appears in part. No control in
-any family below 14B writes a single accepted derivation.
+parameters, on Llama-3.1-8B, on OLMo-2-7B and on a mixture of experts. The procedure
+appears in full on the four dense Qwen and Llama models, in part on OLMo-2,
+and not at all on the mixture of experts. No control in any family below 14B
+writes a single accepted derivation.
 
 The second is a correction of the answer prior. On Qwen2.5-7B accuracy on
 ProofWriter at inference depth 3 rises from 39.3 to 53.2 percent and on FOLIO
@@ -120,7 +123,8 @@ the same derivations correct it in the same direction. We also show that the
 correction is not a free gain, since on models whose prior already leans away
 from ``true'' the formal rendering moves the distribution further out and
 accuracy falls, by 12 points on OLMo-2 and 26 on the mixture of experts, while
-the English rendering helps every model we measure.
+the English rendering helps every dense model we measure and fails only on the
+sparse one, where neither rendering installs the procedure.
 
 The two effects separate under three further manipulations. Shuffling the
 lines of every training proof, which preserves the tokens and the conclusions
@@ -154,7 +158,7 @@ morishita2024alt}. These corpora render their proofs in English.
 on matched problems and report that English supervision generalises further.
 Both renderings here come from a single latent proof, and we find that the
 English rendering extrapolates beyond its training depth where the formal one
-does not, and that it helps every model where the formal one helps two of six.
+does not, and that it helps every dense model where the formal one helps two of six.
 
 \paragraph{Verifiable rewards and checkable traces.} Training a model against a
 verifier has become a standard recipe in mathematics and in code
@@ -255,20 +259,24 @@ rises from 51.4 to 57.8 percent. Above five percent the curve is flat.
 \subsection{Across families, scales and architectures}
 
 Table~\ref{tab:family} repeats the treatment on five further base models. The
-procedure transfers almost everywhere. Every control below 14B writes no
-accepted derivation at any chain length, and every treated arm except OLMo-2
-writes them on 96 to 100 percent of problems at every chain length, including
-the arms whose accuracy did not improve. OLMo-2 reaches a quarter, at chain
-length 5 as well as 25, so its shorter context does not explain the gap. The
+procedure transfers across the dense models. Every control below 14B writes
+no accepted derivation at any chain length, and every treated dense arm except
+OLMo-2 writes them on 96 to 100 percent of problems at every chain length,
+including the arms whose accuracy did not improve. OLMo-2 reaches a quarter,
+at chain length 5 as well as 25, so its shorter context does not explain the
+gap. The mixture of experts does not acquire the procedure in either rendering,
+at most 4.5 percent accepted at any depth from one seed. The
 14B control reaches 7.5 percent at chain 25 by reasoning in prose instead of
 in the trained format, and its treated arm reaches 99.
 
 The accuracy effect is conditional. The English rendering raises ProofWriter
-accuracy on every model, by 3.4 to 15.5 points, and it is the most stable arm
+accuracy on every dense model, by 3.4 to 15.5 points, and it is the most stable arm
 in the study, with the two Llama seeds agreeing to 0.8 points where that
 model's control varies by 8.6. The formal rendering raises accuracy on Qwen at
-all three scales and lowers it on OLMo-2 by 12.2 points and on the mixture of
-experts by 26.2, both outside their seed spreads. Section~\ref{sec:prior}
+all three scales and lowers it on OLMo-2 by 12.2 points, outside both seed
+spreads. On the mixture of experts both renderings lower it, formal by 26.2
+and English by 33.0, with the answer distribution collapsing onto a single
+label in each case. Section~\ref{sec:prior}
 explains why.
 
 \input{tab_family}
@@ -341,8 +349,8 @@ label distribution. OLMo-2 starts well calibrated, with an excess of 8.6
 points, and the formal derivations push it to 46 points of excess toward
 ``unknown'', so it loses ground. The mixture of experts starts with the highest
 control accuracy in the study and the formal derivations remove ``false'' from
-its answers entirely. The English rendering moves every model toward the
-labels. A practitioner should therefore measure the model's answer distribution
+its answers entirely, while the English ones collapse it onto ``unknown''. The
+English rendering moves every dense model toward the labels. A practitioner should therefore measure the model's answer distribution
 against the benchmark's before choosing what to inject, and the English
 rendering is the safer default.
 
@@ -408,8 +416,9 @@ with respect to the task.
 \section{Notation}
 
 The English rendering is the better default on three grounds. It raises
-accuracy on every model measured, where the formal rendering raises it on Qwen
-and lowers it on OLMo-2 and the mixture of experts. It carries no measurable
+accuracy on every dense model measured, where the formal rendering raises it on
+Qwen and lowers it on OLMo-2, and on the one sparse model both renderings fail
+alike. It carries no measurable
 cost on aggregation tasks, where the formal rendering costs 11 points on
 long-context word counting. And it extrapolates beyond its training depth,
 since trained on fifteen-hop proofs it writes accepted derivations on 99.5
@@ -439,7 +448,10 @@ The accuracy gains beyond ProofWriter, on FOLIO, on the chain subtasks of
 BIG-Bench Hard and on the quantitative half of GPQA-Diamond, are measured on
 Qwen2.5-7B and do not replicate on the other families, whose controls are
 already at ceiling on the subtasks concerned. The procedure is installed only
-partially on OLMo-2. Our checker is sound and incomplete, since it cannot
+partially on OLMo-2 and not at all on the mixture of experts, which has one
+seed and whose sharded training ran several times slower than a dense model of
+its active size, so a pathology specific to sparse routing under our trainer is
+not excluded. Our checker is sound and incomplete, since it cannot
 certify that a fact is underivable. The Tulu-trained models are verbose and do
 not reliably stop after a short answer, so their accuracies are scored on
 partly degenerate text, though their answer distributions are unambiguous and
@@ -451,13 +463,14 @@ A program that writes deduction problems and their solutions produces training
 data with no teacher model in it, and a small quantity of it teaches an
 instruction-tuned model two separable things. One is a procedure for writing
 derivations a checker accepts, installed by one percent of the mixture, reaching
-twice the training depth, and present in five of six model families and scales
-tested. The other is a correction of the answer prior that the instruction
+twice the training depth, and present on every dense model tested, in part on
+OLMo-2, and not on a mixture of experts. The other is a correction of the answer prior that the instruction
 corpus installs, which we show by manipulating the corpus, and which helps
 where the prior leans the wrong way and harms where it does not. Shuffled
 proofs, shallow proofs and proofs without instruction data each keep one of the
 two and lose the other. The English rendering carries the procedure further
-and never worsens the prior, and it is the rendering we recommend.
+and never worsens the prior on a dense model, and it is the rendering we
+recommend.
 
 \bibliographystyle{iclr2027/iclr2027_conference}
 \bibliography{iclr2027/references}
