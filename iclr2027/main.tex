@@ -31,8 +31,8 @@
 \newcommand{\longdoc}{\textsc{LongDoc}}
 \newcommand{\condensed}{\textsc{Condensed}}
 
-\title{What Program-Generated Deduction Data Teaches an
-Instruction-Tuned Language Model}
+\title{Garbage In, Performance Out: The Surprising Effect of Symbolically
+Generated Deduction Data on LLMs}
 
 \author{Anonymous authors}
 
@@ -41,102 +41,123 @@ Instruction-Tuned Language Model}
 \maketitle
 
 \begin{abstract}
-Synthetic training data is almost always written by a language model, which
-bounds the data by what the generating model already knows and reproduces the
-errors that model makes. This paper studies a source that contains no model at
-all. A program samples a multi-hop deduction problem, solves it by forward
-chaining and writes the solution out, so that every document is correct by
-construction. We replace a small share of an ordinary instruction mixture with
-such documents and ask what the model that results has learned. Two things,
-and they come apart under every test we apply. The first is a procedure. One
-percent of the mixture takes a model from writing no derivation that a checker
-accepts to writing 51-line derivations accepted in more than nine cases out of
-ten, at chain lengths twice those seen in training, and this holds across four
-dense model families and three scales, where no instruction corpus alone
-produces a single accepted derivation below 14B parameters. It does not hold
-on a mixture of experts. The
-second is a correction of the answer prior that instruction tuning installs. On
-Qwen2.5-7B accuracy on ProofWriter rises from 39.3 to 53.2 percent and the
-entire gain lies in negated claims that are false, where the control answers
-``true''. We show by manipulation that the prior belongs to the instruction
-corpus, since a second corpus installs the opposite prior and the same
-derivations correct it, and we show that the correction can reverse sign on
-models whose prior already leans the other way, and that on the sparse model
-both renderings harm accuracy. The two effects separate on
-three further axes. Shuffling the proof lines preserves most of the accuracy
-gain on ProofWriter and destroys it on FOLIO, training depth decides how far
-the procedure extends but leaves accuracy untouched, and training on
-derivations alone yields a perfect derivation writer that cannot answer a
-question.
+A program of a few hundred lines samples a multi-hop deduction problem, solves
+it by forward chaining and writes the solution out. The documents it produces
+name their constants $c_0$ through $c_{25}$, carry no world knowledge and share
+four words with the two hundred most frequent words of the benchmarks on which
+we evaluate. We replace five to ten percent of an ordinary instruction mixture
+of 100{,}000 examples with such documents, so that every condition trains on
+the same number of examples, and accuracy on Qwen2.5-7B rises by 13.9 points on
+ProofWriter, by 6.4 on FOLIO, by 6.7 on the chain subtasks of BIG-Bench Hard
+and by 12.8 on the items of GPQA-Diamond that ask for a computed value, while
+eight general benchmarks stay inside the seed range of the control. One
+percent of the mixture, which amounts to 1{,}000 documents, installs a
+derivation procedure that no instruction-tuned control below 14B parameters
+exhibits at all, and the procedure appears on four dense model families. The
+data teaches no content, so we ask what it supplies, and we find two things
+that the instruction corpus does not, each established by manipulation. The
+first is a procedure that carries a value along a chain of steps, which
+shuffled proof lines destroy, which the depth of the training proofs bounds,
+and which the control loses between the third and fifth step of a chain where
+the treated model does not. The second is a correction of the answer prior
+that the instruction corpus installs, which shuffled lines preserve, which is
+indifferent to depth, and which reverses direction when a second instruction
+corpus installs the opposite prior. Across nine treated arms in three model
+families the change in accuracy follows the change in the distance between the
+model's answer distribution and the label distribution, including the arms
+that lose, so the sign of the effect can be read off a model before training.
+The English rendering of the proofs helps every dense model, the formal
+rendering helps some and harms others, a mixture of experts gains nothing, and
+four generators built to match particular target tasks improve none of them.
+Since a program checks the derivations it also writes, the validity of a trace
+tracks the correctness of its answer, which makes this data a substrate for
+reasoning that can be verified without a gold label.
 \end{abstract}
 
 \section{Introduction}
 
-An instruction-tuned language model can hold everything a task requires and
-still answer by a rule that ignores part of the input. The model we start from
-answers that a claim holds in three cases out of four on ProofWriter
-\citep{tafjord2021proofwriter}, and on the claims that are negated and false it
-is correct 17.6 percent of the time. Repairing a defect of this kind calls for
-training data in which the defect is absent, and synthetic text is the usual
-way to obtain training data on demand. In nearly every published recipe
-another language model writes that text. Textbook-style corpora
-\citep{gunasekar2023textbooks, eldan2023tinystories}, rephrased web documents
-\citep{maini2024rephrasing, maini2025beyondweb, su2025nemotroncc} and prompted
-expansions of a seed corpus \citep{yang2025synthetic} all take this form. Such a
-corpus inherits the errors of its writer, and repeated training on it narrows
+Synthetic training data is nearly always written by a language model.
+Textbook-style corpora \citep{gunasekar2023textbooks, eldan2023tinystories},
+rephrased web documents \citep{maini2024rephrasing, maini2025beyondweb,
+su2025nemotroncc} and prompted expansions of a seed corpus
+\citep{yang2025synthetic} all take this form, and each inherits the knowledge
+and the errors of its writer, while repeated training on such text narrows
 the distribution of the trained model \citep{shumailov2024collapse,
-dohmatob2025strong}, which makes it a poor instrument for removing a bias the
-writer is liable to share.
-
-A program is the alternative source. A few hundred lines of Python sample a
-multi-hop deduction problem, solve it and write the solution out, which yields
-documents that are correct by construction, unlimited in number and free of any
-teacher model. The objection to using them in a general instruction mixture is
-that they are trivial. They describe abstract constants that carry colour and
-direction predicates, they contain no world knowledge, and they share four
-words with the two hundred most frequent words of the benchmarks on which we
-evaluate. Figure~\ref{fig:overview-a} shows one such document. This paper asks
-what a model learns from them, and it finds two separable things.
+dohmatob2025strong}. A program is the other source. A few hundred lines of
+Python sample a multi-hop deduction problem, solve it and write the solution
+out, which yields documents that are correct by construction, unlimited in
+number and free of any teacher model. The obvious objection is that such
+documents are garbage as training data. They describe abstract constants that
+carry colour and direction predicates, they contain no world knowledge, they
+repeat one inference rule for fifty lines, and they share four words with the
+two hundred most frequent words of the benchmarks on which we evaluate.
+Figure~\ref{fig:overview-a} shows one of them.
 
 \input{fig_design}
 
-The first is a procedure. We fine-tune a base model on a fixed instruction
-mixture in which one, five, ten or twenty-five percent of the examples have
-been replaced by generated derivations, so that every condition trains on the
-same number of examples. At one percent, which amounts to a thousand documents,
-the model writes a derivation that a mechanical checker accepts on more than
-nine problems in ten at chain length 25, and the ability extends to chains
-twice that long. We repeat the treatment on Qwen2.5 at 3B, 7B and 14B
-parameters, on Llama-3.1-8B, on OLMo-2-7B and on a mixture of experts. The procedure
-appears in full on the four dense Qwen and Llama models, in part on OLMo-2,
-and not at all on the mixture of experts. No control in any family below 14B
-writes a single accepted derivation.
+This paper reports what happens when a small share of an ordinary instruction
+mixture is replaced by these documents, and the result is the surprise in our
+title. We fine-tune Qwen2.5-7B \citep{qwen2025qwen25} on a mixture of 100{,}000
+examples in which one, five, ten or 25 percent of the instruction examples
+have been displaced by generated derivations, so that every condition trains
+on the same number of examples. At five to ten percent, accuracy on ProofWriter
+\citep{tafjord2021proofwriter} rises from 39.3 to 53.2 percent, on FOLIO
+\citep{han2024folio} from 51.4 to 57.8, on the eight subtasks of BIG-Bench Hard
+whose answer follows by propagating a value along a chain from 62.2 to 68.9,
+and on the items of GPQA-Diamond that ask for a computed value from 22.8 to
+35.6, with eight general benchmarks inside the seed range of the control and
+coding unchanged. At one percent, which amounts to 1{,}000 documents, the model
+writes a derivation that a mechanical checker accepts on more than nine
+problems in ten at chain length 25 and on nine in ten at chain length 45,
+twice the longest chain in training. No instruction-tuned control below 14B
+parameters, in any of the five families we train, writes a single accepted
+derivation. Figure~\ref{fig:overview-b} summarises these numbers.
 
-The second is a correction of the answer prior. On Qwen2.5-7B accuracy on
-ProofWriter at inference depth 3 rises from 39.3 to 53.2 percent and on FOLIO
-\citep{han2024folio} from 51.4 to 57.8, and splitting the items by the polarity
-of the claim and the gold label places the entire gain in one of the four
-cells, the claims that are negated and false. The control asserts them. We
-show that the prior comes from the instruction corpus by training the same base
-model on a second corpus, which installs the opposite prior, and observing that
-the same derivations correct it in the same direction. We also show that the
-correction is not a free gain, since on models whose prior already leans away
-from ``true'' the formal rendering moves the distribution further out and
-accuracy falls, by 12 points on OLMo-2 and 26 on the mixture of experts, while
-the English rendering helps every dense model we measure and fails only on the
-sparse one, where neither rendering installs the procedure.
+Data this impoverished cannot teach content, so the second part of the paper
+asks what it supplies, and it finds two things the instruction corpus does
+not, which come apart under every manipulation we apply. The first is a
+procedure that carries a value along a chain of steps. Shuffling the lines of
+every training proof, which preserves every token and every conclusion,
+destroys it. Training on five-hop proofs installs a procedure that fails at
+fifteen hops. On web of lies, the BIG-Bench Hard subtask closest in form to
+the generated data, reading the truth value the model carries at each position
+shows the control losing it between the third and the fifth step while the
+treated model does not, and every model answers correctly whenever its
+intermediate values are correct. The second is a correction of the answer
+prior that the instruction corpus installs. The control asserts that a claim
+holds in three cases out of four on ProofWriter, and the entire gain there lies
+in the claims that are negated and false. Shuffled lines preserve this
+correction, training depth leaves it untouched, and when we train the same base
+model on a second instruction corpus that installs the opposite prior, the same
+derivations correct it in the opposite direction. Across nine treated arms in
+three model families, the change in accuracy follows how far the treatment
+moves the model's answer distribution toward the label distribution, and this
+holds for the arms that lose.
 
-The two effects separate under three further manipulations. Shuffling the
-lines of every training proof, which preserves the tokens and the conclusions
-and destroys the order in which facts follow, keeps three fifths of the
-ProofWriter gain and almost none of the FOLIO gain. Training on proofs of five
-hops installs a procedure that fails at fifteen, while accuracy is unchanged.
-Training on derivations alone, with no instruction data, produces a model that
-writes a perfect derivation on every generated problem and cannot answer a
-question. The paper's contribution is therefore an account of what this data
-does, with its boundaries measured on both sides. It is not a recipe for
-engineering capabilities in general, since four further generators built to
-match specific target tasks improve none of them.
+The boundary of the effect follows from the mechanism and we state it as a
+rule. The data helps a model that lacks the procedure and carries a prior away
+from the labels, and the excess of the model's answer distribution over the
+benchmark's, which can be measured before any training, predicts the sign of
+the change. The English rendering of the proofs raises ProofWriter accuracy on
+every dense model we train, from Qwen2.5 at 3B to 14B through Llama-3.1-8B to
+OLMo-2-7B. The formal rendering raises it on Qwen and lowers it on OLMo-2,
+whose prior already leans away from ``true''. A mixture of experts acquires
+neither the procedure nor the correction. Four further generators, each built
+to match the latent structure of a particular target task, improve none of
+their targets, so the effect is not a general recipe for engineering
+capabilities from generated data.
+
+The final part of the paper considers what the procedure is good for beyond
+the benchmarks. A derivation in the trained format can be checked by the same
+program that wrote the training data, and on the generator's problems a
+derivation the checker accepts carries the correct answer in 99 percent of
+samples, so that selecting the first accepted derivation out of sixteen matches
+the accuracy of consulting the gold answer. Validity of the trace tracks
+correctness of the answer to the extent that the checker is complete for the
+task, which we quantify on ProofWriter and on GSM8K. Generated deduction data
+therefore installs a reasoning format whose intermediate steps can be verified
+without a label, which is the ingredient that reinforcement learning from
+verifiable rewards otherwise has to obtain from mathematics or code.
 
 \section{Related work}
 
@@ -235,7 +256,10 @@ has to be requested before a checker can read it.
 
 \subsection{The procedure and the accuracy gain require different shares}
 
-Table~\ref{tab:dose} reports the sweep on Qwen2.5-7B. The ability to write a
+Table~\ref{tab:dose} reports the sweep on Qwen2.5-7B, and it contains the
+numbers behind the title. A slice of the mixture that carries no content moves
+accuracy on held-out deduction benchmarks by more than ten points, and a
+slice a fifth of that size installs a procedure absent from every control. The ability to write a
 derivation that a checker accepts is already complete at one percent of the
 mixture. A model trained without derivations writes none in six hundred
 attempts, a model trained with a thousand of them writes a derivation in every
@@ -350,9 +374,29 @@ points, and the formal derivations push it to 46 points of excess toward
 ``unknown'', so it loses ground. The mixture of experts starts with the highest
 control accuracy in the study and the formal derivations remove ``false'' from
 its answers entirely, while the English ones collapse it onto ``unknown''. The
-English rendering moves every dense model toward the labels. A practitioner should therefore measure the model's answer distribution
-against the benchmark's before choosing what to inject, and the English
-rendering is the safer default.
+English rendering moves every dense model toward the labels.
+
+\subsection{The boundary as a rule}
+\label{sec:rule}
+
+The preceding measurements determine when the data helps, and the condition
+can be checked before any training. The procedure is installed on any dense
+model that lacks it, at one percent of the mixture, with no exception among
+the four dense families we train. The correction of the prior helps a model
+whose answer distribution leans away from the label distribution in the
+direction the derivations push, which for the English rendering is toward the
+labels on every dense model measured and for the formal rendering is toward
+``unknown''. We measure the excess of the control's answer distribution over
+the label distribution on the evaluation set, which requires no training, and
+across the nine treated arms of Table~\ref{tab:family} and
+Table~\ref{tab:corpus} the sign of the accuracy change agrees with the sign of
+the change in that excess in every arm, including the three that lose. The
+rule has two stated exceptions. The sparse model acquires neither ingredient
+under either rendering, and generators built for other latent structures do
+not carry either ingredient to their targets, as Section~\ref{sec:limits}
+reports. Within these bounds a practitioner who measures a model's answer
+distribution against a benchmark's knows the sign of the effect before
+choosing what to inject, and the English rendering is the safer default.
 
 \subsection{Order and depth}
 
@@ -395,7 +439,8 @@ percent on ProofWriter at depth 3, the formal conditions reach 45.3, 49.5 and
 conditions reach 44.1, 43.8 and 47.0. The advantage grows with the share in
 exactly the regime where a well-prompted baseline is the natural objection.
 
-\section{Checking the derivations}
+\section{Checkable derivations as a substrate for reasoning}
+\label{sec:substrate}
 
 A derivation written in a fixed format can be checked by a program. Our checker
 reads the premises of an item and accepts a proof line when the line is a
@@ -412,6 +457,24 @@ underivable and a forward chain never demonstrates that, and on GSM8K the
 coupling nearly disappears, since a wrong answer there usually follows from
 correct arithmetic inside a wrong plan. A checker pays where it is complete
 with respect to the task.
+
+This coupling between validity and correctness is the property that
+reinforcement learning from verifiable rewards depends on, and it is usually
+obtained from a domain that ships with a verifier, such as mathematics with a
+numeric answer or code with a test suite \citep{lambert2025tulu, yue2025does}.
+The generated data supplies the same property for deduction, and it supplies it
+in the model's own output, since the trained procedure writes the format the
+checker reads. The chain-of-thought experiment above shows that the control
+cannot reach the treated model's accuracy by being asked to reason in prose,
+and the derivations the treated model writes on the generator's problems are
+accepted by the checker in more than nine cases out of ten at twice the training
+depth. A reward that pays for an accepted derivation is therefore available
+for every problem the generator can pose, without a reference answer, and the
+99 percent agreement between acceptance and correctness on those problems
+bounds the reward's noise. We do not train against this reward in the present
+paper. The supervised result already shows that the procedure and the prior
+correction are what the data supplies, and a verifier-guided stage would build
+on the procedure that supervised training has installed.
 
 \section{Notation}
 
@@ -432,6 +495,7 @@ it have to be reported separately, and on the second the English rendering is
 ahead at every band.
 
 \section{Limitations}
+\label{sec:limits}
 
 Four further generators built to match specific target tasks, a program
 variable carried through assignment and branching, membership in a reachable
@@ -460,17 +524,23 @@ the within-corpus comparison is sound.
 \section{Conclusion}
 
 A program that writes deduction problems and their solutions produces training
-data with no teacher model in it, and a small quantity of it teaches an
-instruction-tuned model two separable things. One is a procedure for writing
-derivations a checker accepts, installed by one percent of the mixture, reaching
-twice the training depth, and present on every dense model tested, in part on
-OLMo-2, and absent on a mixture of experts. The other is a correction of the answer prior that the instruction
-corpus installs, which we show by manipulating the corpus, and which helps
-where the prior leans the wrong way and harms where it does not. Shuffled
-proofs, shallow proofs and proofs without instruction data each keep one of the
-two and lose the other. The English rendering carries the procedure further
-and never worsens the prior on a dense model, and it is the rendering we
-recommend.
+data that carries no content, and five to ten percent of it in an ordinary
+instruction mixture raises accuracy on held-out deduction and multi-step
+benchmarks by six to fourteen points on Qwen2.5-7B without cost elsewhere,
+while one percent installs a derivation procedure that no instruction-tuned
+control below 14B parameters shows. The data supplies two things the
+instruction corpus does not. One is a procedure that carries a value along a
+chain, which shuffled proofs and shallow proofs remove, and the other is a
+correction of the answer prior the instruction corpus installs, which we show
+by changing the corpus and which predicts the sign of the accuracy change
+across nine arms in three families. The effect therefore has a stated boundary.
+It helps a dense model that lacks the procedure and whose answers lean away
+from the labels, the English rendering satisfies the second condition on every
+dense model we measure, a mixture of experts gains nothing, and generators
+built for other structures do not transfer. Since the same program checks
+what the trained model writes, the derivations are a reasoning format whose
+validity tracks correctness, and this is the property a verifier-guided
+training stage requires.
 
 \bibliographystyle{iclr2027/iclr2027_conference}
 \bibliography{iclr2027/references}

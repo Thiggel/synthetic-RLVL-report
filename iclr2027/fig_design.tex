@@ -73,36 +73,38 @@ common to the two renderings.}
 \vspace{0pt}
 \begin{tikzpicture}
 \begin{axis}[
+  ybar, bar width=4.2pt,
   width=\linewidth, height=5.4cm,
   scale only axis=false,
-  xmin=-0.3, xmax=4.3, ymin=0.35, ymax=0.57,
-  xtick={0,1,2,3,4}, xticklabels={0,1,5,10,25},
-  ytick={0.35,0.40,0.45,0.50,0.55},
+  ymin=0, ymax=100,
+  xtick={1,2,3,4,5},
+  xticklabels={PW d3, FOLIO, BBH chain, GPQA comp., deriv. 25},
+  x tick label style={font=\tiny, rotate=30, anchor=north east},
+  ytick={0,25,50,75,100},
   tick align=outside, tick pos=left,
-  xlabel={replaced share of the mixture (\%)},
-  ylabel={ProofWriter accuracy},
+  ylabel={accuracy (\%)},
+  enlarge x limits=0.14,
   grid=major, grid style={gray!16, line width=0.3pt},
   axis line style={gray!55},
   label style={font=\scriptsize}, tick label style={font=\tiny},
-  legend style={at={(0.97,0.04)}, anchor=south east, draw=none, fill=none,
+  legend style={at={(0.03,0.97)}, anchor=north west, draw=none, fill=none,
                 font=\tiny, row sep=-2pt},
-  every axis plot/.append style={line width=1.0pt},
+  nodes near coords, every node near coord/.append style={font=\tiny, /pgf/number format/precision=1, /pgf/number format/fixed},
 ]
-  \addplot [name path=ctlu, draw=none, forget plot] coordinates {(-0.3,0.402) (4.3,0.402)};
-  \addplot [name path=ctll, draw=none, forget plot] coordinates {(-0.3,0.388) (4.3,0.388)};
-  \addplot [gray, opacity=0.25, forget plot] fill between [of=ctlu and ctll];
-  \addplot [formalcol, mark=*, mark size=1.3pt] coordinates {(0,0.393) (1,0.405) (2,0.500) (3,0.486) (4,0.516)};
-  \addplot [natcol, mark=square*, mark size=1.3pt] coordinates {(0,0.393) (1,0.403) (2,0.490) (3,0.532)};
-  \legend{Formal, English}
+  \addplot [fill=gray!45, draw=gray!70] coordinates {(1,39.3) (2,51.4) (3,62.2) (4,22.8) (5,0.3)};
+  \addplot [fill=natcol!70, draw=natcol] coordinates {(1,53.2) (2,57.8) (3,68.9) (4,35.6) (5,99.0)};
+  \legend{Control, 10\% English}
 \end{axis}
 \end{tikzpicture}
-\caption{Accuracy on ProofWriter at inference depth 3. The grey band gives the
-range over the three seeds of the unmodified control.}
+\caption{Headline results on Qwen2.5-7B, mean of three seeds. ProofWriter at
+inference depth 3, FOLIO, the eight chain subtasks of BIG-Bench Hard, the 73
+GPQA-Diamond items that ask for a computed value, and the share of generated
+problems at chain length 25 on which the checker accepts the derivation.}
 \label{fig:overview-b}
 \end{subfigure}
-\caption{The data added to the instruction mixture and the accuracy it buys.
-Replacing 1\% of the mixture already lets the model write derivations that a
-checker accepts, and 5\% gives the full gain on a held-out deduction
-benchmark.}
+\caption{The data added to the instruction mixture and what it buys. A
+program writes the example on the left, which carries no world knowledge, and
+replacing ten percent of the instruction mixture with such examples produces
+the gains on the right. Table~\ref{tab:dose} gives the full share sweep.}
 \label{fig:overview}
 \end{figure}
