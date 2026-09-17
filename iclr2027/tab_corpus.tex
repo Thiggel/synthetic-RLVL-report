@@ -1,0 +1,23 @@
+\begin{table}[t]
+\caption{Two instruction corpora on the same base model install opposite answer
+priors, and the same replacement corrects both toward the label distribution.
+The gold labels of ProofWriter at inference depth 3 are 42.8 percent false,
+39.8 true and 17.4 unknown. ``Excess'' is the largest gap between the model's
+answer distribution and that distribution. The Tulu treated arm has three
+seeds, of which one failed to learn the format and is listed separately.}
+\label{tab:corpus}
+\begin{center}
+\footnotesize
+\begin{tabular}{llccc}
+\toprule
+instruction corpus & condition & answer distribution & excess & PW d3 \\
+\midrule
+first corpus & control        & true $.73$  & true $+23.5$  & $39.3$ \\
+first corpus & plus 5\% formal & true $.50$  & true $+0.2$   & $\mathbf{50.0}$ \\
+Tulu 3       & control        & false $.82$ & false $+39.6$ & $53.6$ \\
+Tulu 3       & plus 5\% formal & false $.70$ & false $+27.0$ & $\mathbf{57.2}$ \\
+Tulu 3       & third seed, format not learnt & as control & -- & $51.0$ \\
+\bottomrule
+\end{tabular}
+\end{center}
+\end{table}

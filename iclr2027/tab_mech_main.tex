@@ -1,0 +1,21 @@
+\begin{table}[t]
+\caption{Accuracy by claim polarity and gold label on decidable ProofWriter
+items, pooled over inference depths 1 through 5, formal notation, mean over
+seeds. The rightmost column gives the probability that the model answers
+``true'' on the full evaluation set. The gain lies in one cell.}
+\label{tab:mechanism}
+\begin{center}
+\begin{tabular}{lccccc}
+\toprule
+Share & negated, false & negated, true & positive, false & positive, true & $P(\text{answers true})$ \\
+      & $n=785$ & $n=67$ & $n=112$ & $n=789$ & \\
+\midrule
+0\%   & $.176$ & $.992$ & $.683$ & $.752$ & $.735$ \\
+1\%   & $.241$ & $.985$ & $.649$ & $.716$ & $.692$ \\
+5\%   & $.501$ & $.920$ & $.830$ & $.687$ & $.565$ \\
+10\%  & $.496$ & $.945$ & $.774$ & $.664$ & $.552$ \\
+25\%  & $.569$ & $.910$ & $.679$ & $.668$ & $.502$ \\
+\bottomrule
+\end{tabular}
+\end{center}
+\end{table}
