@@ -448,7 +448,7 @@ The accuracy gains beyond ProofWriter, on FOLIO, on the chain subtasks of
 BIG-Bench Hard and on the quantitative half of GPQA-Diamond, are measured on
 Qwen2.5-7B and do not replicate on the other families, whose controls are
 already at ceiling on the subtasks concerned. The procedure is installed only
-partially on OLMo-2 and not at all on the mixture of experts, which has one
+partially on OLMo-2, and it is absent on the mixture of experts, which has one
 seed and whose sharded training ran several times slower than a dense model of
 its active size, so a pathology specific to sparse routing under our trainer is
 not excluded. Our checker is sound and incomplete, since it cannot
@@ -464,7 +464,7 @@ data with no teacher model in it, and a small quantity of it teaches an
 instruction-tuned model two separable things. One is a procedure for writing
 derivations a checker accepts, installed by one percent of the mixture, reaching
 twice the training depth, and present on every dense model tested, in part on
-OLMo-2, and not on a mixture of experts. The other is a correction of the answer prior that the instruction
+OLMo-2, and absent on a mixture of experts. The other is a correction of the answer prior that the instruction
 corpus installs, which we show by manipulating the corpus, and which helps
 where the prior leans the wrong way and harms where it does not. Shuffled
 proofs, shallow proofs and proofs without instruction data each keep one of the
