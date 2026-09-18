@@ -18,16 +18,16 @@ common to the two.}
 \centering
 \vspace{0pt}
 \includegraphics[width=\linewidth]{figures/headline.pdf}
-\caption{Main results on Qwen2.5-7B, each rendering at its best share on
-ProofWriter.}
+\caption{Main results on Qwen2.5-7B with the formal rendering at 5 percent
+and the English rendering at 10 percent of the mixture.}
 \label{fig:overview-b}
 \end{subfigure}
 \caption{The data added to the instruction mixture and what it
 buys. A program writes the example on the left, which carries no world
 knowledge, and replacing 5 to 10 percent of the instruction mixture with such
-examples produces the gains on the right. BranchProof is the fraction of
-held-out generator problems with an accepted derivation, and
-Table~\ref{tab:main} gives the full share sweep.}
+examples gives the results on the right. \branchproof{} is the fraction of
+held-out generator problems at chain length 25 with an accepted derivation,
+and Table~\ref{tab:main} gives the full share sweep.}
 \label{fig:overview}
 \end{minipage}
 \end{center}

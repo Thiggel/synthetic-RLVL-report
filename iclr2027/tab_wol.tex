@@ -1,12 +1,10 @@
 \begin{table}[H]
-\caption{Web of lies, the BIG-Bench Hard subtask that chains assertions about
-who tells the truth, mean over seeds on 250 items. Gold answers are ``yes'' on
-48.8 percent of items. The control answers ``yes'' on 56.7 percent, and the
-formal conditions bring that rate to the gold rate while the English conditions
-do not. Accuracy rises almost entirely on the items whose answer is ``no'' and
-on the items whose chain contains three negating links. Every condition emits
-the answer phrase on every item and writes about 129 words, so neither
-extraction nor length explains the difference.}
+\caption{Web of lies on Qwen2.5-7B, the BIG-Bench Hard subtask that chains
+assertions about who tells the truth, accuracy in percent, mean over runs on
+250 items. Gold answers are ``yes'' on 48.8 percent of items. A negating
+link is a person who says that the previous person lies, and the column for
+3 negating links covers the items with the most such links. Every condition
+emits the answer phrase on every item and writes about 129 words.}
 \label{tab:wol}
 \begin{center}
 \begin{tabular}{llccccc}

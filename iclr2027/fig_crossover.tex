@@ -1,9 +1,7 @@
 % Generated from the three-seed grid. Shaded regions are one standard
 % deviation over seeds. Do not edit by hand.
-\definecolor{formalcol}{RGB}{40,104,178}
-\definecolor{natcol}{RGB}{34,139,94}
 \pgfplotsset{crossoverstyle/.style={
-    width=0.375\linewidth, height=4.5cm,
+    width=0.34\linewidth, height=4.5cm,
     xmin=4, xmax=26, ymin=0, ymax=1.05,
     xtick={5,10,15,20,25}, ytick={0,0.25,0.5,0.75,1.0},
     tick align=outside, tick pos=left,
@@ -51,7 +49,7 @@
 \end{tikzpicture}
 \caption{Out-of-distribution answer accuracy on \branchproof{} against maximum
 training depth, for three decoding rules. Shaded regions give one standard
-deviation over three seeds. Greedy decoding and \passk{1} place the crossover
+deviation over 3 runs. Greedy decoding and \passk{1} place the crossover
 at maximum training depth 25. Sampling with sixteen draws places it at 15, ten
 depth levels earlier.}
 \label{fig:crossover}

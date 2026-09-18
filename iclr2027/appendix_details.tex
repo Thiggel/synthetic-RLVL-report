@@ -17,7 +17,6 @@ render the same latent proof as formal and English targets
 \end{verbatim}
 
 \paragraph{Uniqueness of the answer.}
-\label{sec:uniqueness-audit}
 Every metric compares a generated answer against one labelled answer, which
 is only meaningful if the labelled answer is the sole one derivable from the
 premises. Each example introduces fresh constants, so no constant is reused
@@ -30,7 +29,6 @@ of derivable candidates is 1, there are no generation failures, and answer
 positions are balanced across the four candidates.
 
 \paragraph{Trace grammar and checker.}
-\label{sec:grammar}
 Formal traces contain four blocks, constants, predicates, premises and proof
 lines, followed by a conclusion and an answer. A proof line contains a
 formula and a rule justification such as premise retrieval or implication
@@ -129,8 +127,8 @@ fully sharded data parallelism with gradient checkpointing, in bfloat16,
 with a global batch of 128 sequences, a maximum sequence length of 8{,}192,
 warmup ratio 0.03 and learning rate $5\times10^{-6}$. The learning rate is
 the one used by our earlier instruction-tuning runs on the same corpus and
-is held fixed across conditions. Seeds 3407, 3408 and 3409 give the three
-replicates on Qwen2.5-7B, and only the final checkpoint is kept. Before
+is held fixed across conditions. The 3 runs per configuration on Qwen2.5-7B
+differ only in the random seed, and only the final checkpoint is kept. Before
 training starts, the mixture is tokenized and the examples whose target
 would be cut by the sequence length are counted. The run aborts if that
 count exceeds 0.5 percent, which prevents a condition from training on
@@ -174,20 +172,22 @@ the pooled runs trained with derivations against the pooled control runs.
 \paragraph{Overlap audit.} No evaluation item of ProofWriter, FOLIO or the
 BIG-Bench Hard subtasks shares an eight-gram with any training derivation.
 
-\section{General Benchmarks}
+\section{Additional Results}
+\subsection{General benchmarks}
 \label{sec:general-table}
 
 Table~\ref{tab:general} reports nine general benchmarks. GSM8K is five-shot
 with a chain of thought, HumanEval and MBPP report pass@1 from a single
 greedy sample, and MMLU, ARC-Challenge, LogiQA, HellaSwag, PIQA and
 WinoGrande are scored by log-likelihood over the answer options with the
-default prompts of the evaluation harness. The three seeds of the Qwen2.5-7B
+default prompts of the evaluation harness. The 3 runs of the Qwen2.5-7B
 control span 0.3 points on GSM8K, 0.1 on MMLU, 0.8 on ARC-Challenge, 0.6 on
-LogiQA, 0.0 on HellaSwag, 0.4 on PIQA and 1.0 on WinoGrande.
+LogiQA, 0.0 on HellaSwag, 0.4 on PIQA and 1.0 on WinoGrande. Rows for the
+English rendering at 25 percent and some code rows are still being
+evaluated.
 
 \input{tab_general}
 
-\section{Additional Results}
 
 \subsection{BIG-Bench Hard by subtask}
 \label{sec:bbh-table}
@@ -197,7 +197,12 @@ LogiQA, 0.0 on HellaSwag, 0.4 on PIQA and 1.0 on WinoGrande.
 \subsection{Web of lies by gold answer}
 \label{sec:wol-table}
 
+Table~\ref{tab:wol} resolves web of lies by gold answer and by the number
+of negating links, and Table~\ref{tab:steps} reads the intermediate value at
+every position of the chain of thought.
+
 \input{tab_wol}
+\input{tab_steps}
 
 \subsection{FOLIO by gold label}
 \label{sec:folio-table}
@@ -219,9 +224,9 @@ LogiQA, 0.0 on HellaSwag, 0.4 on PIQA and 1.0 on WinoGrande.
 
 \begin{table}[H]
 \caption{Ranking of decidable ProofWriter items by the log-likelihood margin
-between ``true'' and ``false'' on Qwen2.5-7B, seed 3407 with seed 3408 in
-parentheses. The pooled column mixes the two polarities and the next two
-columns rank within a polarity. \longdoc{} is a length-matched control that
+between ``true'' and ``false'' on Qwen2.5-7B, area under the ranking curve
+(AUC) for 1 run with a second run in parentheses. The pooled column mixes the
+two polarities and the next two columns rank within a polarity. \longdoc{} is a length-matched control that
 replaces the same share of the mixture with ordinary long documents.}
 \label{tab:probe}
 \begin{center}
@@ -246,7 +251,7 @@ The first probe toggles the polarity of the claim and leaves the theory
 untouched, so a model that ignores negation answers both versions
 identically. The control does so on 37.6 percent of decidable items and the
 length-matched control on 37.6 percent, against 28.5 percent for the formal
-and 24.2 percent for the English mixture, with the second seed within half a
+and 24.2 percent for the English mixture, with a second run within half a
 point throughout. Every model answers the positive version of a negated and
 false item correctly about 68 percent of the time, so the models separate on
 the negated version alone.
@@ -268,7 +273,8 @@ negated claims.
 
 Each example below is an item that the Qwen2.5-7B control answers
 incorrectly and that the models trained with 10 percent formal and 10
-percent English derivations both answer correctly, all at seed 3407. The
+percent English derivations both answer correctly, all from the same run
+of each condition. The
 responses are reproduced verbatim apart from the omission of repeated
 prefixes.
 
@@ -356,7 +362,7 @@ renderings in depth generalisation depends on the depth of the training
 proofs. We fine-tune OLMo-3-7B with LoRA adapters on 50{,}000 paired
 examples per condition, one condition per rendering, for 10{,}000 optimizer
 steps, and we evaluate at chain lengths beyond the longest one seen in
-training with sixteen samples per prompt and one greedy decode.
+training with 16 samples per prompt and 1 greedy decode.
 Figure~\ref{fig:crossover} gives the resulting curves. English supervision
 generalises further as long as the training proofs reach at most 20 hops. At
 25 hops the ordering reverses, and formal supervision reaches $75.0\pm9.5$
@@ -373,7 +379,7 @@ depth. It survives a control that equates the number of supervised target
 tokens by subsampling the longer condition, a control that removes a schema
 marker which identifies the active branch on 80 percent of training examples
 (out-of-distribution \passk{1} of $43.1\pm7.7$ percent for \formal{} and
-$78.5\pm14.9$ for \nat{}), and a replication at a second seed. Concatenating
+$78.5\pm14.9$ for \nat{}), and a replication with a second run. Concatenating
 both renderings into one target fails, with $0.5\pm0.4$ percent
 out-of-distribution \passk{1}, whereas placing an output-mode tag on separate
 examples reaches $50.3\pm6.4$ percent in formal mode at 7B and $85.0\pm8.7$
@@ -386,15 +392,63 @@ The same derivations can enter during midtraining. We midtrained Qwen2.5-7B
 on 2.5 billion tokens, 2{,}385 steps at sequence length 8{,}192 with a
 global batch of 128 sequences, with a tenth of the loss tokens replaced by
 72{,}000 generated documents packed without splitting, and then applied the
-same instruction tuning to every condition. That route also produces the
-gain on ProofWriter, 12.6 points for the English rendering at inference
-depth 3 with two instruction-tuning seeds, and it also leaves the general
-benchmarks flat apart from a loss of two to three points on LogiQA that
-replicates across seeds. Midtraining is the more expensive route and buys
-no more, since the instruction-tuning route reaches the same accuracy,
-generalises further on long chains, carries no cost on LogiQA, and adds
-nothing when the two are applied in sequence. One ability survives
-midtraining that instruction tuning without derivations removes completely,
-since the midtrained model writes checkable proofs up to chain length 25
-when prompted in the format of its training documents, and writes none
-after ordinary instruction tuning.
+same instruction tuning to every condition. The conditions are the control,
+a length-matched control that replaces the same tokens by ordinary long
+documents (\longdoc{}), and the formal and English renderings, with 1
+midtraining run per condition. Table~\ref{tab:midtrain} reports the
+results. That route also produces the gain on ProofWriter, 12.6 points for
+the English rendering at inference depth 3, which a second instruction-tuning
+run reproduces to within 0.1 points, and the gain again lies in the items
+whose gold label is false. It also leaves the general benchmarks flat apart
+from a loss of 2 to 3 points on LogiQA that the second run reproduces.
+Midtraining is the more expensive route and buys no more, since the
+instruction-tuning route reaches the same accuracy, generalises further on
+long chains, carries no cost on LogiQA, and adds nothing when the two are
+applied in sequence. The midtrained base models write checker-valid
+derivations on every generator problem up to chain length 25 when prompted
+in the format of their training documents, and the control base writes
+none. Ordinary instruction tuning removes this ability, and the lower half
+of Table~\ref{tab:midtrain} shows what remains of it after instruction
+tuning, where the derivations raise greedy accuracy on the generator's
+problems by 20 to 50 points and \passk{16} by 20 to 40 points.
+
+\begin{table}[H]
+\caption{Midtraining on Qwen2.5-7B followed by instruction tuning without
+derivations, in percent, 1 run per condition. The upper part gives
+ProofWriter accuracy at each inference depth on 500 items per depth, and
+the accuracy on the items pooled over depths 1 to 5 by gold label, together
+with the fraction of pooled items on which the model answers ``true''. The
+lower part gives accuracy on held-out generator problems at chain lengths 5
+to 25, 200 items per length, under greedy decoding and as \passk{16} at
+temperature 0.8.}
+\label{tab:midtrain}
+\begin{center}
+\small
+\setlength{\tabcolsep}{4pt}
+\begin{tabular}{lccccccccc}
+\toprule
+ & \multicolumn{5}{c}{ProofWriter by inference depth} & \multicolumn{4}{c}{pooled depths 1 to 5} \\
+\cmidrule(lr){2-6}\cmidrule(lr){7-10}
+Condition & 0 & 1 & 2 & 3 & 5 & answers true & gold true & gold false & two-class \\
+\midrule
+\ctrl{}     & 44.2 & 32.8 & 44.0 & 44.4 & 46.0 & 66.3 & 70.4 & 38.5 & 54.4 \\
+\longdoc{}  & 45.8 & 32.2 & 44.4 & 45.4 & 44.0 & 65.9 & 69.5 & 38.6 & 54.0 \\
+\formal{}   & 48.0 & 35.8 & 49.4 & 50.0 & 50.2 & 56.4 & 66.5 & 54.2 & 60.3 \\
+\nat{}      & \textbf{48.8} & \textbf{38.8} & \textbf{56.2} & \textbf{57.0} & \textbf{56.4} & 49.5 & 68.3 & \textbf{68.0} & \textbf{68.2} \\
+\midrule
+ & & \multicolumn{5}{c}{generator problems by chain length} \\
+\cmidrule(lr){3-7}
+Decoding & Condition & 5 & 10 & 15 & 20 & 25 \\
+\midrule
+greedy & \ctrl{} & 5.0 & 3.5 & 11.0 & 9.0 & 6.5 \\
+greedy & \longdoc{} & 7.5 & 11.0 & 12.0 & 15.0 & 12.0 \\
+greedy & \formal{} & 31.5 & 17.5 & 27.5 & 21.5 & 19.5 \\
+greedy & \nat{} & \textbf{52.5} & \textbf{34.5} & \textbf{30.5} & \textbf{24.5} & \textbf{29.5} \\
+\passk{16} & \ctrl{} & 58.0 & 55.5 & 58.5 & 60.0 & 53.0 \\
+\passk{16} & \longdoc{} & 63.0 & 63.5 & 61.0 & 63.5 & 56.0 \\
+\passk{16} & \formal{} & \textbf{97.0} & 85.5 & 79.0 & 74.0 & 71.5 \\
+\passk{16} & \nat{} & 95.5 & \textbf{91.5} & \textbf{84.5} & \textbf{78.0} & \textbf{82.5} \\
+\bottomrule
+\end{tabular}
+\end{center}
+\end{table}

@@ -1,11 +1,9 @@
-\begin{table}[t]
-\caption{The depth of the training proofs decides how far the procedure
-extends, and the rendering decides how far it extrapolates. Entries are the
-fraction of the generator's own problems whose written proof a checker accepts,
-two seeds per cell, mean over seeds. Benchmark accuracy over the same runs sits
-between 46.4 and 51.0 on ProofWriter at depth 3 and between 54.2 and 58.1 on
-FOLIO, against a control of 39.3 and 51.4, with no dependence on the training
-band or the rendering.}
+\begin{table}[H]
+\caption{Depth ablation on Qwen2.5-7B. Each model trains on 10 percent
+derivations whose chain lengths are at most the training depth given in the
+first column, and the entries are the percentage of held-out generator
+problems at the given chain length for which the checker accepts the written
+derivation, mean over 2 runs.}
 \label{tab:depth}
 \begin{center}
 \small

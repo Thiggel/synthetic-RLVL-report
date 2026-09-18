@@ -1,9 +1,8 @@
 \begin{table}[H]
-\caption{Multi-hop question answering, F1 in percent, mean over seeds. The
-three benchmarks retrieve from supplied passages and ask a question that
-requires two or three hops. The bottom row gives the range over the three
-control seeds. Gains are present and small, and the English rendering at ten
-percent is the only condition above that range on all three.}
+\caption{Multi-hop question answering on Qwen2.5-7B, F1 in percent, mean
+over runs. The 3 benchmarks retrieve from supplied passages and ask a
+question that requires 2 or 3 hops. The bottom row gives the range over the
+3 control runs.}
 \label{tab:multihop}
 \begin{center}
 \begin{tabular}{llccc}
@@ -19,7 +18,7 @@ English & 1\%  & $55.4$ & $40.0$ & $32.2$ \\
 English & 5\%  & $55.4$ & $41.2$ & $\mathbf{34.2}$ \\
 English & 10\% & $\mathbf{56.6}$ & $\mathbf{41.6}$ & $32.8$ \\
 \midrule
-\multicolumn{2}{l}{control seed range} & $0.1$ & $1.1$ & $1.5$ \\
+\multicolumn{2}{l}{range over control runs} & $0.1$ & $1.1$ & $1.5$ \\
 \bottomrule
 \end{tabular}
 \end{center}

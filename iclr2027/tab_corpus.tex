@@ -2,19 +2,19 @@
 \caption{Two instruction corpora on the same base model. The gold labels of
 ProofWriter at inference depth 3 are 42.8 percent false, 39.8 percent true and
 17.4 percent unknown. The answer column gives the label the model chooses
-most often and how often, and the excess is the gap between that frequency
-and the frequency of the label in the gold distribution, in points.}
+most often and how often, and PW d3 is accuracy in percent. Bold marks the
+better mixture for each corpus.}
 \label{tab:corpus}
 \begin{center}
 \footnotesize
-\begin{tabular}{llccc}
+\begin{tabular}{llcc}
 \toprule
-Instruction corpus & Mixture & Most frequent answer & Excess & PW d3 \\
+Instruction corpus & Mixture & Most frequent answer & PW d3 \\
 \midrule
-Dolci  & control            & true, 73\%  & 23.5 & 39.3 \\
-Dolci  & 5\% \formal        & true, 50\%  & 0.2  & \textbf{50.0} \\
-Tulu 3 & control            & false, 82\% & 39.6 & 53.6 \\
-Tulu 3 & 5\% \formal        & false, 74\% & 31.5 & \textbf{54.6} \\
+Dolci  & control            & true, 73\%  & 39.3 \\
+Dolci  & 5\% \formal        & true, 50\%  & \textbf{50.0} \\
+Tulu 3 & control            & false, 82\% & 53.6 \\
+Tulu 3 & 5\% \formal        & false, 74\% & \textbf{54.6} \\
 \bottomrule
 \end{tabular}
 \end{center}
