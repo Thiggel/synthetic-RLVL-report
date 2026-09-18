@@ -52,8 +52,8 @@ mixture with such documents while keeping the number of training examples
 fixed, and we find that they improve the resulting model substantially. On
 Qwen2.5-7B, replacing 5 to 10 percent of the mixture raises accuracy by 14
 points on ProofWriter, 6 points on FOLIO, 7 points on the multi-step subtasks
-of BIG-Bench Hard and 13 points on the quantitative items of GPQA-Diamond,
-without degrading general benchmarks. As little as 1 percent of the mixture
+of BIG-Bench Hard and up to 13 points on the quantitative items of
+GPQA-Diamond, without degrading general benchmarks. As little as 1 percent of the mixture
 teaches the model to write long derivations that a symbolic checker accepts,
 an ability that instruction tuning alone does not produce in any of the model
 families we study. We identify two mechanisms behind these gains. The
@@ -97,7 +97,7 @@ written either as a formal proof or as English sentences. On Qwen2.5-7B
 accuracy on ProofWriter \citep{tafjord2021proofwriter} by 13.9 points, on
 FOLIO \citep{han2024folio} by 6.4 points, on the multi-step subtasks of
 BIG-Bench Hard by 6.7 points and on the quantitative items of GPQA-Diamond by
-12.8 points, and it leaves general benchmarks unchanged. Replacing only 1
+up to 12.8 points, and it leaves general benchmarks unchanged. Replacing only 1
 percent of the mixture is enough for the model to write derivations of more
 than 50 lines that a symbolic checker accepts, at twice the chain length seen
 in training, an ability that instruction tuning alone does not produce in
@@ -126,7 +126,7 @@ ability that transfers across four dense model families
 (Section~\ref{sec:families}). (iii)~We identify the two mechanisms behind
 the gains and separate them by manipulating the order, the depth and the
 presence of the training proofs and by changing the instruction corpus
-(Sections~\ref{sec:ablations} and~\ref{sec:analysis}). (iv)~We find that the
+(Sections~\ref{sec:ablations} and~\ref{sec:discussion}). (iv)~We find that the
 English rendering of the proofs generalises further in depth and improves
 accuracy on every dense model, whereas the formal rendering helps some
 models and harms others (Section~\ref{sec:discussion}).
@@ -222,12 +222,13 @@ The instruction corpus is Dolci \citep{olmo2025olmo2}, from which we draw
 $p$ of these examples by generated derivations, so that every model trains on
 the same number of examples. We fine-tune each base model on each mixture for
 one epoch with a global batch of 128 sequences and a context window of
-8{,}192 tokens, and we abort a run if more than 0.5 percent of its examples
-would be truncated. The main sweep trains Qwen2.5-7B at shares of 1, 5, 10
+8{,}192 tokens, and the examples that exceed the window, fewer than 0.5
+percent, are truncated. The main sweep trains Qwen2.5-7B at shares of 1, 5, 10
 and 25 percent in both renderings with three random seeds per configuration,
 and we report the mean over seeds throughout. The same recipe then trains
-Qwen2.5-3B and Qwen2.5-14B, Llama-3.1-8B and OLMo-2-7B at the 5 percent
-formal and 10 percent English shares. All models are base models, since the
+Qwen2.5-3B, Qwen2.5-14B, Llama-3.1-8B and OLMo-2-7B at the 10 percent
+English share, and at the 5 percent formal share for the results in the
+appendix. All models are base models, since the
 instruction tuning has to be identical across conditions for the comparison
 to be meaningful. Appendix~\ref{sec:sweep-details} gives the remaining
 hyperparameters.
@@ -237,106 +238,100 @@ hyperparameters.
 
 We evaluate on ProofWriter under the open-world assumption at inference
 depths 1, 3 and 5, on FOLIO, on GPQA-Diamond, on the three multi-hop question
-answering datasets of LongBench, on BIG-Bench Hard, on HumanEval and MBPP,
-and on seven further general benchmarks. ProofWriter and FOLIO are prompted
-for a direct answer, and we additionally evaluate ProofWriter under a prompt
-that asks the model to reason before answering. GPQA-Diamond is prompted to
-work through the options before the final choice, BIG-Bench Hard uses the
-standard three-shot chain-of-thought prompts, GSM8K is five-shot with a chain
-of thought, and the remaining general benchmarks are scored by
-log-likelihood. We also evaluate on held-out problems of the generator at
-chain lengths 5 to 45, where the model is prompted in the format on which it
-was trained and a forward-chaining checker verifies every line of the
-derivation it writes. We audited the overlap between the generated documents
-and the evaluation sets and found no evaluation item that shares an
-eight-gram with any training derivation.
+answering datasets of LongBench and on BIG-Bench Hard. ProofWriter and FOLIO
+are prompted for a direct answer, and we additionally evaluate ProofWriter
+under a prompt that asks the model to reason before answering. GPQA-Diamond
+is prompted to work through the options before the final choice, and
+BIG-Bench Hard uses the standard three-shot chain-of-thought prompts. We
+also evaluate on held-out problems of the generator, which we refer to as
+\branchproof{}, at chain lengths 5 to 45. There the model is prompted in the
+format on which it was trained and a forward-chaining checker verifies every
+line of the derivation it writes, so the score is the fraction of problems
+with an accepted derivation. Nine general benchmarks, among them GSM8K, MMLU
+and HumanEval, are described in Appendix~\ref{sec:general-table}. We audited
+the overlap between the generated documents and the evaluation sets and
+found no evaluation item that shares an eight-gram with any training
+derivation.
 
-For two benchmarks we report subsets in addition to the full score, and both
-subsets are defined by a rule on the item text that does not depend on any
-model output. The eight chain subtasks of BIG-Bench Hard are those whose
-answer is obtained by propagating a truth value or a state along a sequence
-of steps, namely web of lies, the three object-tracking subtasks, the three
-logical-deduction subtasks and formal fallacies. The 73 quantitative items of
-GPQA-Diamond are those whose question contains a number with a physical unit
-or asks for a value, ratio or factor and contains a number. Appendix~\ref{sec:metrics}
-gives the exact rules and the item-level statistics.
+For two benchmarks we additionally report a subset. BBH-chain averages the
+eight subtasks of BIG-Bench Hard whose answer is obtained by propagating a
+truth value or a state along a sequence of steps, namely web of lies, the
+three object-tracking subtasks, the three logical-deduction subtasks and
+formal fallacies. GPQA-quant consists of the 73 items of GPQA-Diamond whose
+question contains a number with a physical unit or asks for a value, ratio
+or factor. Appendix~\ref{sec:metrics} gives the exact rules.
 
 \section{Results}
 \label{sec:results}
 
 \subsection{Main results}
 
-Table~\ref{tab:main} reports the reasoning benchmarks for Qwen2.5-7B across
-the replaced share, and Table~\ref{tab:general} reports the general
-benchmarks. Replacing 5 to 10 percent of the instruction mixture with
-generated derivations improves every deduction and multi-step benchmark. On
+Table~\ref{tab:main} reports the results for Qwen2.5-7B across the replaced
+share. Replacing 5 to 10 percent of the instruction mixture with generated
+derivations improves every deduction and multi-step benchmark. On
 ProofWriter the English rendering at 10 percent improves accuracy by 6.4
 points at depth 1, 13.9 points at depth 3 and 10.2 points at depth 5, and
 the formal rendering at 5 percent improves it by 5.3, 10.7 and 7.7 points.
 FOLIO improves by 6.4 points with the formal rendering at 5 percent. On
 BIG-Bench Hard the macro average improves by 2.7 points, and the eight chain
 subtasks account for the whole gain, improving by 6.7 points while the other
-nineteen subtasks move by less than one point. GPQA-Diamond improves by 2.0
-to 5.1 points, and the multi-hop question answering datasets by one to three
-points of F1. The general benchmarks in Table~\ref{tab:general} do not move
-beyond the noise of a single run, with the largest deviation being 2.8 points
-on ARC-Challenge in the direction of improvement.
+nineteen subtasks move by less than one point. GPQA-Diamond improves by 2 to
+5 points, and the gain is concentrated in the quantitative items, which
+improve by 5 to 7 points at the 5 and 10 percent shares and by 12.8 points at
+25 percent formal, while the 125 remaining items move by less than one point.
+The multi-hop question answering datasets improve by one to three points of
+F1. The general benchmarks in Appendix~\ref{sec:general-table} neither
+improve nor degrade, with every difference to the control within 3 points
+and most within one.
 
 \input{tab_main}
-\input{tab_general}
-
-The improvements on GPQA-Diamond are concentrated in the quantitative items
-defined in Section~\ref{sec:eval}. On these 73 items accuracy rises from 22.8
-percent for the control to 35.6 percent for the formal rendering at 10
-percent, with 46 items improving and 19 worsening across the pooled runs,
-which a sign test puts at $p = 0.001$. The 125 remaining items move from 37.1
-to 37.6 percent, with a sign test at $p = 0.60$. The overall score of the
-benchmark therefore averages a substantial gain on the items that require a
-computation with no change on the items that require recall.
 
 The ability to write derivations that the checker accepts appears at a much
 smaller share than the accuracy gains. The control writes no accepted
-derivation, whereas the model trained with 1 percent derivations writes one
-on 93 percent of held-out generator problems at chain length 25, and on 90
-percent of problems at chain length 45, which is about twice the longest
-chain in training. This ability is complete from 1 percent upward in both
-renderings. Accuracy on the benchmarks, by contrast, improves by about one
-point at 1 percent and reaches its full value at 5 percent, and it does not
-improve further at 25 percent. The two effects therefore have different
-thresholds, which is the first indication that they are distinct, and we
-return to this in Section~\ref{sec:ablations}.
+derivation on \branchproof{}, whereas the model trained with 1 percent
+derivations writes one on 93 percent of problems at chain length 25 and on
+90 percent at chain length 45, which is about twice the longest chain in
+training. This ability is complete from 1 percent upward in both renderings.
+Accuracy on the other benchmarks, by contrast, improves by about one point
+at 1 percent, reaches its full value at 5 percent, and does not improve
+further at 25 percent. The two effects therefore have different thresholds,
+which is a first indication that they are distinct.
 
-Table~\ref{tab:main} also compares direct answers on ProofWriter with answers
-given after a requested chain of reasoning. The control gains 0.6 points from
-reasoning aloud, so the gap to the models trained with derivations is not
-closed by prompting. For the formal rendering the gain from reasoning aloud
-grows with the share and reaches 55.8 percent at 25 percent, whereas for the
-English rendering it is smaller than the gain from the direct answer.
+Table~\ref{tab:main} also compares direct answers on ProofWriter with
+answers given after a requested chain of reasoning. The control gains 0.6
+points from reasoning aloud, so the gap to the models trained with
+derivations is not closed by prompting. For the formal rendering the score
+under the reasoning prompt grows with the share and reaches 55.8 percent at
+25 percent, whereas for the English rendering the direct answer is more
+accurate at every share.
 
 \subsection{Model families and scales}
 \label{sec:families}
 
-Table~\ref{tab:family} repeats the experiment on Qwen2.5-3B, Qwen2.5-14B,
-Llama-3.1-8B and OLMo-2-7B. The derivation-writing ability transfers across
-the Qwen and Llama models. Every control below 14B writes no accepted
-derivation at any chain length, and every Qwen and Llama model trained with
+Table~\ref{tab:family} repeats the experiment with the English rendering at
+10 percent on Qwen2.5-3B, Qwen2.5-14B, Llama-3.1-8B and OLMo-2-7B, and
+Table~\ref{tab:family-formal} in the appendix gives the formal rendering at
+5 percent, including Qwen2.5-32B. The derivation-writing ability transfers
+to every Qwen and Llama model. The controls below 14B write no accepted
+derivation at any chain length, the 14B control reaches 7.5 percent at chain
+length 25 by reasoning in prose, and every Qwen and Llama model trained with
 derivations writes accepted derivations on 96 to 100 percent of problems at
-every chain length. The 14B control reaches 7.5 percent at chain length 25 by
-reasoning in prose, and the same model trained with derivations reaches 99
-percent. OLMo-2 acquires the ability only in part, at about a quarter of the
-problems with the English rendering at chain length 5 as well as 25, so its
-shorter context does not explain the gap.
+every chain length. OLMo-2 acquires the ability only in part, on about a
+fifth of the problems at chain length 5 as well as 25, so its shorter
+context does not explain the gap.
 
-The accuracy gain on ProofWriter transfers with the English rendering to
-every model, by 3.6 points on Qwen2.5-3B, 10.6 on Qwen2.5-14B, 15.5 on
-Llama-3.1-8B and 11.4 on OLMo-2-7B. The formal rendering improves the three
-Qwen models and Llama, but it lowers accuracy on OLMo-2 by 12.2 points.
-FOLIO and GPQA-Diamond move by less than the seed spread of the respective
-control on Qwen2.5-3B and Llama-3.1-8B, whose controls already score at or
-near 100 percent on the chain subtasks of BIG-Bench Hard, so the additional
-gains observed on Qwen2.5-7B correspond to a deficit that the 7B model has
-and the others do not. Section~\ref{sec:analysis} explains the loss on
-OLMo-2.
+The gain on ProofWriter transfers to every model, by 3.2 points on
+Qwen2.5-3B, 10.6 on Qwen2.5-14B, 15.5 on Llama-3.1-8B and 10.8 on OLMo-2-7B.
+The formal rendering improves ProofWriter on every Qwen model including the
+32B model, where it improves depth 3 by 8.6 points and depth 5 by 21.2
+points, but lowers it on OLMo-2 by 12.2 points. FOLIO and GPQA-Diamond move
+by less than 3 points on the other models, except for GPQA-Diamond on
+Qwen2.5-14B, which improves by 4.5 points. The controls of these models
+already score at or near 100 percent on the chain subtasks of BIG-Bench
+Hard, so the gains on that benchmark observed on Qwen2.5-7B correspond to a
+deficit of the 7B model that the others do not have.
+Section~\ref{sec:prior} explains the loss of OLMo-2 under the formal
+rendering.
 
 \input{tab_family}
 
@@ -388,8 +383,8 @@ because when asked a plain question it emits the opening token of the only
 format it knows and stops. The derivations and the instruction data are
 therefore both necessary.
 
-\section{Analysis}
-\label{sec:analysis}
+\section{Discussion}
+\label{sec:discussion}
 
 \subsection{The bias in the answer distribution}
 \label{sec:prior}
@@ -419,14 +414,16 @@ is already close to the gold distribution, with an excess of 8.6 points, and
 the formal derivations push it 46 points toward ``unknown'', so its accuracy
 falls, whereas the English derivations move it toward the labels and its
 accuracy rises. On every model, the English rendering moves the answer
-distribution toward the labels.
+distribution toward the labels. Since the answer distribution of the control
+can be measured before any derivations are added, it indicates in advance
+whether the derivations will help a given model and in which rendering.
 
 \subsection{Carrying a value through a chain}
 \label{sec:procedure}
 
-The ablations show that the second effect requires ordered proofs of
-sufficient depth and produces no gain on FOLIO when the order is destroyed.
-It can also be observed directly on a benchmark task. Web of lies, the
+The ablations show that the gains on FOLIO require ordered proofs of
+sufficient depth. The procedure that the derivations teach can also be
+observed directly on a benchmark task. Web of lies, the
 subtask of BIG-Bench Hard closest in form to the generated data, states for
 each of five people whether they tell the truth given the previous person,
 so the answer is obtained by carrying a truth value along the chain. We read
@@ -440,27 +437,9 @@ on essentially every item whose intermediate values are all correct, so the
 Appendix~\ref{sec:wol-table} gives the full analysis, and the tracking
 subtasks show the same pattern.
 
-\section{Discussion}
-\label{sec:discussion}
+\subsection{Notation}
 
-\paragraph{Two mechanisms.} The generated derivations teach no facts, and
-the experiments indicate that they act on the model in two ways that come
-apart under every manipulation we applied. The first is a procedure for
-carrying a value through a chain, which requires ordered proofs, is bounded
-by the depth of the training proofs, appears at 1 percent of the mixture,
-and accounts for the gains on FOLIO, on the chain subtasks of BIG-Bench Hard
-and on the quantitative items of GPQA-Diamond. The second is a shift of the
-answer distribution toward the labels, which survives shuffling, is
-indifferent to depth, requires about 5 percent of the mixture, and accounts
-for most of the gain on ProofWriter. The second effect depends on the bias
-of the model before training, which we could measure from the control alone,
-and the sign of the change in accuracy agreed with the sign of the change in
-the bias on every model we trained. This suggests a simple diagnostic. The
-answer distribution of an instruction-tuned model on a benchmark, compared
-with the label distribution, indicates whether the derivations will help and
-in which rendering.
-
-\paragraph{Notation.} The English rendering is the better default on the
+The English rendering is the better default on the
 evidence of this paper. It improves accuracy on every dense model, whereas
 the formal rendering improves Qwen and Llama and harms OLMo-2. It generalises
 further beyond its training depth, since trained on fifteen-hop proofs it
@@ -472,7 +451,9 @@ Appendix~\ref{sec:crossover}, finds the formal rendering ahead at the deepest
 training depth when the evaluation depth is held fixed, so the two renderings
 should be compared separately at the training depth and beyond it.
 
-\paragraph{Checking the derivations.} A derivation in the trained format is
+\subsection{Checking the derivations}
+
+A derivation in the trained format is
 checked by the same program that wrote the training data. On the generator's
 own problems, a derivation the checker accepts carries the correct answer in
 99 percent of samples, so selecting the first accepted derivation out of

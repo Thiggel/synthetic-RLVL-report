@@ -222,7 +222,14 @@ without the template and report it in Table~\ref{tab:bbh}.
 \section{General Benchmarks}
 \label{sec:general-table}
 
-Table~\ref{tab:general} in the main text reports the general benchmarks.
+Table~\ref{tab:general} reports nine general benchmarks. GSM8K is five-shot
+with a chain of thought, HumanEval and MBPP report pass@1 from a single
+greedy sample, and MMLU, ARC-Challenge, LogiQA, HellaSwag, PIQA and
+WinoGrande are scored by log-likelihood over the answer options with the
+default prompts of the evaluation harness.
+
+\input{tab_general}
+\input{tab_family_formal}
 The three seeds of the Qwen2.5-7B control span 0.3 points on GSM8K, 0.1 on
 MMLU, 0.8 on ARC-Challenge, 0.6 on LogiQA, 0.0 on HellaSwag, 0.4 on PIQA and
 1.0 on WinoGrande, which is the noise floor of a single cell.

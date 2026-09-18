@@ -5,22 +5,23 @@ benchmarks are scored by log-likelihood over the answer options. Entries
 marked -- are still being evaluated.}
 \label{tab:general}
 \begin{center}
-\footnotesize
-\begin{tabular}{llccccccccc}
+\small
+\setlength{\tabcolsep}{4.5pt}
+\begin{tabular}{lccccccccc}
 \toprule
- & & GSM8K & MMLU & ARC-C & LogiQA & HellaSwag & PIQA & WinoGrande & HumanEval & MBPP \\
+ & & \multicolumn{4}{c}{\formal} & \multicolumn{4}{c}{\nat} \\
+\cmidrule(lr){3-6}\cmidrule(lr){7-10}
+Benchmark & Control & 1\% & 5\% & 10\% & 25\% & 1\% & 5\% & 10\% & 25\% \\
 \midrule
-\multicolumn{2}{l}{Control} & 77.0 & 70.3 & 49.6 & 36.8 & 73.2 & 80.5 & 71.0 & 66.8 & 65.2 \\
-\midrule
-\multirow{4}{*}{\formal} & 1\%  & 76.5 & 70.2 & 52.4 & 38.0 & 73.4 & 81.0 & 70.6 & 67.1 & 64.8 \\
- & 5\%  & 76.7 & 69.7 & 50.7 & 36.8 & 73.2 & 80.8 & 70.3 & -- & -- \\
- & 10\% & 76.2 & 70.0 & 50.4 & 38.9 & 73.2 & 80.9 & 71.0 & 68.3 & 65.2 \\
- & 25\% & 76.8 & 69.5 & 49.8 & 38.4 & 73.6 & 80.7 & 71.3 & -- & -- \\
-\midrule
-\multirow{4}{*}{\nat} & 1\%  & 76.5 & 70.2 & 51.1 & 37.5 & 73.3 & 80.6 & 71.3 & 65.9 & 65.2 \\
- & 5\%  & 75.7 & 70.2 & 51.9 & 36.6 & 73.6 & 81.0 & 70.2 & 63.4 & 64.6 \\
- & 10\% & 76.4 & 70.3 & 49.9 & 38.5 & 73.5 & 80.8 & 70.7 & 69.5 & 64.8 \\
- & 25\% & 78.2 & 69.9 & 50.7 & 37.6 & 73.5 & 80.5 & 71.4 & 65.2 & 66.4 \\
+GSM8K      & 77.0 & 76.5 & 76.7 & 76.2 & 76.8 & 76.5 & 75.7 & 76.4 & 78.2 \\
+MMLU       & 70.3 & 70.2 & 69.7 & 70.0 & 69.5 & 70.2 & 70.2 & 70.3 & 69.9 \\
+ARC-C      & 49.6 & 52.4 & 50.7 & 50.4 & 49.8 & 51.1 & 51.9 & 49.9 & 50.7 \\
+LogiQA     & 36.8 & 38.0 & 36.8 & 38.9 & 38.4 & 37.5 & 36.6 & 38.5 & 37.6 \\
+HellaSwag  & 73.2 & 73.4 & 73.2 & 73.2 & 73.6 & 73.3 & 73.6 & 73.5 & 73.5 \\
+PIQA       & 80.5 & 81.0 & 80.8 & 80.9 & 80.7 & 80.6 & 81.0 & 80.8 & 80.5 \\
+WinoGrande & 71.0 & 70.6 & 70.3 & 71.0 & 71.3 & 71.3 & 70.2 & 70.7 & 71.4 \\
+HumanEval  & 66.8 & 67.1 & --   & 68.3 & --   & 65.9 & 63.4 & 69.5 & 65.2 \\
+MBPP       & 65.2 & 64.8 & --   & 65.2 & --   & 65.2 & 64.6 & 64.8 & 66.4 \\
 \bottomrule
 \end{tabular}
 \end{center}
