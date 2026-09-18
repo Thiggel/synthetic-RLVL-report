@@ -71,31 +71,7 @@ common to the two renderings.}
 \begin{subfigure}[t]{0.34\linewidth}
 \centering
 \vspace{0pt}
-\begin{tikzpicture}
-\begin{axis}[
-  ybar, bar width=4.2pt,
-  width=\linewidth, height=5.4cm,
-  scale only axis=false,
-  ymin=0, ymax=100,
-  xtick={1,2,3,4,5},
-  xticklabels={PW d3, FOLIO, BBH chain, GPQA comp., deriv. 25},
-  x tick label style={font=\tiny, rotate=30, anchor=north east},
-  ytick={0,25,50,75,100},
-  tick align=outside, tick pos=left,
-  ylabel={accuracy (\%)},
-  enlarge x limits=0.14,
-  grid=major, grid style={gray!16, line width=0.3pt},
-  axis line style={gray!55},
-  label style={font=\scriptsize}, tick label style={font=\tiny},
-  legend style={at={(0.03,0.97)}, anchor=north west, draw=none, fill=none,
-                font=\tiny, row sep=-2pt},
-  nodes near coords, every node near coord/.append style={font=\tiny, /pgf/number format/precision=1, /pgf/number format/fixed},
-]
-  \addplot [fill=gray!45, draw=gray!70] coordinates {(1,39.3) (2,51.4) (3,62.2) (4,22.8) (5,0.3)};
-  \addplot [fill=natcol!70, draw=natcol] coordinates {(1,53.2) (2,57.8) (3,68.9) (4,35.6) (5,99.0)};
-  \legend{Control, 10\% English}
-\end{axis}
-\end{tikzpicture}
+\includegraphics{figures/example.pdf}
 \caption{Main results on Qwen2.5-7B. ProofWriter at
 inference depth 3, FOLIO, the eight chain subtasks of BIG-Bench Hard, the 73
 GPQA-Diamond items that ask for a computed value, and the share of generated
