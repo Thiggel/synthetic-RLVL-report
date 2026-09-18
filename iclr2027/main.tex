@@ -33,8 +33,7 @@
 \definecolor{formalcol}{RGB}{40,104,178}
 \definecolor{natcol}{RGB}{34,139,94}
 
-\title{Garbage In, Performance Out: The Surprising Effect of Symbolically
-Generated Deduction Data on LLMs}
+\title{Garbage In, Performance Out: The Surprising Effect of Symbolically Generated Deduction Data on LLMs}
 
 \author{Anonymous authors}
 
@@ -93,7 +92,7 @@ lines, so there is little reason to expect them to improve a model on
 anything beyond the generator's own problems.
 
 In this work we show that such data does improve a general instruction-tuned
-model by a substantial margin, and we investigate why. We fine-tune base
+model by a substantial margin, and investigate the causes behind this. We fine-tune base
 models on a fixed instruction mixture of 100{,}000 examples in which a
 fraction of the instruction examples is replaced by generated derivations.
 Each derivation is written in one of two renderings of the same underlying
@@ -232,10 +231,9 @@ one epoch with a global batch of 128 sequences and a context window of
 8{,}192 tokens. Fewer than 0.5 percent of the examples exceed the window and
 are truncated. The main sweep trains Qwen2.5-7B at shares of 1, 5, 10 and 25
 percent in both renderings with 3 runs per configuration, and we report the
-mean over runs throughout. The same recipe then trains
+mean over runs throughout. In the same way, we train
 Qwen2.5-3B, Qwen2.5-14B, Qwen2.5-32B, Llama-3.1-8B and OLMo-2-7B at the
-5 percent formal and 10 percent English shares, with the 32B model trained
-on two nodes. All models are base models, which
+5 percent formal and 10 percent English shares. All models are base models, which
 keeps the instruction tuning identical across conditions. Appendix~\ref{sec:sweep-details} gives the remaining
 hyperparameters.
 
@@ -266,7 +264,7 @@ truth value or a state along a sequence of steps, namely web of lies, the
 three object-tracking subtasks, the three logical-deduction subtasks and
 formal fallacies. GPQA-quant consists of the 73 items of GPQA-Diamond whose
 question contains a number with a physical unit or asks for a value, ratio
-or factor. Appendix~\ref{sec:metrics} gives the exact rules.
+or factor. Appendix~\ref{sec:metrics} gives the exact rules for constructing this subset.
 
 \section{Results}
 \label{sec:results}
@@ -294,8 +292,7 @@ percent shares and by 12.8 points at the 25 percent share of the formal
 rendering, while the 125 remaining items move by less than 1 point. The
 multi-hop question answering datasets improve by 1 to 3 points of F1
 (Appendix~\ref{sec:multihop-table}). The general benchmarks in
-Appendix~\ref{sec:general-table} neither improve nor degrade, with every
-difference to the control within 3.5 points and most within 1.
+Appendix~\ref{sec:general-table} neither improve nor degrade.
 
 \input{tab_main}
 
