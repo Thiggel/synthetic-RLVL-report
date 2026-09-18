@@ -214,6 +214,13 @@ every position of the chain of thought.
 
 \input{tab_multihop}
 
+\subsection{Depth of the training proofs}
+\label{sec:depth-table}
+
+Table~\ref{tab:depth} gives the depth ablation of Section~\ref{sec:ablations}.
+
+\input{tab_depth2}
+
 \subsection{ProofWriter by inference depth}
 \label{sec:depth-figure}
 
@@ -353,6 +360,48 @@ size estimate for a loop diagram containing the factor $1/(4\pi)^6$ and asks
 for the number of loops. The control reads the exponent as the loop count and
 answers 6, whereas the model trained with formal derivations writes that each
 loop contributes a factor $1/(4\pi)^2$ and answers 3.
+
+\subsection{Web of lies}
+\label{sec:wol-example}
+
+The item below shows the failure of the Qwen2.5-7B control on web of lies
+described in Section~\ref{sec:procedure} and its absence after training.
+
+\begin{small}
+\begin{quote}
+\textbf{Question.} Vina tells the truth. Helene says Vina lies. Kandi says
+Helene tells the truth. Jamey says Kandi lies. Ka says Jamey lies. Does Ka
+tell the truth?
+
+\textbf{Control.} (1) Vina tells the truth. (2) Since Vina tells the truth
+and Helene says Vina lies, Helene lies. (3) Since we know from (2) that
+Helene \emph{tells the truth}, and Kandi says Helene tells the truth, Kandi
+tells the truth. (4) Jamey lies. (5) Ka tells the truth. So the answer is
+Yes.
+
+\textbf{With 10 percent formal derivations.} (1) Vina tells the truth. (2)
+Helene lies. (3) Since we know from (2) that Helene lies, and Kandi says
+Helene tells the truth, Kandi lies. (4) Jamey tells the truth. (5) Ka lies.
+So the answer is No.
+\end{quote}
+\end{small}
+
+\section{Verification of Derivations}
+\label{sec:verification}
+
+A derivation in the trained format is
+checked by the same program that wrote the training data. On the generator's
+own problems, a derivation the checker accepts carries the correct answer in
+99 percent of samples, so selecting the first accepted derivation out of
+16 matches the accuracy of selecting with the gold answer. On
+ProofWriter the checker reproduces the published label on 84 to 99 percent
+of items depending on the depth, and an accepted derivation is correct
+between 53 and 69 percent of the time, because a third of the items ask
+whether a claim is underivable and a forward chain cannot show that. The
+coupling between validity and correctness therefore holds where the checker
+is complete for the task, which makes the trained format a candidate for
+verifier-based training on deduction \citep{lambert2025tulu, yue2025does},
+although we do not pursue this here.
 
 \section{Notation Crossover on the Generator}
 \label{sec:crossover}
