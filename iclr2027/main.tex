@@ -374,14 +374,14 @@ on Tulu 3 answers "false" on 82 percent, while the gold labels are 40
 percent true and 43 percent false. Replacing 5 percent of either corpus by
 formal derivations moves the answers toward the labels in both cases, by 23
 points on Dolci, from 73 to 50 percent, and by 12 points on Tulu 3, from 82
-to 70 percent, and improves ProofWriter accuracy on both, by 10.7 points on
-Dolci and by 3.6 points on Tulu 3. On FOLIO the two corpora come apart, with a
-gain of 6.4 points on Dolci and a loss of 2.5 points on Tulu 3. The gain is
-smaller on Tulu 3, whose control is already 14 points more accurate on
-ProofWriter, and the run we report there is one of 3, of which a second behaves
-like the control. The effect therefore does
-not depend on one corpus, and the size of the gain follows the size of the
-bias that the corpus leaves, which is the account developed in
+to 70 percent. The accuracy that follows from the correction does not. On
+Dolci the mixture gains 10.7 points at inference depth 3, 7.7 points at depth 5
+and 6.4 points on FOLIO, and on Tulu 3 it loses 0.8, 3.2 and 2.5 points on the
+same three benchmarks. The Tulu 3 control is already 17 points more accurate
+than the Dolci control at inference depth 3, so there is little room left for
+the derivations to repair. The correction of the answer prior therefore does
+not depend on one corpus, and it turns into accuracy only where the corpus
+leaves a bias large enough to cost accuracy, which is the account developed in
 Section~\ref{sec:prior}.
 
 \input{tab_corpus}

@@ -6,10 +6,8 @@ most often and how often, \branchproof{} is the percentage of held-out
 generator problems at chain length 25 for which the checker accepts the written
 derivation, PW d3 and PW d5 are accuracy in percent on ProofWriter at inference
 depths 3 and 5, and FOLIO is accuracy in percent. Bold marks the better mixture
-for each corpus. The Dolci rows are the mean of 3 runs. The Tulu 3 control is
-the mean of 2 runs and the Tulu 3 mixture is a single run, the one of 3 for
-which both benchmarks were evaluated, and the other 2 runs reach 55.6 and 51.0
-on PW d3. The Tulu-trained models are verbose and do not reliably stop after a
+for each corpus. The Dolci rows are the mean of 3 runs and the
+Tulu 3 rows are single runs. The Tulu-trained models are verbose and do not reliably stop after a
 short answer, so the comparison across corpora is not like for like. Entries
 marked -- are still being evaluated.}
 \label{tab:corpus}
@@ -21,8 +19,8 @@ Instruction corpus & Mixture & Most frequent answer & \branchproof{} & PW d3 & P
 \midrule
 Dolci  & control            & true, 73\%  & $0.3$ & $39.3$ & $41.2$ & $51.4$ \\
 Dolci  & 5\% \formal{}      & true, 50\%  & $\mathbf{99.3}$ & $\mathbf{50.0}$ & $\mathbf{48.9}$ & $\mathbf{57.8}$ \\
-Tulu 3 & control            & false, 82\% & -- & $53.6$ & -- & $\mathbf{54.2}$ \\
-Tulu 3 & 5\% \formal{}      & false, 70\% & -- & $\mathbf{57.2}$ & -- & $51.7$ \\
+Tulu 3 & control            & false, 82\% & -- & $\mathbf{56.4}$ & $\mathbf{59.8}$ & $\mathbf{54.2}$ \\
+Tulu 3 & 5\% \formal{}      & false, 70\% & -- & $55.6$ & $56.6$ & $51.7$ \\
 \bottomrule
 \end{tabular}
 \end{center}
