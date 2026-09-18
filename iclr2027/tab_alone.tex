@@ -1,0 +1,22 @@
+\begin{table}[H]
+\caption{Training on derivations without instruction data, Qwen2.5-7B. The
+first column is the percentage of held-out generator problems at chain length
+25 for which the checker accepts the written derivation, and the remaining
+columns are accuracy in percent on ProofWriter at inference depths 3 and 5 and
+on FOLIO. Asked a benchmark question, the models trained on derivations alone
+emit the opening token of the derivation format and stop.}
+\label{tab:alone}
+\begin{center}
+\small
+\begin{tabular}{lcccc}
+\toprule
+training data & \branchproof{} & PW d3 & PW d5 & FOLIO \\
+\midrule
+instruction data only & $0.3$ & $39.3$ & $41.2$ & $51.4$ \\
+5 percent \formal{} in instruction data & $99.3$ & $50.0$ & $48.9$ & $57.8$ \\
+\formal{} derivations only & $100.0$ & $0.0$ & $0.0$ & $0.0$ \\
+\nat{} derivations only & $100.0$ & $0.0$ & $0.0$ & $0.0$ \\
+\bottomrule
+\end{tabular}
+\end{center}
+\end{table}

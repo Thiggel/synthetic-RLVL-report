@@ -336,11 +336,14 @@ context does not explain the gap.
 
 The gain on ProofWriter transfers to every model. With the English
 rendering it is 3.2 points on Qwen2.5-3B, 10.6 on Qwen2.5-14B, 15.5 on
-Llama-3.1-8B and 10.8 on OLMo-2-7B, and with the formal rendering it is 3.9,
+Llama-3.1-8B and 10.8 on OLMo-2-7B, where the English run of Qwen2.5-32B is
+still training, and with the formal rendering it is 3.9,
 10.7, 6.2 and 8.6 points on the 4 Qwen models from 3B to 32B and 3.0 points
 on Llama-3.1-8B, where the 32B model also improves by 21.2 points at
 inference depth 5. The formal rendering lowers ProofWriter accuracy on
-OLMo-2 by 12.2 points, which Section~\ref{sec:prior} explains. FOLIO and
+OLMo-2 by 12.2 points, because it moves an answer distribution that was
+already close to the labels onto "unknown", an effect
+Section~\ref{sec:prior} develops in more detail. FOLIO and
 GPQA-Diamond move by less than 3 points on the other models, except for
 GPQA-Diamond on Qwen2.5-14B, which improves by 4.5 points. The controls of
 these models already score at or near 100 percent on the chain subtasks of
@@ -393,20 +396,25 @@ the ordered derivations improve accuracy by 4.4 points in the English
 rendering and 5.4 in the formal one, and the shuffled ones by 1.5 points.
 The model trained on shuffled derivations also writes no derivation that
 the checker accepts. The order of the lines is therefore what teaches the
-procedure, and the tokens alone account for most of the ProofWriter gain.
+derivation-writing procedure, while the tokens alone account for most of the
+ProofWriter gain, enough for the shuffled derivations to stay above the
+ordered formal ones on that benchmark.
 
 \input{tab_shuffle}
 
 \paragraph{Training depth.}
-Table~\ref{tab:depth} in Appendix~\ref{sec:depth-table} varies the depth
-of the training proofs. Trained on 5-hop proofs, the model writes accepted
+Table~\ref{tab:depth} varies the depth of the training proofs. Trained on 5-hop proofs, the model writes accepted
 derivations on every 5-hop problem but on only about a tenth of the 15-hop
 problems with the formal rendering, whereas the model trained on proofs of
 up to 25 hops stays above 99 percent everywhere. Benchmark accuracy is
 indifferent to the training depth in every cell.
 
+\input{tab_depth2}
+
 \paragraph{Derivations alone.}
-The last experiment removes the instruction data. Trained on derivations
+The last experiment removes the instruction data, and
+Table~\ref{tab:alone} in Appendix~\ref{sec:alone-table} gives the result.
+Trained on derivations
 alone, in either rendering, the model writes a derivation the checker
 accepts on every generator problem and scores zero on every benchmark,
 because when asked a plain question it emits the opening token of the only
