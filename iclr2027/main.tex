@@ -4,6 +4,7 @@
 \usepackage{booktabs}
 \usepackage{graphicx}
 \usepackage{subcaption}
+\usepackage{float}
 \usepackage{microtype}
 \usepackage{multirow}
 \usepackage{siunitx}
@@ -398,8 +399,14 @@ it asserts the claim in three cases out of four regardless of its content.
 The derivations move the answer distribution toward the gold labels, and
 the improvement is concentrated in the negated and false claims, whose
 accuracy rises to 56.9 percent at the 25 percent share, while the other
-three cells change by a few points. FOLIO shows the same pattern, with the
-false and uncertain items gaining and the true ones fixed. A log-likelihood
+three cells change by a few points. The following item is typical. Its theory contains
+``If someone is young then they visit the dog. Red people are young. If the
+rabbit visits the dog then the dog is red.'' together with facts from which
+the rabbit is red, and the claim is ``The dog is not red''. The control
+answers ``true'' and the models trained with derivations answer ``false''.
+FOLIO shows the same pattern, with the false and uncertain items gaining and
+the true ones fixed, and Appendix~\ref{sec:examples} gives further items
+from both benchmarks. A log-likelihood
 probe in Appendix~\ref{sec:probe-table} shows that the change is mostly a
 shift of the decision margin on negated claims and to a smaller extent a
 gain in discrimination.
@@ -434,8 +441,33 @@ the value along the chain, whereas the model trained with formal
 derivations is correct on 99 and 98 percent. Every model answers correctly
 on essentially every item whose intermediate values are all correct, so the
 12-point gain on this subtask is fully accounted for by the retained value.
-Appendix~\ref{sec:wol-table} gives the full analysis, and the tracking
-subtasks show the same pattern.
+The item below shows the failure in the control and its absence after
+training. The two chains of thought are identical up to step 3, where the
+control misreads its own conclusion of step 2 and carries the wrong value to
+the end.
+
+\begin{small}
+\begin{quote}
+\textbf{Question.} Vina tells the truth. Helene says Vina lies. Kandi says
+Helene tells the truth. Jamey says Kandi lies. Ka says Jamey lies. Does Ka
+tell the truth?
+
+\textbf{Control.} (1) Vina tells the truth. (2) Since Vina tells the truth
+and Helene says Vina lies, Helene lies. (3) Since we know from (2) that
+Helene \emph{tells the truth}, and Kandi says Helene tells the truth, Kandi
+tells the truth. (4) Jamey lies. (5) Ka tells the truth. So the answer is
+Yes.
+
+\textbf{With 10 percent formal derivations.} (1) Vina tells the truth. (2)
+Helene lies. (3) Since we know from (2) that Helene lies, and Kandi says
+Helene tells the truth, Kandi lies. (4) Jamey tells the truth. (5) Ka lies.
+So the answer is No.
+\end{quote}
+\end{small}
+
+Appendix~\ref{sec:wol-table} gives the full analysis, the tracking
+subtasks show the same pattern, and Appendix~\ref{sec:examples} gives
+items from every benchmark.
 
 \subsection{Notation}
 

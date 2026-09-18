@@ -1,36 +1,44 @@
+\section{Generated Data}
+\label{sec:generator-eval}
 
-\section{Answer-Uniqueness Validation of the Generator}
+\paragraph{Generator.} The generator samples a target path, assigns labels to
+constants and predicates, then adds distractor branches that remain locally
+coherent but do not derive the queried conclusion. In pseudocode:
+
+\begin{verbatim}
+sample target answer label
+sample initial object state
+for depth step in 1..D:
+    sample active branch rule(s)
+    derive next object state
+    add coherent distractor rules for inactive branches
+render one prompt
+render the same latent proof as formal and English targets
+\end{verbatim}
+
+\paragraph{Uniqueness of the answer.}
 \label{sec:uniqueness-audit}
+Every metric compares a generated answer against one labelled answer, which
+is only meaningful if the labelled answer is the sole one derivable from the
+premises. Each example introduces fresh constants, so no constant is reused
+across layers and no two branches can derive the same atom through reuse of
+a state predicate. A preflight check computes the full Horn closure of
+1{,}000 training instances and 2{,}000 evaluation instances with a solver
+independent of the generator and records the number of candidate final
+states derivable in each. The unique-answer rate is 1.0, the maximum number
+of derivable candidates is 1, there are no generation failures, and answer
+positions are balanced across the four candidates.
 
-Every metric in this paper compares a generated answer against one labelled
-answer, which is only meaningful if the labelled answer is the sole one
-derivable from the premises. Each example introduces fresh constants
-\texttt{c0} through \texttt{c\{depth\}}, so no constant is reused across layers
-and no two branches can derive the same atom through reuse of a state
-predicate. A preflight check computes the full Horn closure of 1{,}000 training
-instances and 2{,}000 evaluation instances with a solver independent of the
-generator and records the number of candidate final states derivable in each.
-The unique-answer rate is 1.0, the maximum derived-candidate count is 1, there
-are no generation failures, and answer positions are balanced across the four
-candidates.
-
-Token headroom is verified over the same instances. Evaluation uses a
-16{,}384-token context with a 7{,}168-token generation cap applied identically
-to both notations. Across every validation row and every depth the minimum
-measured headroom is 494 tokens for generation and 2{,}788 tokens for the full
-context, so neither notation is truncated at any depth reported in this paper.
-
-\section{Trace Grammar and Validation}
+\paragraph{Trace grammar and checker.}
 \label{sec:grammar}
-
 Formal traces contain four blocks, constants, predicates, premises and proof
-lines, followed by a conclusion and an answer. A proof line contains a formula
-and a rule justification such as premise retrieval or implication elimination.
-The checker parses the generated blocks and verifies that each proof line is
-licensed by earlier lines and premises. English traces use controlled sentences
-for the same premises and proof steps, and a deterministic translator maps
-those sentences back into the checker. The operational \branchproof{} formal
-surface is:
+lines, followed by a conclusion and an answer. A proof line contains a
+formula and a rule justification such as premise retrieval or implication
+elimination. The checker parses the generated blocks and verifies that each
+proof line is licensed by earlier lines and premises. English traces use
+controlled sentences for the same premises and proof steps, and a
+deterministic translator maps those sentences back into the checker. The
+formal surface is:
 
 \begin{verbatim}
 <formal>
@@ -51,82 +59,19 @@ PROOF_LINE ::= FORMULA "; R," REF
 \end{verbatim}
 
 References must point to earlier proof lines or listed premises, so a line
-cannot justify a future step.
+cannot justify a future step. Answer extraction searches for the final
+\texttt{<answer>} field, and a generation without a well-formed final answer
+is counted incorrect. Common checker failures are malformed block structure,
+undeclared symbols, references to unavailable lines, applying implication
+elimination to the wrong antecedent, and stopping before the queried
+conclusion. English validation adds one further failure mode, in which the
+controlled sentence must translate back into a formal step before the checker
+can evaluate it.
 
-\section{Generator and Evaluation Mechanics}
-\label{sec:generator-eval}
-
-The generator samples a target path, assigns labels to constants and
-predicates, then adds distractor branches that remain locally coherent but do
-not derive the queried conclusion. In pseudocode:
-
-\begin{verbatim}
-sample target answer label
-sample initial object state
-for depth step in 1..D:
-    sample active branch rule(s)
-    derive next object state
-    add coherent distractor rules for inactive branches
-render one prompt
-render the same latent proof as formal and English targets
-\end{verbatim}
-
-Answer extraction searches for the final \texttt{<answer>} field. If no
-well-formed final answer is present the generation is counted incorrect, even
-when earlier text contains the gold label. Formal validation parses block
-boundaries, declarations, formulas, proof-line references and rule
-applications. Common failures are malformed block structure, undeclared
-symbols, references to unavailable lines, applying implication elimination to
-the wrong antecedent, and stopping before the queried conclusion. English
-validation adds one further failure mode, in which the controlled sentence must
-translate back into a formal step before the checker can evaluate it.
-
-\section{Paired Target Examples}
+\paragraph{A paired example.}
 \label{sec:paired-example}
-
-The prompt and the answer are identical within each pair. Full experimental
-examples contain more distractor premises and longer derivations.
-
-\paragraph{Example 1.}
-
-\begin{verbatim}
-Prompt:
-a is ruby. a is north.
-If a is north and a is ruby, then b is olive.
-What is b?
-\end{verbatim}
-
-\noindent\begin{minipage}[t]{0.48\linewidth}
-\textbf{\formal{} target}
-\scriptsize
-\begin{verbatim}
-<formal>
-<constants> a = a b = b </constants>
-<predicates> Rx: x is ruby Nx: x is north
-Ox: x is olive </predicates>
-<premises> Ra Na Na & Ra -> Ob </premises>
-<proof> Ra ; R,1
-Na ; R,2
-Na & Ra ; &I,5,4
-Ob ; ->E,3,6 </proof>
-<conclusion> Ob </conclusion>
-<answer> olive </answer>
-\end{verbatim}
-\end{minipage}\hfill
-\begin{minipage}[t]{0.48\linewidth}
-\textbf{\nat{} target}
-\scriptsize
-\begin{verbatim}
-<think>
-a is ruby. a is north.
-Since a is north and a is ruby, b is olive.
-Therefore, b is olive.
-</think>
-<answer> olive </answer>
-\end{verbatim}
-\end{minipage}
-
-\paragraph{Example 2.}
+The prompt and the answer are identical within each pair. Training examples
+contain more distractor premises and longer derivations.
 
 \begin{verbatim}
 Prompt:
@@ -176,48 +121,58 @@ Therefore, c is cedar.
 \end{verbatim}
 \end{minipage}
 
-\section{Controlled-Study Training and Evaluation Details}
-\label{sec:training-details}
-
-All runs use materialized datasets so that the two conditions see the same
-prompts and answers. Each train-depth subset contains 50{,}000 examples and the
-online validation subset 256. Runs train for 10{,}000 optimizer steps with LoRA
-adapters on the query, key, value, output, up, down and gate projections, rank
-16, alpha 32, dropout 0.05, learning rate $10^{-4}$, per-device batch size 1
-and gradient accumulation 1 unless a control states otherwise, in bfloat16
-with gradient checkpointing.
-
-Evaluation uses vLLM with top-$p$ 0.95, temperature 1.0, sixteen samples per
-prompt and one greedy decode, at depths
-$\{1,2,5,10,12,15,18,20,25,30,35,40,45,50\}$ with 32 prompts per depth per
-seed. The out-of-distribution band for a run with maximum training depth $D$
-is every evaluated depth above $D$, and for $D=25$ it contains $5\times32=160$
-prompts per seed. Reported uncertainty is the standard deviation over three
-seeds.
-
-\section{Instruction-Tuning Sweep Configuration}
+\section{Training Details}
 \label{sec:sweep-details}
 
-Every condition trains for one epoch on $10^5$ examples of a public
-instruction corpus at a pinned revision, full-parameter under fully sharded
-data parallelism with gradient checkpointing, in bfloat16, with a global batch
-of 128 sequences, a maximum sequence length of 8{,}192, warmup ratio 0.03 and
-learning rate $5\times10^{-6}$. The learning rate is the one used by our
-earlier instruction-tuning runs on the same corpus, and it is held fixed across
-conditions, so no condition receives an optimiser setting that another does
-not. Seeds 3407, 3408 and
-3409 give the three replicates, and only the final checkpoint is kept.
+Every model trains for one epoch on $10^5$ examples, full-parameter under
+fully sharded data parallelism with gradient checkpointing, in bfloat16,
+with a global batch of 128 sequences, a maximum sequence length of 8{,}192,
+warmup ratio 0.03 and learning rate $5\times10^{-6}$. The learning rate is
+the one used by our earlier instruction-tuning runs on the same corpus and
+is held fixed across conditions. Seeds 3407, 3408 and 3409 give the three
+replicates on Qwen2.5-7B, and only the final checkpoint is kept. Before
+training starts, the mixture is tokenized and the examples whose target
+would be cut by the sequence length are counted. The run aborts if that
+count exceeds 0.5 percent, which prevents a condition from training on
+derivations whose conclusions have been removed. No run aborted. Qwen2.5-32B
+and the second-corpus runs use the same configuration, the former on two
+nodes.
 
-Before training starts, a gate tokenizes the mixture and counts the examples
-whose target would be cut by the sequence length. The run aborts if that count
-exceeds 0.5 percent, which prevents a condition from training on derivations
-whose conclusions have been removed. No run in the sweep aborted.
+\section{Evaluation Details}
+\label{sec:metrics}
 
-\paragraph{BIG-Bench Hard.} The suite ships as a chain-of-thought few-shot
-task whose answer extractor reads a plain continuation. Applying the chat
-template wraps every shot and the extractor then matches nothing, which scores
-every condition at zero, including the control. We therefore run this one suite
-without the template and report it in Table~\ref{tab:bbh}.
+\paragraph{Prompts and scoring.} ProofWriter and FOLIO are prompted with the
+theory, the claim and the question whether the claim is true, false or
+unknown (uncertain for FOLIO), and the answer is the first label in the
+generation. The reasoning prompt for ProofWriter asks the model to reason
+step by step and to give the final answer on its own last line. GPQA-Diamond
+uses the four-option mirror of the benchmark and asks the model to work
+through the options briefly and end with ``Answer: X''. BIG-Bench Hard ships
+as a chain-of-thought few-shot task whose answer extractor reads a plain
+continuation, and applying the chat template to its shots makes the
+extractor match nothing for every condition, so this one suite is run without
+the template. The LongBench multi-hop datasets use the standard prompt and
+report F1. \branchproof{} prompts the model in the format of its training
+documents and scores the fraction of items whose derivation the checker
+accepts and whose answer is correct.
+
+\paragraph{Benchmark subsets.} The chain subtasks of BIG-Bench Hard are web
+of lies, tracking shuffled objects (three, five and seven objects), logical
+deduction (three, five and seven objects) and formal fallacies. The
+quantitative subset of GPQA-Diamond is defined by two regular expressions
+applied to the question text. An item is quantitative if the question
+contains a number followed by a physical unit (nm, mm, cm, km, kg, mol, ml,
+eV, keV, MeV, GeV, K, Hz, MHz, GHz, degrees, percent, pc, AU, or a solar
+mass or radius symbol), or if it contains a digit and asks for a value,
+ratio, factor, energy, wavelength, number, probability, concentration, pH,
+mass, radius, velocity or temperature, or contains ``calculate'',
+``compute'', ``how many'', ``by what factor'' or ``what fraction''. The rule
+assigns 73 items to the quantitative subset and 125 to the remainder, and it
+depends only on the question text. The sign test compares, for each item,
+the pooled runs trained with derivations against the pooled control runs.
+
+\paragraph{Overlap audit.} No evaluation item of ProofWriter, FOLIO or the
+BIG-Bench Hard subtasks shares an eight-gram with any training derivation.
 
 \section{General Benchmarks}
 \label{sec:general-table}
@@ -226,121 +181,54 @@ Table~\ref{tab:general} reports nine general benchmarks. GSM8K is five-shot
 with a chain of thought, HumanEval and MBPP report pass@1 from a single
 greedy sample, and MMLU, ARC-Challenge, LogiQA, HellaSwag, PIQA and
 WinoGrande are scored by log-likelihood over the answer options with the
-default prompts of the evaluation harness.
+default prompts of the evaluation harness. The three seeds of the Qwen2.5-7B
+control span 0.3 points on GSM8K, 0.1 on MMLU, 0.8 on ARC-Challenge, 0.6 on
+LogiQA, 0.0 on HellaSwag, 0.4 on PIQA and 1.0 on WinoGrande.
 
 \input{tab_general}
-The three seeds of the Qwen2.5-7B control span 0.3 points on GSM8K, 0.1 on
-MMLU, 0.8 on ARC-Challenge, 0.6 on LogiQA, 0.0 on HellaSwag, 0.4 on PIQA and
-1.0 on WinoGrande, which is the noise floor of a single cell.
 
-\section{Notation Crossover on the Generator}
-\label{sec:crossover}
+\section{Additional Results}
 
-The two notations transfer about equally across the conditions, with the
-English rendering ahead at ten percent and the formal rendering ahead at five.
-A controlled study on the generator alone shows that the ordering is not fixed
-and that the depth of the training proofs decides it. We fine-tune OLMo-3-7B on
-50{,}000 paired examples per condition, one condition per notation, and we
-evaluate at chain lengths beyond the longest one seen in training.
-Figure~\ref{fig:crossover} gives the resulting curves. English supervision
-generalises further as long as the training proofs reach at most 20 hops. At 25
-hops the ordering reverses, and formal supervision reaches $75.0\pm9.5$
-percent out-of-distribution accuracy against $17.8\pm4.7$ percent for English
-supervision. Sixteen samples move the reversal to 15 hops, so formal
-supervision first widens the set of problems the model can reach and only later
-improves its first attempt.
-
-\input{fig_crossover}
-
-The crossover follows from the supervision alone, since the prompt, the answer
-and the latent proof are identical in the two conditions at every depth. It also survives a control that equates the number of supervised
-target tokens, a control that removes a schema marker the model could otherwise
-exploit, and a replication at a second seed, all of which
-Appendix~\ref{sec:boundary-details} reports.
-
-
-\section{Midtraining}
-\label{sec:midtrain-detail}
-
-
-The same derivations can enter during midtraining. We midtrained Qwen2.5-7B on
-2.5 billion tokens with a tenth of the mixture replaced and then applied the
-same instruction tuning to every condition. That route also produces the gain
-on ProofWriter, 12.6 points for the English rendering at inference depth 3 with
-two instruction-tuning seeds, and it also leaves the general benchmarks flat
-apart from a loss of two to three points on LogiQA that replicates across
-seeds. Midtraining is the more expensive route and buys no more, since the
-instruction-tuning route reaches the same accuracy, generalises further on long
-chains, carries no cost on LogiQA, and adds nothing when the two are applied in
-sequence. One ability survives midtraining that instruction tuning without
-derivations removes completely, since the midtrained model writes checkable
-proofs up to chain length 25 when prompted in the format of its training
-documents, and writes none after ordinary instruction tuning.
-
-
-\section{BIG-Bench Hard by Subtask}
+\subsection{BIG-Bench Hard by subtask}
 \label{sec:bbh-table}
 
 \input{tab_bbh}
 
-\section{Web of Lies by Gold Answer}
+\subsection{Web of lies by gold answer}
 \label{sec:wol-table}
 
 \input{tab_wol}
 
-\section{FOLIO by Gold Label}
+\subsection{FOLIO by gold label}
 \label{sec:folio-table}
 
 \input{tab_folio}
 
-\section{Multi-Hop Question Answering}
+\subsection{Multi-hop question answering}
 \label{sec:multihop-table}
 
 \input{tab_multihop}
 
-\section{ProofWriter by Inference Depth}
+\subsection{ProofWriter by inference depth}
 \label{sec:depth-figure}
 
 \input{fig_depth}
 
-\section{Perturbation Probes}
-\label{sec:perturbation}
-
-The second probe toggles the polarity of the claim and leaves the theory
-untouched, so an arm that ignores negation answers both versions identically.
-The control does so on 37.6 percent of decidable items and the length-matched
-control on 37.6 percent, against 28.5 percent for the formal arm and 24.2
-percent for the English one, with the second seed within half a point
-throughout. Every arm answers the positive version of a negated and false item
-correctly about 68 percent of the time, so the arms separate on the negated
-version alone.
-
-The third probe removes the premises that support the claim, which makes the
-gold label unknown, and asks whether the extra ``false'' survives. It largely
-does not, which is what a premise-grounded answer predicts. The probability
-that the formal arm answers ``false'' on these items falls from 0.53 to 0.27
-once the supporting facts are gone, and the control falls from 0.35 to 0.20.
-The English arm retains more, falling from 0.67 to 0.46, so about two thirds of
-its advantage on this cell survives the removal of the evidence for it. The
-formal rendering therefore buys a smaller gain that is more firmly tied to the
-premises, and the English rendering a larger gain of which part is a shifted
-default for negated claims.
-
-\section{Log-Likelihood Probe}
+\subsection{Log-likelihood probe}
 \label{sec:probe-table}
 
-\begin{table}[t]
+\begin{table}[H]
 \caption{Ranking of decidable ProofWriter items by the log-likelihood margin
-between ``true'' and ``false'', for the midtrained and instruction-tuned arms,
-seed 3407 with seed 3408 in parentheses. The pooled column mixes the two
-polarities and the next two columns rank within a polarity. \longdoc{} is the
-length-matched control.}
+between ``true'' and ``false'' on Qwen2.5-7B, seed 3407 with seed 3408 in
+parentheses. The pooled column mixes the two polarities and the next two
+columns rank within a polarity. \longdoc{} is a length-matched control that
+replaces the same share of the mixture with ordinary long documents.}
 \label{tab:probe}
 \begin{center}
 \small
 \begin{tabular}{lcccc}
 \toprule
-Arm & AUC pooled & AUC negated & AUC positive & $P(\text{argmax}=\text{true})$ \\
+Mixture & AUC pooled & AUC negated & AUC positive & $P(\text{argmax}=\text{true})$ \\
 \midrule
 \ctrl{}    & $.662$ ($.654$) & $.872$ ($.869$) & $.860$ ($.858$) & $.64$ ($.63$) \\
 \longdoc{} & $.663$ ($.664$) & $.876$ ($.877$) & $.867$ ($.867$) & $.64$ ($.64$) \\
@@ -351,309 +239,162 @@ Arm & AUC pooled & AUC negated & AUC positive & $P(\text{argmax}=\text{true})$ \
 \end{center}
 \end{table}
 
+\subsection{Perturbation probes}
+\label{sec:perturbation}
 
-\section{Metric Definitions}
-\label{sec:metrics}
+The first probe toggles the polarity of the claim and leaves the theory
+untouched, so a model that ignores negation answers both versions
+identically. The control does so on 37.6 percent of decidable items and the
+length-matched control on 37.6 percent, against 28.5 percent for the formal
+and 24.2 percent for the English mixture, with the second seed within half a
+point throughout. Every model answers the positive version of a negated and
+false item correctly about 68 percent of the time, so the models separate on
+the negated version alone.
 
-Answer accuracy is computed after extracting the final answer field.
+The second probe removes the premises that support the claim, which makes
+the gold label unknown, and asks whether the additional ``false'' answers
+survive. They largely do not, which is what a premise-grounded answer
+predicts. The probability that the formal mixture answers ``false'' on these
+items falls from 0.53 to 0.27 once the supporting facts are gone, and the
+control falls from 0.35 to 0.20. The English mixture retains more, falling
+from 0.67 to 0.46, so about two thirds of its advantage on this cell
+survives the removal of the evidence for it. The formal rendering therefore
+buys a smaller gain that is more firmly tied to the premises, and the
+English rendering a larger gain of which part is a shifted default for
+negated claims.
 
-\paragraph{Benchmark subsets.} The chain subtasks of BIG-Bench Hard are web of
-lies, tracking shuffled objects (three, five and seven objects), logical
-deduction (three, five and seven objects) and formal fallacies. The
-quantitative subset of GPQA-Diamond is defined by two regular expressions
-applied to the question text. An item is quantitative if the question
-contains a number followed by a physical unit (nm, mm, cm, km, kg, mol, ml,
-eV, keV, MeV, GeV, K, Hz, MHz, GHz, degrees, percent, pc, AU, or a solar
-mass or radius symbol), or if it contains a digit and asks for a value,
-ratio, factor, energy, wavelength, number, probability, concentration, pH,
-mass, radius, velocity or temperature, or contains ``calculate'',
-``compute'', ``how many'', ``by what factor'' or ``what fraction''. The
-rule assigns 73 items to the quantitative subset and 125 to the remainder,
-and it depends only on the question text. The sign test
-compares, for each item, the pooled runs trained with derivations against
-the pooled control runs.
-\passk{k} uses the unbiased estimator of \citet{chen2021evaluating} over the
-sixteen samples. Formal joint validity requires a correct answer and a
-mechanically valid formal trace. English joint validity requires a correct
-answer and a successful translation of the trace into a valid formal proof.
-Checker selection draws the sixteen samples in a fixed order, accepts the first
-whose derivation the checker validates, and scores its answer. If no sample is
-accepted, the item is scored incorrect. The selector never sees the gold answer.
+\section{Qualitative Examples}
+\label{sec:examples}
 
-\section{Length and Token-Budget Controls}
-\label{sec:length-controls}
+Each example below is an item that the Qwen2.5-7B control answers
+incorrectly and that the models trained with 10 percent formal and 10
+percent English derivations both answer correctly, all at seed 3407. The
+responses are reproduced verbatim apart from the omission of repeated
+prefixes.
 
-Generation budgets are identical by construction, at a 7{,}168-token limit
-inside a 16{,}384-token window, and the tokenizer audit of
-Appendix~\ref{sec:uniqueness-audit} confirms that every gold target fits in
-both notations. Supervised token counts are equated in the token-matched run
-of the controlled study by subsampling the longer condition until the
-number of target tokens per condition is equal. The \longdoc{} condition of
-Appendix~\ref{sec:transfer-tables} supplies a third control at midtraining
-scale.
+\paragraph{ProofWriter.} The theory is ``The bear needs the dog. The cow is
+kind. The cow is nice. The cow likes the dog. The cow needs the dog. The dog
+chases the rabbit. The dog likes the bear. The dog likes the rabbit. The
+rabbit chases the bear. The rabbit chases the cow. The rabbit is blue. The
+rabbit is kind. The rabbit likes the cow. The rabbit needs the dog. If
+someone needs the rabbit then the rabbit likes the bear. If someone needs the
+rabbit and they chase the dog then they need the bear. If someone is kind
+then they like the dog. If someone likes the bear and they are blue then
+they chase the rabbit. If the rabbit likes the dog then the dog is kind. If
+someone chases the dog then the dog likes the cow. If someone likes the dog
+then they are round. If the rabbit likes the dog and the rabbit chases the
+cow then the dog likes the cow. If someone needs the dog and the dog is kind
+then the dog needs the rabbit.'' The claim is ``The dog does not need the
+rabbit'', which is false, since the rabbit is kind, therefore likes the dog,
+therefore the dog is kind, and the rabbit needs the dog, so the dog needs
+the rabbit. The control answers ``True'' and both trained models answer
+``False''. The item in Section~\ref{sec:prior} has the same structure.
 
-\section{Boundary Condition Details}
-\label{sec:boundary-details}
+\paragraph{FOLIO.} The premises are ``A Japanese game company created the
+game the Legend of Zelda. All games on the Top 10 list are made by Japanese
+game companies. If a game sells more than one million copies, then it will
+be included in the Top 10 list. The Legend of Zelda sold more than one
+million copies.'' The claim ``The Legend of Zelda is not on the Top 10 list''
+is false. The control answers ``Uncertain'' and both trained models answer
+``False''. A second item has the premises ``Beethoven leads the Vienna Music
+Society. Vienna Music Society is an orchestra. Orchestras are led by
+conductors.'' and the claim ``Beethoven is not a conductor''. The control
+answers ``True'' and both trained models answer ``False''.
 
-\paragraph{Shortcut.}
-A spurious schema marker identifies the active branch on 80 percent of
-training examples and is removed at test time. Out-of-distribution \passk{1} is
-$43.1\pm7.7$ percent for \formal{} and $78.5\pm14.9$ for \nat{}, and at depth 50
-the two are $11.7$ and $76.1$ percent.
+\paragraph{Web of lies.} A second item beyond the one in
+Section~\ref{sec:procedure}.
 
-\paragraph{Mode conditioning.}
-Concatenating both renderings into one target gives $0.5\pm0.4$ percent
-out-of-distribution \passk{1} with the formal rendering first and $0.2\pm0.1$
-with the English rendering first, and generations copy one or both traces and
-exhaust the budget. Mode-conditioned training places an output-mode tag on
-separate examples. At 7B it reaches $50.3\pm6.4$ percent \passk{1} in formal
-mode and $18.1\pm2.0$ in English mode, and at 32B it reaches $85.0\pm8.7$ and
-$77.2\pm11.7$ percent.
-Raw generations separate cleanly by mode.
+\begin{small}
+\begin{quote}
+\textbf{Question.} Jim lies. Yoland says Jim lies. Willian says Yoland tells
+the truth. Delbert says Willian lies. Shalonda says Delbert tells the truth.
+Does Shalonda tell the truth?
 
-\paragraph{Capacity.}
-Single-notation training gives out-of-distribution \passk{1} of $69.9\pm11.1$
-formal against $74.9\pm7.0$ English on Qwen2.5-7B, and $63.9\pm5.1$ against
-$98.9\pm0.8$ on OLMo-3-32B. Formal \passk{16} at 32B is $98.8\pm0.9$.
+\textbf{Control.} (1) Jim lies. (2) Since Jim lies and Yoland says Jim lies,
+Yoland tells the truth. (3) Willian tells the truth. (4) Since Willian tells
+the truth and Delbert says Willian lies, Delbert lies. (5) Since we know from
+(4) that Delbert \emph{tells the truth}, and Shalonda says Delbert tells the
+truth, Shalonda tells the truth. So the answer is Yes.
 
-\section{Midtraining Configuration}
-\label{sec:midtrain-details}
+\textbf{With derivations.} Steps (1) to (4) as above. (5) Since we know from
+(4) that Delbert lies, and Shalonda says Delbert tells the truth, Shalonda
+lies. So the answer is No.
+\end{quote}
+\end{small}
 
-\begin{table}[h]
-\centering
-\caption{Rendered document lengths under the Qwen2.5-7B tokenizer, 72{,}000
-documents per corpus, and packing statistics at sequence length 8{,}192.}
-\label{tab:corpus}
-\begin{tabular}{lrrrrrrr}
-\toprule
-corpus & p50 & mean & p99 & max & windows & real tokens & packing eff.\\
-\midrule
-\formal{}    & 3{,}749 & 3{,}856 & 7{,}673 & 7{,}727 & 35{,}492 & 277{,}732{,}923 & 0.9551\\
-\nat{}       & 3{,}819 & 3{,}907 & 7{,}744 & 7{,}851 & 35{,}979 & 281{,}372{,}725 & 0.9545\\
-\condensed{} & 1{,}450 & 1{,}500 & 3{,}007 & 3{,}014 & 13{,}311 & 108{,}099{,}330 & 0.9912\\
-\longdoc{}   & 3{,}712 & 3{,}832 & n/a & 7{,}750 & n/a & n/a & n/a\\
-\bottomrule
-\end{tabular}
-\end{table}
+\paragraph{Tracking shuffled objects.} Alice, Bob, Claire, Dave and Eve
+hold a brown, purple, orange, pink and blue present respectively, and the
+pairs Claire and Eve, Claire and Bob, Alice and Dave, Bob and Claire, and
+Bob and Alice swap in turn. The question is which present Eve holds at the
+end. Both models write out the full state after every swap. The control
+performs the second swap between Claire and Bob incorrectly, giving Bob the
+orange present and returning the blue present to Eve, and answers blue,
+whereas the trained models carry the state correctly through all five swaps
+and answer orange. On a second item the control reaches the correct final
+state and then selects the wrong option letter, which the trained models do
+not.
 
-\paragraph{Optimisation.}
-Every condition trains Qwen2.5-7B for 2{,}385 steps at sequence length 8{,}192
-with a global batch of 128 sequences, formed as micro-batch 2 with gradient
-accumulation 32 over eight A100-80GB devices, for $2{,}500{,}853{,}760$ tokens
-per condition. The learning rate is $10^{-5}$ with minimum $10^{-6}$, 128
-warmup steps, and a decay horizon of 18{,}946 steps. Checkpoints are written
-every 250 steps. Throughput is about 36 seconds per iteration. A run exceeds
-the 24-hour scheduling limit and is completed as two serialized allocations,
-the second resuming from the newest complete checkpoint.
+\paragraph{GPQA-Diamond.} An uncharged spherical conductor of radius $R$
+contains an off-centre cavity with a charge $+q$ inside, and the question
+asks for the field at a point $P$ outside the conductor at distance $L$ from
+the centre of the conductor and $l$ from the centre of the cavity. The
+control writes that the field ``is the same as if the charge were
+concentrated at the center of the cavity'' and answers $q/(4\pi\epsilon_0
+l^2)$. The trained models write that the conductor shields the position of
+the charge, so the field is that of a charge at the centre of the conductor,
+and answer $q/(4\pi\epsilon_0 L^2)$. In a second item the question gives a
+size estimate for a loop diagram containing the factor $1/(4\pi)^6$ and asks
+for the number of loops. The control reads the exponent as the loop count and
+answers 6, whereas the model trained with formal derivations writes that each
+loop contributes a factor $1/(4\pi)^2$ and answers 3.
 
-\paragraph{Replaced slice.}
-The 72{,}000 source examples are generated at seed 20260830 with depths 1 to
-25 round-robin, branching factor 4, distractor ratio 0.5 and the same generator
-variant as the controlled study. Seeds are disjoint from those of every
-evaluation corpus. A per-condition document weight is solved so that the
-realised synthetic share of loss tokens is exactly ten percent after padding,
-which is necessary because the three renderings pack with different
-efficiencies.
+\section{Notation Crossover on the Generator}
+\label{sec:crossover}
 
-\paragraph{Packing and audit.}
-Documents are packed by a document-preserving packer at sequence length
-8{,}192 under a fixed shuffle seed. The packer never splits a document, and a
-document exceeding one window is excluded and counted. Tail padding uses a
-dedicated token masked out of the loss. Overlength and split counts are zero
-for every condition. Before training begins, a decoded-batch audit
-reconstructs real loader windows and verifies that no split document is
-present, that the padding token is masked, and that the realised replacement
-share matches the target. Training refuses to start if any gate fails.
+A controlled study on the generator alone shows that the ordering of the two
+renderings in depth generalisation depends on the depth of the training
+proofs. We fine-tune OLMo-3-7B with LoRA adapters on 50{,}000 paired
+examples per condition, one condition per rendering, for 10{,}000 optimizer
+steps, and we evaluate at chain lengths beyond the longest one seen in
+training with sixteen samples per prompt and one greedy decode.
+Figure~\ref{fig:crossover} gives the resulting curves. English supervision
+generalises further as long as the training proofs reach at most 20 hops. At
+25 hops the ordering reverses, and formal supervision reaches $75.0\pm9.5$
+percent out-of-distribution accuracy against $17.8\pm4.7$ percent for English
+supervision. Sixteen samples move the reversal to 15 hops, so formal
+supervision first widens the set of problems the model can reach and only
+later improves its first attempt.
 
-\paragraph{Instruction tuning.}
-Each midtrained checkpoint is converted to the Hugging Face format and
-instruction-tuned on 100{,}000 examples of a public instruction corpus at a
-pinned revision, for one epoch at learning rate $5\times10^{-6}$ with warmup
-ratio 0.03, maximum sequence length 4{,}096, per-device batch size 1, and seed
-3407 with a replicate at seed 3408, full-parameter under fully sharded data
-parallelism with gradient checkpointing. Only the final checkpoint is written.
+\input{fig_crossover}
 
-\paragraph{Evaluation.}
-Greedy evaluation uses a standard harness with a paged-attention backend in
-bfloat16, a maximum model length of 8{,}192, the model's chat template applied
-to every prompt, and per-sample logging. The metric is exact match on the
-extracted answer. The external family is ProofWriter under the open-world
-assumption, bucketed by proof depth at 0, 1, 2, 3 and 5 with 500 items per
-depth. The near-transfer family is a held-out sample from the generator at
-depths 5, 10, 15, 20 and 25 with 200 items per depth, prompted to write a
-derivation before the answer, with a 2{,}048-token generation cap. Sampled
-evaluation draws sixteen completions per item at temperature 0.8 and top-$p$
-0.95 under a fixed seed, replaying the prompts logged by the greedy run, and
-stops on every end-of-sequence token declared by the checkpoint. The scorer
-imports the extraction function of the greedy harness. The general suite is
-GSM8K, MATH-500, BBH, MMLU, ARC-Challenge, HellaSwag, WinoGrande, PIQA and
-LogiQA, and the multi-hop tasks are HotpotQA, 2WikiMultihopQA and MuSiQue
-under standard prompting.
+The crossover follows from the supervision alone, since the prompt, the
+answer and the latent proof are identical in the two conditions at every
+depth. It survives a control that equates the number of supervised target
+tokens by subsampling the longer condition, a control that removes a schema
+marker which identifies the active branch on 80 percent of training examples
+(out-of-distribution \passk{1} of $43.1\pm7.7$ percent for \formal{} and
+$78.5\pm14.9$ for \nat{}), and a replication at a second seed. Concatenating
+both renderings into one target fails, with $0.5\pm0.4$ percent
+out-of-distribution \passk{1}, whereas placing an output-mode tag on separate
+examples reaches $50.3\pm6.4$ percent in formal mode at 7B and $85.0\pm8.7$
+at 32B.
 
-\paragraph{Statistics.}
-Contrasts are computed by a paired bootstrap over evaluation documents with
-4{,}000 resamples, resampling document indices once per replicate and applying
-the same indices to every condition and depth. Reported intervals are the
-2.5th and 97.5th percentiles of the replicate distribution.
+\section{Midtraining}
+\label{sec:midtrain-detail}
 
-\section{Per-Depth Transfer Tables}
-\label{sec:transfer-tables}
-
-\begin{table}[h]
-\centering
-\caption{General-benchmark scores of the five midtrained and instruction-tuned
-models at seed 3407, in percent. GSM8K is strict-match exact match, MATH-500
-is scored by a post-hoc answer-prefix checker, BBH is exact match over the
-chain-of-thought few-shot suite, and the multi-hop tasks report F1 under standard
-prompting.}
-\label{tab:general}
-\scriptsize\setlength{\tabcolsep}{3pt}
-\begin{tabular}{lrrrrrrrrrrrr}
-\toprule
-condition & GSM8K & MATH & BBH & MMLU & ARC & HSwag & WinoG & PIQA & LogiQA & Hotpot & 2Wiki & MuSiQue\\
-\midrule
-\ctrl{}      & 78.6 & 11.8 & 67.4 & 69.8 & 50.3 & 56.3 & 69.8 & 79.3 & 31.2 & 55.7 & 38.9 & 29.9\\
-\longdoc{}   & 79.2 & 12.8 & 68.3 & 69.6 & 51.6 & 56.6 & 70.3 & 79.2 & 29.3 & 57.6 & 35.3 & 30.2\\
-\formal{}    & 79.2 & 12.2 & 68.0 & 69.1 & 52.7 & 56.1 & 70.0 & 79.0 & 28.1 & 57.1 & 36.4 & 27.3\\
-\nat{}       & 78.6 & 11.4 & 68.3 & 69.2 & 50.3 & 56.0 & 70.4 & 78.9 & 27.8 & 55.9 & 38.2 & 27.2\\
-\condensed{} & 79.8 & 11.2 & 68.6 & 69.0 & 52.0 & 56.2 & 70.4 & 78.9 & 26.6 & 57.0 & 34.3 & 26.8\\
-\bottomrule
-\end{tabular}
-\end{table}
-
-\begin{table}[h]
-\centering
-\caption{Near-transfer contrasts pooled over inference depths 5 to 25 (1{,}000
-documents), in percentage points, with 95 percent intervals from a paired
-bootstrap over documents with 4{,}000 resamples. Intervals cover evaluation
-sampling error only, and the two-seed comparison in Table~\ref{tab:seedrep} gives
-the training-run term.}
-\label{tab:transfer-boot}
-\begin{tabular}{lrr}
-\toprule
-contrast & \passk{16} & mean single-sample\\
-\midrule
-\nat{} $-$ \ctrl{}     & $+29.4\ [25.8, 33.1]$ & $+20.5\ [19.0, 21.9]$\\
-\formal{} $-$ \ctrl{}  & $+24.4\ [20.8, 28.0]$ & $+13.7\ [12.5, 14.9]$\\
-\nat{} $-$ \longdoc{}  & $+25.0\ [21.4, 28.6]$ & $+19.7\ [18.2, 21.1]$\\
-\formal{} $-$ \longdoc{} & $+20.0\ [16.3, 23.5]$ & $+12.9\ [11.6, 14.2]$\\
-\longdoc{} $-$ \ctrl{} & $+4.4\ [0.7, 8.0]$ & $+0.8\ [0.3, 1.4]$\\
-\nat{} $-$ \formal{}   & $+5.0\ [2.1, 7.9]$ & $+6.8\ [5.2, 8.3]$\\
-\condensed{} $-$ \ctrl{} & $+26.5\ [23.0, 30.1]$ & $+10.6\ [9.7, 11.5]$\\
-\condensed{} $-$ \longdoc{} & $+22.1\ [18.7, 25.5]$ & $+9.8\ [8.9, 10.6]$\\
-\condensed{} $-$ \formal{} & $+2.1\ [-0.9, 5.3]$ & $-3.1\ [-4.5, -1.8]$\\
-\nat{} $-$ \condensed{} & $+2.9\ [-0.1, 5.8]$ & $+9.9\ [8.4, 11.3]$\\
-\bottomrule
-\end{tabular}
-\end{table}
-
-\begin{table}[h]
-\centering
-\caption{The full deduction suite under both instruction-tuning seeds, greedy
-exact match in percent. Each pair of columns is the same midtrained
-checkpoint instruction-tuned at seed 3407 and at seed 3408. ProofWriter uses
-500 items per depth and the near-transfer family 200. Over the fifty
-condition and task pairs the mean absolute difference between seeds is
-$0.015$ and the largest is $0.050$.}
-\label{tab:seedrep}
-\scriptsize\setlength{\tabcolsep}{3.5pt}
-\begin{tabular}{lcccccccccc}
-\toprule
-& \multicolumn{2}{c}{\ctrl{}} & \multicolumn{2}{c}{\longdoc{}} & \multicolumn{2}{c}{\formal{}} & \multicolumn{2}{c}{\nat{}} & \multicolumn{2}{c}{\condensed{}}\\
-\cmidrule(lr){2-3}\cmidrule(lr){4-5}\cmidrule(lr){6-7}\cmidrule(lr){8-9}\cmidrule(lr){10-11}
-task & 3407 & 3408 & 3407 & 3408 & 3407 & 3408 & 3407 & 3408 & 3407 & 3408\\
-\midrule
-ProofWriter d0 & 44.2 & 46.4 & 45.8 & 45.4 & 48.0 & 48.0 & 48.8 & 48.6 & 46.0 & 44.8\\
-ProofWriter d1 & 32.8 & 33.2 & 32.2 & 32.2 & 35.8 & 36.0 & 38.8 & 39.6 & 34.6 & 34.6\\
-ProofWriter d2 & 44.0 & 43.4 & 44.4 & 43.8 & 49.4 & 49.2 & 56.2 & 56.0 & 46.0 & 46.0\\
-ProofWriter d3 & 44.4 & 43.4 & 45.4 & 44.8 & 50.0 & 50.0 & 57.0 & 57.0 & 48.0 & 48.6\\
-ProofWriter d5 & 46.0 & 44.6 & 44.0 & 43.8 & 50.2 & 50.0 & 56.4 & 55.8 & 47.4 & 44.6\\
-\midrule
-near transfer d5 & 5.0 & 8.0 & 7.5 & 7.5 & 31.5 & 36.5 & 52.5 & 54.5 & 34.5 & 33.0\\
-near transfer d10 & 3.5 & 4.5 & 11.0 & 15.0 & 17.5 & 22.5 & 34.5 & 35.0 & 28.5 & 31.0\\
-near transfer d15 & 11.0 & 11.5 & 12.0 & 10.5 & 27.5 & 23.5 & 30.5 & 25.5 & 18.5 & 22.5\\
-near transfer d20 & 9.0 & 13.0 & 15.0 & 12.5 & 21.5 & 20.0 & 24.5 & 25.5 & 20.5 & 21.5\\
-near transfer d25 & 6.5 & 9.0 & 12.0 & 11.0 & 19.5 & 21.5 & 29.5 & 29.5 & 24.0 & 27.0\\
-\bottomrule
-\end{tabular}
-\end{table}
-
-\begin{table}[h]
-\centering
-\caption{Near-transfer \passk{16} in percent under both instruction-tuning
-seeds, 200 items per depth, sixteen completions at temperature 0.8. The three
-contrasts between the derivation conditions agree across seeds to within
-$0.2$ points, and \longdoc{} carries the largest seed spread and no contrast of
-interest.}
-\label{tab:sampled-seedrep}
-\small\setlength{\tabcolsep}{4pt}
-\begin{tabular}{lcccccccccc}
-\toprule
-& \multicolumn{2}{c}{\ctrl{}} & \multicolumn{2}{c}{\longdoc{}} & \multicolumn{2}{c}{\formal{}} & \multicolumn{2}{c}{\nat{}} & \multicolumn{2}{c}{\condensed{}}\\
-\cmidrule(lr){2-3}\cmidrule(lr){4-5}\cmidrule(lr){6-7}\cmidrule(lr){8-9}\cmidrule(lr){10-11}
-depth & 3407 & 3408 & 3407 & 3408 & 3407 & 3408 & 3407 & 3408 & 3407 & 3408\\
-\midrule
-d5  & 58.0 & 59.5 & 63.0 & 65.0 & 97.0 & 94.5 & 95.5 & 94.5 & 89.5 & 92.5\\
-d10 & 55.5 & 56.0 & 63.5 & 58.0 & 85.5 & 84.0 & 91.5 & 93.0 & 89.0 & 90.0\\
-d15 & 58.5 & 54.0 & 61.0 & 55.5 & 79.0 & 82.0 & 84.5 & 83.0 & 80.0 & 82.0\\
-d20 & 60.0 & 66.0 & 63.5 & 53.0 & 74.0 & 74.0 & 78.0 & 82.0 & 81.5 & 81.0\\
-d25 & 53.0 & 51.5 & 56.0 & 56.0 & 71.5 & 75.5 & 82.5 & 82.0 & 77.5 & 75.5\\
-\midrule
-pooled & 57.0 & 57.4 & 61.4 & 57.5 & 81.4 & 82.0 & 86.4 & 86.9 & 83.5 & 84.2\\
-\bottomrule
-\end{tabular}
-\end{table}
-
-Pooled, \nat{} minus \formal{} is $+5.0$ and $+4.9$ points across the two
-seeds, \nat{} minus \condensed{} is $+2.9$ and $+2.7$, and \formal{} minus
-\condensed{} is $-2.1$ and $-2.2$.
-
-The label-bias decomposition of the ProofWriter transfer tables also
-replicates.
-Pooled over ProofWriter depths 1 to 5 at seed 3408, \ctrl{} predicts
-\emph{true} on 65.3 percent of items against 66.3 at seed 3407, and two-class
-accuracy is 53.5 against 54.4 for \ctrl{}, 60.4 against 60.3 for \formal{},
-and 68.2 against 68.2 for \nat{}.
-
-\begin{table}[h]
-\centering
-\caption{Sampled evaluation of the suites that do not ask for a derivation,
-seed 3407, sixteen completions at temperature 0.8. The multi-hop tasks use the
-tagged prompt that elicits the trained scaffold with 200 items each, GSM8K has
-1{,}319 items and MATH-500 has 500. Sampling reproduces the greedy picture, in
-which no derivation condition separates from \ctrl{} except on
-2WikiMultihopQA.}
-\label{tab:sampled-downstream}
-\small\setlength{\tabcolsep}{5pt}
-\begin{tabular}{llccccc}
-\toprule
-task & metric & \ctrl{} & \longdoc{} & \formal{} & \nat{} & \condensed{}\\
-\midrule
-GSM8K            & \passk{16} & 97.6 & 97.8 & 97.4 & 97.6 & 97.4\\
-                 & maj@16     & 89.7 & 89.7 & 89.7 & 89.2 & 90.0\\
-MATH-500         & \passk{16} & 52.2 & 54.4 & 54.4 & 54.2 & 54.6\\
-                 & maj@16     & 13.2 & 14.6 & 14.4 & 13.2 & 14.8\\
-\midrule
-HotpotQA         & \passk{16} & 58.5 & 54.0 & 58.5 & 59.5 & 49.5\\
-                 & maj@16     & 42.5 & 35.0 & 38.5 & 35.5 & 31.5\\
-2WikiMultihopQA  & \passk{16} & 40.0 & 27.5 & 48.5 & 47.0 & 20.5\\
-                 & maj@16     & 22.0 & 18.0 & 26.0 & 22.0 & 11.5\\
-MuSiQue          & \passk{16} & 34.5 & 39.5 & 33.5 & 34.5 & 33.0\\
-                 & maj@16     & 22.0 & 18.5 & 15.0 & 12.0 & 13.0\\
-\bottomrule
-\end{tabular}
-\end{table}
-
-\section{An Earlier Configuration}
-\label{sec:earlier-config}
-
-Before the midtraining study, the same three-way design was
-run at sequence length 4{,}096 with a five percent replacement share, a compact
-rendering, and derivations capped at depth 14 so that they fit the window, for
-the same token budget. On a ten-task general suite the three conditions scored
-$58.2$, $58.4$ and $58.5$ percent macro-average for control, formal and
-English, and on tagged multi-hop question answering the differences vanished
-under fallback answer extraction. That configuration had no length-matched
-control and no deduction benchmark, and its derivations never reached the
-depths at which the controlled study locates the formal advantage, so it
-motivated the present design without constraining it.
+The same derivations can enter during midtraining. We midtrained Qwen2.5-7B
+on 2.5 billion tokens, 2{,}385 steps at sequence length 8{,}192 with a
+global batch of 128 sequences, with a tenth of the loss tokens replaced by
+72{,}000 generated documents packed without splitting, and then applied the
+same instruction tuning to every condition. That route also produces the
+gain on ProofWriter, 12.6 points for the English rendering at inference
+depth 3 with two instruction-tuning seeds, and it also leaves the general
+benchmarks flat apart from a loss of two to three points on LogiQA that
+replicates across seeds. Midtraining is the more expensive route and buys
+no more, since the instruction-tuning route reaches the same accuracy,
+generalises further on long chains, carries no cost on LogiQA, and adds
+nothing when the two are applied in sequence. One ability survives
+midtraining that instruction tuning without derivations removes completely,
+since the midtrained model writes checkable proofs up to chain length 25
+when prompted in the format of its training documents, and writes none
+after ordinary instruction tuning.
