@@ -1,0 +1,24 @@
+\begin{table}[H]
+\caption{Shuffled-lines ablation on Qwen2.5-7B, in percent, 1 run per
+condition. The derivations replace 10 percent of the midtraining tokens
+(Appendix~\ref{sec:midtrain-detail}) and every condition receives the same
+instruction tuning afterwards. Depth is the inference depth of the
+ProofWriter item, 500 items per depth.}
+\label{tab:shuffle}
+\begin{center}
+\small
+\begin{tabular}{lccccc}
+\toprule
+ & \multicolumn{4}{c}{ProofWriter by inference depth} & \\
+\cmidrule(lr){2-5}
+midtraining condition & 1 & 2 & 3 & 5 & FOLIO \\
+\midrule
+control                       & $32.8$ & $44.0$ & $44.4$ & $46.0$ & $55.2$ \\
+length-matched documents      & $32.2$ & $44.4$ & $45.4$ & $44.0$ & $56.2$ \\
+formal derivations            & $35.8$ & $49.4$ & $50.0$ & $50.2$ & $\mathbf{60.6}$ \\
+English derivations           & $\mathbf{38.8}$ & $\mathbf{56.2}$ & $\mathbf{57.0}$ & $\mathbf{56.4}$ & $59.6$ \\
+English derivations, shuffled & $36.4$ & $50.6$ & $52.2$ & $53.2$ & $56.7$ \\
+\bottomrule
+\end{tabular}
+\end{center}
+\end{table}

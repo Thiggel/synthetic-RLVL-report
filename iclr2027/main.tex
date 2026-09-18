@@ -235,9 +235,8 @@ percent in both renderings with 3 runs per configuration, and we report the
 mean over runs throughout. The same recipe then trains
 Qwen2.5-3B, Qwen2.5-14B, Qwen2.5-32B, Llama-3.1-8B and OLMo-2-7B at the
 5 percent formal and 10 percent English shares, with the 32B model trained
-on two nodes. All models are base models, since the
-instruction tuning has to be identical across conditions for the comparison
-to be meaningful. Appendix~\ref{sec:sweep-details} gives the remaining
+on two nodes. All models are base models, which
+keeps the instruction tuning identical across conditions. Appendix~\ref{sec:sweep-details} gives the remaining
 hyperparameters.
 
 \subsection{Evaluation}
@@ -353,41 +352,58 @@ rendering.
 
 \input{tab_family}
 
-\subsection{A second instruction corpus}
-\label{sec:corpus}
+\subsection{What in the training data produces the gain}
+\label{sec:ablations}
 
-Table~\ref{tab:corpus} repeats the experiment with a different instruction
-corpus, 100{,}000 single-turn examples of Tulu 3 \citep{lambert2025tulu} in
-place of Dolci. The model tuned on Dolci answers ``true'' on 73 percent of
-the ProofWriter items and the model tuned on Tulu 3 answers ``false'' on 82
-percent, while the gold labels are 40 percent true and 43 percent false.
-Replacing 5 percent of either corpus by formal derivations reduces the share
-of the most frequent answer by 23 points on Dolci, from 73 to 50 percent,
-and by 8 points on Tulu 3, from 82 to 74 percent, and improves accuracy on
-both.
-The gain is smaller on Tulu 3, whose control is already 14 points more
-accurate, which is consistent with the account of Section~\ref{sec:prior}.
+The gains above come from the generated derivations of
+Section~\ref{sec:data}, and 4 further experiments on Qwen2.5-7B ask which
+of their properties matter. We vary the instruction corpus the derivations
+are mixed into, the order of the lines within each derivation, the depth of
+the proofs, and whether any instruction data is present at all. The first
+manipulation tests whether the gain depends on the instruction corpus, and
+the remaining 3 separate the 2 effects that the derivations have, the
+correction of the answer distribution and the derivation-writing procedure.
+
+\paragraph{A second instruction corpus.}
+\label{sec:corpus}
+Table~\ref{tab:corpus} repeats the experiment with 100{,}000 single-turn
+examples of Tulu 3 \citep{lambert2025tulu} in place of Dolci. The two
+corpora leave the control with opposite biases. The model tuned on Dolci
+answers ``true'' on 73 percent of the ProofWriter items and the model tuned
+on Tulu 3 answers ``false'' on 82 percent, while the gold labels are 40
+percent true and 43 percent false. Replacing 5 percent of either corpus by
+formal derivations moves the answers toward the labels in both cases, by 23
+points on Dolci, from 73 to 50 percent, and by 8 points on Tulu 3, from 82
+to 74 percent, and improves accuracy on both. The gain is smaller on Tulu 3,
+whose control is already 14 points more accurate. The effect therefore does
+not depend on one corpus, and the size of the gain follows the size of the
+bias that the corpus leaves, which is the account developed in
+Section~\ref{sec:prior}.
 
 \input{tab_corpus}
 
-\subsection{Ablations}
-\label{sec:ablations}
+\paragraph{Shuffled lines.}
+Table~\ref{tab:shuffle} shuffles the lines of every training derivation,
+which preserves every token, the vocabulary, the length and the conclusion,
+and destroys only the order in which the facts follow. These runs enter the
+derivations during midtraining at a 10 percent share
+(Appendix~\ref{sec:midtrain-detail}) and are compared with a length-matched
+control that replaces the same share by ordinary long documents. On
+ProofWriter at inference depth 3 the ordered English derivations improve
+accuracy by 12.6 points over the control and the shuffled ones by 7.8
+points, compared with 1.0 point for the length-matched control, so about 3
+fifths of the improvement survives without the order. On FOLIO almost none
+of it does, since the ordered derivations improve accuracy by 4.4 points in
+the English rendering and 5.4 in the formal one, and the shuffled ones by
+1.5 points. The model trained on shuffled derivations also writes no
+derivation that the checker accepts. The order of the lines is therefore
+what teaches the procedure, and the tokens alone account for most of the
+ProofWriter gain.
 
-Three ablations on Qwen2.5-7B separate the two effects of the derivations.
-The first shuffles the lines of every training proof, which preserves every
-token, the vocabulary, the length and the conclusion, and destroys only the
-order in which the facts follow. These runs replace 10 percent of the
-mixture and are compared with a length-matched control that replaces the
-same share by ordinary long documents. On ProofWriter at depth 3 the ordered
-English derivations improve accuracy by 12.6 points over the control and the
-shuffled ones by 7.8 points, compared with 1.0 point for the length-matched
-control, so about 3 fifths of the improvement survives. On FOLIO almost none
-of it does, since the ordered English derivations improve accuracy by 5.4
-points and the shuffled ones by 1.5 points. The model trained
-on shuffled derivations also writes no derivation that the checker accepts.
+\input{tab_shuffle}
 
-The second ablation varies the depth of the training proofs, and
-Table~\ref{tab:depth} reports it. Trained on 5-hop proofs, the model
+\paragraph{Training depth.}
+Table~\ref{tab:depth} varies the depth of the training proofs. Trained on 5-hop proofs, the model
 writes accepted derivations on every 5-hop problem but on only about a
 tenth of the 15-hop problems with the formal rendering, whereas the
 model trained on proofs of up to 25 hops stays above 99 percent everywhere.
@@ -397,7 +413,8 @@ cell.
 
 \input{tab_depth2}
 
-The third ablation removes the instruction data. Trained on derivations
+\paragraph{Derivations alone.}
+The last experiment removes the instruction data. Trained on derivations
 alone, in either rendering, the model writes a derivation the checker
 accepts on every generator problem and scores zero on every benchmark,
 because when asked a plain question it emits the opening token of the only
@@ -469,13 +486,15 @@ it with the value the chain implies, over all 250 items. The control is
 correct on the intermediate value at the third step on 98 percent of items
 and at the fifth step on 86 percent, so it loses the value along the chain,
 whereas the model trained with formal derivations is correct on 99 and 98
-percent. Every model answers correctly on essentially every item whose
+percent, and Figure~\ref{fig:steps} shows the curve at every position. Every model answers correctly on essentially every item whose
 intermediate values are all correct, so the gain on this subtask is fully
 accounted for by the retained value.
 The item below shows the failure in the control and its absence after
 training. The two chains of thought are identical up to step 3, where the
 control misreads its own conclusion of step 2 and carries the wrong value to
 the end.
+
+\input{fig_steps}
 
 \begin{small}
 \begin{quote}
@@ -496,8 +515,9 @@ So the answer is No.
 \end{quote}
 \end{small}
 
-Appendix~\ref{sec:wol-table} gives the full analysis, the tracking
-subtasks show the same pattern, and Appendix~\ref{sec:examples} gives
+Table~\ref{tab:steps} in Appendix~\ref{sec:wol-table} reads the value at
+every position for every share, and the object-tracking subtasks of
+BIG-Bench Hard behave in the same way. Appendix~\ref{sec:examples} gives
 items from every benchmark.
 
 \subsection{Notation}
