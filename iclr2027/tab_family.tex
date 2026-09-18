@@ -8,8 +8,8 @@ d3 is ProofWriter at inference depth 3. Entries marked -- are still being
 trained or evaluated.}
 \label{tab:family}
 \begin{center}
-\footnotesize
-\setlength{\tabcolsep}{3.6pt}
+\small
+\resizebox{\linewidth}{!}{%
 \begin{tabular}{lcccccccccccc}
 \toprule
  & \multicolumn{3}{c}{\branchproof{}} & \multicolumn{3}{c}{PW d3} & \multicolumn{3}{c}{FOLIO} & \multicolumn{3}{c}{GPQA-Diamond} \\
@@ -23,6 +23,6 @@ Qwen2.5-32B  & --  & --   & --    & 32.2 & 40.8 & --   & 62.6 & 63.1 & --   & 44
 Llama-3.1-8B & 0.0 & 99.5 & 100.0 & 33.3 & 36.3 & 48.8 & 51.2 & 48.5 & 48.3 & 24.7 & 25.8 & 26.3 \\
 OLMo-2-7B    & 0.0 & 0.2  & 19.5  & 45.8 & 33.6 & 56.6 & 45.1 & 47.0 & 45.8 & 29.8 & 29.5 & 29.0 \\
 \bottomrule
-\end{tabular}
+\end{tabular}}
 \end{center}
 \end{table}
