@@ -226,9 +226,9 @@ one epoch with a global batch of 128 sequences and a context window of
 percent, are truncated. The main sweep trains Qwen2.5-7B at shares of 1, 5, 10
 and 25 percent in both renderings with three random seeds per configuration,
 and we report the mean over seeds throughout. The same recipe then trains
-Qwen2.5-3B, Qwen2.5-14B, Llama-3.1-8B and OLMo-2-7B at the 10 percent
-English share, and at the 5 percent formal share for the results in the
-appendix. All models are base models, since the
+Qwen2.5-3B, Qwen2.5-14B, Qwen2.5-32B, Llama-3.1-8B and OLMo-2-7B at the
+5 percent formal and 10 percent English shares, with the 32B model trained
+on two nodes. All models are base models, since the
 instruction tuning has to be identical across conditions for the comparison
 to be meaningful. Appendix~\ref{sec:sweep-details} gives the remaining
 hyperparameters.
@@ -308,10 +308,8 @@ accurate at every share.
 \subsection{Model families and scales}
 \label{sec:families}
 
-Table~\ref{tab:family} repeats the experiment with the English rendering at
-10 percent on Qwen2.5-3B, Qwen2.5-14B, Llama-3.1-8B and OLMo-2-7B, and
-Table~\ref{tab:family-formal} in the appendix gives the formal rendering at
-5 percent, including Qwen2.5-32B. The derivation-writing ability transfers
+Table~\ref{tab:family} repeats the experiment on Qwen2.5-3B, Qwen2.5-14B,
+Qwen2.5-32B, Llama-3.1-8B and OLMo-2-7B with both renderings. The derivation-writing ability transfers
 to every Qwen and Llama model. The controls below 14B write no accepted
 derivation at any chain length, the 14B control reaches 7.5 percent at chain
 length 25 by reasoning in prose, and every Qwen and Llama model trained with
@@ -320,11 +318,12 @@ every chain length. OLMo-2 acquires the ability only in part, on about a
 fifth of the problems at chain length 5 as well as 25, so its shorter
 context does not explain the gap.
 
-The gain on ProofWriter transfers to every model, by 3.2 points on
-Qwen2.5-3B, 10.6 on Qwen2.5-14B, 15.5 on Llama-3.1-8B and 10.8 on OLMo-2-7B.
-The formal rendering improves ProofWriter on every Qwen model including the
-32B model, where it improves depth 3 by 8.6 points and depth 5 by 21.2
-points, but lowers it on OLMo-2 by 12.2 points. FOLIO and GPQA-Diamond move
+The gain on ProofWriter transfers to every model. With the English
+rendering it is 3.2 points on Qwen2.5-3B, 10.6 on Qwen2.5-14B, 15.5 on
+Llama-3.1-8B and 10.8 on OLMo-2-7B, and with the formal rendering it is 3.9,
+6.2, 3.0 and 8.6 points on the four Qwen models from 3B to 32B, where the
+32B model also improves by 21.2 points at inference depth 5. The formal
+rendering lowers ProofWriter accuracy on OLMo-2 by 12.2 points. FOLIO and GPQA-Diamond move
 by less than 3 points on the other models, except for GPQA-Diamond on
 Qwen2.5-14B, which improves by 4.5 points. The controls of these models
 already score at or near 100 percent on the chain subtasks of BIG-Bench
