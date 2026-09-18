@@ -55,27 +55,25 @@ points on ProofWriter, 6 points on FOLIO, 7 points on the multi-step subtasks
 of BIG-Bench Hard and 13 points on the quantitative items of GPQA-Diamond,
 without degrading general benchmarks. As little as 1 percent of the mixture
 teaches the model to write long derivations that a symbolic checker accepts,
-an ability that instruction tuning alone does not produce in any of the five
-model families we study. We identify two mechanisms behind these gains. The
-generated data teaches a procedure for carrying an intermediate result
-through a chain of steps, and it corrects a systematic bias in the answers of
-instruction-tuned models that we trace to the instruction corpus itself. Both
-mechanisms transfer across model families and scales, and together they
-predict when the data helps and when it does not.
+an ability that instruction tuning alone does not produce in any of the model
+families we study. We identify two mechanisms behind these gains. The
+generated data teaches the model to carry an intermediate result through a
+chain of steps, and it corrects a systematic bias in the answers of
+instruction-tuned models that we trace to the instruction corpus itself.
 \end{abstract}
 
 \section{Introduction}
 
 Synthetic data has become a standard ingredient in the training of language
 models. Textbook-style corpora \citep{gunasekar2023textbooks,
-eldan2023tinystories}, rephrased web documents \citep{maini2024rephrasing,
-maini2025beyondweb, su2025nemotroncc} and prompted expansions of a seed corpus
-\citep{yang2025synthetic} have all been shown to improve downstream
-performance. In nearly every case, however, the synthetic text is written by
-another language model. Its quality is therefore bounded by the knowledge and
-the reasoning of the model that writes it, and repeated training on such text
-has been shown to narrow the distribution of the trained model
-\citep{shumailov2024collapse, dohmatob2025strong}.
+eldan2023tinystories, abdin2024phi4}, rephrased web documents
+\citep{maini2024rephrasing, maini2025beyondweb, su2025nemotroncc} and
+prompted expansions of a seed corpus \citep{yang2025synthetic} have all been
+shown to improve downstream performance. In nearly every case, however, the
+synthetic text is written by another language model. Its quality is therefore
+bounded by the knowledge and the reasoning of the model that writes it, and
+repeated training on such text has been shown to narrow the distribution of
+the trained model \citep{shumailov2024collapse, dohmatob2025strong}.
 
 An alternative source of synthetic data is a program. A generator of a few
 hundred lines can sample a multi-hop deduction problem, solve it by forward
@@ -91,435 +89,433 @@ lines, so there is little reason to expect them to improve a model on
 anything beyond the generator's own problems.
 
 In this work we show that such data does improve a general instruction-tuned
-model by a substantial margin, and we investigate why.
-We fine-tune base models on a fixed instruction mixture of 100{,}000 examples
-in which a fraction of the instruction examples is replaced by generated
-derivations, so that every condition trains on the same number of examples
-and the treatment adds no data. On Qwen2.5-7B \citep{qwen2025qwen25},
-replacing 5 to 10 percent of the mixture improves accuracy on ProofWriter
-\citep{tafjord2021proofwriter} by 13.9 points, on FOLIO \citep{han2024folio}
-by 6.4 points, on the multi-step subtasks of BIG-Bench Hard by 6.7 points and
-on the quantitative items of GPQA-Diamond by 12.8 points, while eight general
-benchmarks are unchanged. Replacing only 1 percent of the mixture, which
-amounts to 1{,}000 documents, is enough for the model to write derivations of
-more than 50 lines that a symbolic checker accepts, at twice the chain length
-seen in training. Instruction tuning alone does not produce this ability in
-any of the five model families we study, and the treatment installs it on
-every dense model among them.
+model by a substantial margin, and we investigate why. We fine-tune base
+models on a fixed instruction mixture of 100{,}000 examples in which a
+fraction of the instruction examples is replaced by generated derivations,
+written either as a formal proof or as English sentences. On Qwen2.5-7B
+\citep{qwen2025qwen25}, replacing 5 to 10 percent of the mixture improves
+accuracy on ProofWriter \citep{tafjord2021proofwriter} by 13.9 points, on
+FOLIO \citep{han2024folio} by 6.4 points, on the multi-step subtasks of
+BIG-Bench Hard by 6.7 points and on the quantitative items of GPQA-Diamond by
+12.8 points, and it leaves general benchmarks unchanged. Replacing only 1
+percent of the mixture is enough for the model to write derivations of more
+than 50 lines that a symbolic checker accepts, at twice the chain length seen
+in training, an ability that instruction tuning alone does not produce in
+any of the model families we study.
 
-The second part of the paper asks how documents with no content can have this
-effect. We find that the generated data supplies two things that the
-instruction corpus does not, and a series of controlled manipulations
-separates them. The first is a procedure for carrying an intermediate value
-through a chain of steps. Shuffling the lines of the training proofs removes
-it, the depth of the training proofs bounds it, and on the multi-step subtasks
-of BIG-Bench Hard we observe the untreated model losing the carried value
-midway through a chain where the treated model retains it. The second is a
-correction of a systematic bias in the answers of the instruction-tuned model.
-On ProofWriter the untreated model asserts that a claim holds in three cases
-out of four, and the entire accuracy gain comes from the negated claims that
-are false. We show that the instruction corpus installs this bias, since
-training the same base model on a second instruction corpus installs the
-opposite bias and the same derivations correct it in the opposite direction.
-Across nine treated models from three families, the change in accuracy is
-predicted by how far the treatment moves the model's answer distribution
-toward the label distribution, which also accounts for the two models on
-which the formal rendering of the derivations lowers accuracy.
+We then ask how documents without content can have this effect, and we find
+two mechanisms. First, the derivations teach the model to carry an
+intermediate value through a chain of steps. Shuffling the lines of the
+training proofs removes this effect, the depth of the training proofs bounds
+it, and on the multi-step subtasks of BIG-Bench Hard we can observe the
+untrained model losing the carried value midway through a chain. Second,
+the derivations correct a systematic bias in the answers of the
+instruction-tuned model. On ProofWriter the control model asserts that a
+claim holds in three cases out of four, and the whole accuracy gain comes
+from the negated claims that are false. We show that this bias originates in
+the instruction corpus, since training the same base model on a second
+instruction corpus produces the opposite bias, which the same derivations
+correct in the opposite direction.
 
 Our contributions are as follows. (i)~We show that a small fraction of
 program-generated deduction data, substituted into an ordinary instruction
 mixture, improves an instruction-tuned model on deduction and multi-step
 benchmarks well beyond the generator's domain (Section~\ref{sec:results}).
-(ii)~We show that the data installs a derivation-writing procedure across four
-dense model families at 1 percent of the mixture, and we characterise the
-models on which it fails (Section~\ref{sec:families}). (iii)~We identify the
-two mechanisms responsible for the accuracy gains and separate them by
-manipulating the order, the depth and the presence of the training proofs
-and by changing the instruction corpus (Section~\ref{sec:analysis}). (iv)~We
-compare a formal and an English rendering of the same latent proofs and find
-that the English rendering generalises further in depth and improves accuracy
-on every dense model, where the formal rendering helps some models and harms
-others (Section~\ref{sec:notation}).
+(ii)~We show that 1 percent of the mixture teaches a derivation-writing
+ability that transfers across four dense model families
+(Section~\ref{sec:families}). (iii)~We identify the two mechanisms behind
+the gains and separate them by manipulating the order, the depth and the
+presence of the training proofs and by changing the instruction corpus
+(Sections~\ref{sec:ablations} and~\ref{sec:analysis}). (iv)~We find that the
+English rendering of the proofs generalises further in depth and improves
+accuracy on every dense model, whereas the formal rendering helps some
+models and harms others (Section~\ref{sec:discussion}).
 
 \section{Related work}
 
-\paragraph{Synthetic data written by models.} Most synthetic pretraining
-corpora are produced by prompting a language model, either to write documents
-in a chosen style \citep{gunasekar2023textbooks, eldan2023tinystories} or to
-rewrite existing text from the web \citep{maini2024rephrasing,
-maini2025beyondweb, su2025nemotroncc}. The quality of the result is bounded by
-the generating model, and repeated training on such text degrades the
-distribution of the trained model \citep{shumailov2024collapse,
-dohmatob2025strong}. The data we study is generated by a program and involves
-no model at any stage.
+\paragraph{Synthetic data in pretraining and post-training.} Synthetic text
+written by language models now enters every stage of training. It forms a
+large part of the pretraining corpus of Phi-4 \citep{abdin2024phi4} and
+SmolLM2 \citep{benallal2025smollm2}, it is used to rephrase web text at scale
+\citep{maini2024rephrasing, su2025nemotroncc}, and \citet{kang2025demystifying}
+study its scaling behaviour systematically. Upsampling a domain at the end of
+pretraining \citep{blakeney2024sparkjoy, liu2025midtraining,
+wang2025octothinker} and the composition of the instruction mixture
+\citep{lambert2025tulu, olmo2025olmo2} are known to have large effects on
+downstream performance, which motivates our replacement design. The limits of
+model-written data, both in the amount of human text available
+\citep{villalobos2024position} and in the degradation caused by training on
+model output \citep{shumailov2024collapse, dohmatob2025strong}, motivate
+sources that involve no model.
 
-\paragraph{Synthetic deduction corpora.} Several corpora present deduction
-problems to language models for training or for evaluation, among them
-RuleTaker and ProofWriter \citep{clark2020transformers, tafjord2021proofwriter},
-PrOntoQA \citep{saparov2023language} and FLD \citep{morishita2023fld,
-morishita2024alt}. These corpora render their proofs in English.
-\citet{zhou2025finelogic} compare symbolic supervision with English supervision
-on matched problems and report that English supervision generalises further.
-In our setting both renderings are produced from a single latent proof, which
-allows a direct comparison, and we reach a similar conclusion for
-generalisation in depth and across model families.
+\paragraph{Abstract and procedural data.} A line of work trains on data with
+structure but without content. Pretraining on music or on artificial
+languages transfers to natural language \citep{papadimitriou2020music,
+chiang2022transferability, wu2022insights}, summarisation can be learned from
+nonsense text \citep{krishna2021nonsense}, and pretraining on formal
+languages imparts inductive biases that help later language learning
+\citep{hu2025circuits}. \citet{jiang2026proceduralpretraining} warm up
+language models on procedurally generated sequences before natural text, and
+\citet{lacombe2026reasoningcore} provide a suite of procedural generators
+for symbolic training. \citet{ruis2025procedural} find that the pretraining
+documents that most influence a model's reasoning are those that show a
+procedure. Our data is procedural in this sense, and we study it as a small
+component of instruction tuning of a pretrained model.
 
-\paragraph{Verifiable rewards and checkable traces.} Training a model against
-a verifier has become a standard recipe in mathematics and in code
-\citep{lambert2025tulu, yue2025does}, and formal systems allow a machine to
-check a proof \citep{trinh2024alphageometry}. The derivations studied here are
-checked by a small forward-chaining program, and we discuss the relation to
-verifier-based training in Section~\ref{sec:substrate}.
+\paragraph{Synthetic deduction data.} Program-generated deduction problems
+have been used to test the reasoning of language models
+\citep{clark2020transformers, tafjord2021proofwriter, saparov2023language,
+saparov2023ood, zhu2024dyval} and to train them. FLD and ALT
+\citep{morishita2023fld, morishita2024alt} train on large synthetic logic
+corpora and report gains on logical reasoning benchmarks, LogiPT
+\citep{feng2024logipt} trains a model to emulate a solver, and
+\citet{xia2025formallogic} study whether formal logic can be learned from
+data. \citet{zhang2023paradox} show that models trained on deduction data
+can learn statistical shortcuts, which is a concern we address by
+manipulating the proofs. \citet{zhou2025finelogic} compare symbolic and
+English supervision on matched problems and \citet{kabra2026synthetic} show
+that reinforcement learning on rule-generated multi-hop data improves
+real-world multi-hop benchmarks. Recent reinforcement learning work uses
+synthetic puzzles with verifiable answers as environments
+\citep{xie2025logicrl, liu2025synlogic, chen2025enigmata,
+stojanovski2025reasoninggym}. Our work differs from these in that the
+generated data is a small replacement within an ordinary instruction
+mixture, the evaluation is on general benchmarks, and the analysis is
+directed at the mechanism of the gain.
 
 \paragraph{Answer biases in tuned models.} Instruction-tuned models acquire
 response biases that are separable from their underlying competence
-\citep{ouyang2022training}, and negation in particular remains difficult for
-language models \citep{kassner2020negated, hosseini2021understanding,
-truong2023language}. We locate one such bias, attribute it to the instruction
-corpus by manipulation, and show which training data corrects it.
+\citep{ouyang2022training}, negation remains difficult for language models
+\citep{kassner2020negated, hosseini2021understanding, truong2023language},
+and shortcut learning is a general concern for trained models
+\citep{geirhos2020shortcut}. We locate one such bias, attribute it to the
+instruction corpus by manipulation, and show which training data corrects it.
 
-\section{Generated data}
+\section{Experimental setup}
+\label{sec:setup}
+
+\subsection{Generated data}
 \label{sec:data}
 
 The generator samples a set of constants, a set of unary predicates and a set
 of implication rules, chooses a target chain length, and constructs a problem
 whose answer follows from the premises by that many applications of modus
-ponens. It then solves the problem by forward chaining and writes the solution
-out, so that every document is correct by construction and no language model
-participates in any step. The vocabulary is kept deliberately small.
-Constants are named $c_0$ through $c_{25}$ and predicates are drawn from a
-list of colour and direction words, so that the documents carry no world
-knowledge. Figure~\ref{fig:overview-a} shows one generated example.
+ponens. It then solves the problem by forward chaining and writes the
+solution out. Constants are named $c_0$ through $c_{25}$ and predicates are
+drawn from a short list of colour and direction words, so that the documents
+carry no world knowledge. Each latent proof is written in one of two
+renderings, both shown in Figure~\ref{fig:overview-a}. The formal rendering
+declares the constants and the predicate symbols, states the premises as
+implications between atoms, and lists the proof as numbered lines together
+with the rule that justifies each line. The English rendering states the
+same premises and the same proof as ordinary sentences. The prompt, the
+answer and the proof graph are common to the two renderings, so a comparison
+between them isolates the effect of notation. The training documents have
+chain lengths of up to 25 and the longest occupies 7{,}700 tokens.
 
 \input{fig_design}
 
-Each latent proof admits two renderings. The formal rendering declares the
-constants and the predicate symbols, states the premises as implications
-between atoms, and lists the proof as numbered lines together with the rule
-that justifies each line. The English rendering states the same premises and
-the same proof as ordinary sentences. The prompt, the answer and the proof
-graph are common to the two renderings, so a comparison between them isolates
-the effect of notation.
+\subsection{Training}
 
-Every training mixture is built by replacement. A condition with share $p$
-contains $(1-p)\cdot 10^5$ examples of the instruction corpus and $p \cdot
-10^5$ rendered derivations, so that all conditions train on exactly $10^5$
-examples and differ only in the content of the replaced slice. The evaluation
-split of every mixture is drawn from the instruction corpus alone. This design
-avoids the most common confound in experiments on data augmentation, namely
-that the treated condition sees more data than the control. We audited the
-overlap between the generated documents and the evaluation sets and found no
-evaluation item on ProofWriter, FOLIO or the BIG-Bench Hard subtasks of
-Section~\ref{sec:bbh} that shares an eight-gram with any training derivation.
-
-\section{Experimental setup}
-\label{sec:setup}
-
-We fine-tune each base model on each mixture for one epoch with a global batch
-of 128 sequences and a context window of 8{,}192 tokens. The window follows
-from the corpus, since the longest rendered derivation at chain length 25
-occupies 7{,}700 tokens, and a run is aborted before it starts if more than
-0.5 percent of its examples would be truncated. The main sweep trains
-Qwen2.5-7B at shares of 1, 5, 10 and 25 percent in both renderings with three
-random seeds per configuration. The same recipe then trains Qwen2.5-3B and
-Qwen2.5-14B, Llama-3.1-8B, OLMo-2-7B and OLMoE-1B-7B, a mixture of 64 experts
-with one billion active parameters, at the 5 percent formal and 10 percent
-English shares, with two seeds where the seed spread of the control exceeds
-one point. All models are base models, since the instruction tuning has to be
-ours and identical across conditions for the claims about it to be testable.
-Base models that ship no chat template receive a plain role-prefixed format
-that adds no vocabulary. Appendix~\ref{sec:sweep-details} gives the remaining
+The instruction corpus is Dolci \citep{olmo2025olmo2}, from which we draw
+100{,}000 single-turn examples. A mixture with share $p$ replaces a fraction
+$p$ of these examples by generated derivations, so that every model trains on
+the same number of examples. We fine-tune each base model on each mixture for
+one epoch with a global batch of 128 sequences and a context window of
+8{,}192 tokens, and we abort a run if more than 0.5 percent of its examples
+would be truncated. The main sweep trains Qwen2.5-7B at shares of 1, 5, 10
+and 25 percent in both renderings with three random seeds per configuration,
+and we report the mean over seeds throughout. The same recipe then trains
+Qwen2.5-3B and Qwen2.5-14B, Llama-3.1-8B and OLMo-2-7B at the 5 percent
+formal and 10 percent English shares. All models are base models, since the
+instruction tuning has to be identical across conditions for the comparison
+to be meaningful. Appendix~\ref{sec:sweep-details} gives the remaining
 hyperparameters.
 
-We evaluate on ProofWriter under the open-world assumption at inference depths
-0 through 5, on FOLIO, on the deduction problems of the generator at chain
-lengths 5 through 45, on GPQA-Diamond, on the three multi-hop question
-answering datasets of LongBench, on BIG-Bench Hard, on HumanEval and MBPP, and
-on six further general benchmarks. For the problems of the generator we prompt
-the model in the document format on which it was trained, since a derivation
-has to be requested before a checker can read it. Unless stated otherwise,
-we report the mean over seeds.
+\subsection{Evaluation}
+\label{sec:eval}
+
+We evaluate on ProofWriter under the open-world assumption at inference
+depths 1, 3 and 5, on FOLIO, on GPQA-Diamond, on the three multi-hop question
+answering datasets of LongBench, on BIG-Bench Hard, on HumanEval and MBPP,
+and on seven further general benchmarks. ProofWriter and FOLIO are prompted
+for a direct answer, and we additionally evaluate ProofWriter under a prompt
+that asks the model to reason before answering. GPQA-Diamond is prompted to
+work through the options before the final choice, BIG-Bench Hard uses the
+standard three-shot chain-of-thought prompts, GSM8K is five-shot with a chain
+of thought, and the remaining general benchmarks are scored by
+log-likelihood. We also evaluate on held-out problems of the generator at
+chain lengths 5 to 45, where the model is prompted in the format on which it
+was trained and a forward-chaining checker verifies every line of the
+derivation it writes. We audited the overlap between the generated documents
+and the evaluation sets and found no evaluation item that shares an
+eight-gram with any training derivation.
+
+For two benchmarks we report subsets in addition to the full score, and both
+subsets are defined by a rule on the item text that does not depend on any
+model output. The eight chain subtasks of BIG-Bench Hard are those whose
+answer is obtained by propagating a truth value or a state along a sequence
+of steps, namely web of lies, the three object-tracking subtasks, the three
+logical-deduction subtasks and formal fallacies. The 73 quantitative items of
+GPQA-Diamond are those whose question contains a number with a physical unit
+or asks for a value, ratio or factor and contains a number. Appendix~\ref{sec:metrics}
+gives the exact rules and the item-level statistics.
 
 \section{Results}
 \label{sec:results}
 
-\subsection{Effect of the replaced share}
+\subsection{Main results}
 
-Table~\ref{tab:dose} reports the sweep on Qwen2.5-7B. The ability to write a
-derivation that the checker accepts is already complete at 1 percent of the
-mixture. A model trained without derivations writes none in 600 attempts,
-whereas a model trained with 1{,}000 of them writes a derivation in every
-attempt, and the checker accepts more than nine in ten of those derivations at
-chain length 25. The proofs run to 51 lines at that depth, and the ability
-extends to chains of length 45, about twice the longest chain in training,
-where the checker still accepts nine in ten. Below 1 percent the behaviour
-becomes unreliable, since at 500 documents one seed reaches 84.5 percent
-acceptance and another writes no derivation at all.
+Table~\ref{tab:main} reports the reasoning benchmarks for Qwen2.5-7B across
+the replaced share, and Table~\ref{tab:general} reports the general
+benchmarks. Replacing 5 to 10 percent of the instruction mixture with
+generated derivations improves every deduction and multi-step benchmark. On
+ProofWriter the English rendering at 10 percent improves accuracy by 6.4
+points at depth 1, 13.9 points at depth 3 and 10.2 points at depth 5, and
+the formal rendering at 5 percent improves it by 5.3, 10.7 and 7.7 points.
+FOLIO improves by 6.4 points with the formal rendering at 5 percent. On
+BIG-Bench Hard the macro average improves by 2.7 points, and the eight chain
+subtasks account for the whole gain, improving by 6.7 points while the other
+nineteen subtasks move by less than one point. GPQA-Diamond improves by 2.0
+to 5.1 points, and the multi-hop question answering datasets by one to three
+points of F1. The general benchmarks in Table~\ref{tab:general} do not move
+beyond the noise of a single run, with the largest deviation being 2.8 points
+on ARC-Challenge in the direction of improvement.
 
-Accuracy on held-out benchmarks requires a larger share. At 1 percent it
-rises by about one point on ProofWriter at depth 3, which is within the seed
-spread. At 5 percent it rises from 39.3 to 50.0 percent, and at 10 percent of
-English-rendered derivations it reaches 53.2 percent. Every seed of every
-condition at 5 percent or more scores above every seed of the control, whose
-three seeds span 1.4 points. Accuracy on FOLIO rises from 51.4 to 57.8
-percent. Above 5 percent the curve is flat.
-Figure~\ref{fig:overview-b} summarises the gains at the 10 percent English
-share.
+\input{tab_main}
+\input{tab_general}
 
-\input{tab_dose_main}
+The improvements on GPQA-Diamond are concentrated in the quantitative items
+defined in Section~\ref{sec:eval}. On these 73 items accuracy rises from 22.8
+percent for the control to 35.6 percent for the formal rendering at 10
+percent, with 46 items improving and 19 worsening across the pooled runs,
+which a sign test puts at $p = 0.001$. The 125 remaining items move from 37.1
+to 37.6 percent, with a sign test at $p = 0.60$. The overall score of the
+benchmark therefore averages a substantial gain on the items that require a
+computation with no change on the items that require recall.
 
-\subsection{Model families, scales and architectures}
+The ability to write derivations that the checker accepts appears at a much
+smaller share than the accuracy gains. The control writes no accepted
+derivation, whereas the model trained with 1 percent derivations writes one
+on 93 percent of held-out generator problems at chain length 25, and on 90
+percent of problems at chain length 45, which is about twice the longest
+chain in training. This ability is complete from 1 percent upward in both
+renderings. Accuracy on the benchmarks, by contrast, improves by about one
+point at 1 percent and reaches its full value at 5 percent, and it does not
+improve further at 25 percent. The two effects therefore have different
+thresholds, which is the first indication that they are distinct, and we
+return to this in Section~\ref{sec:ablations}.
+
+Table~\ref{tab:main} also compares direct answers on ProofWriter with answers
+given after a requested chain of reasoning. The control gains 0.6 points from
+reasoning aloud, so the gap to the models trained with derivations is not
+closed by prompting. For the formal rendering the gain from reasoning aloud
+grows with the share and reaches 55.8 percent at 25 percent, whereas for the
+English rendering it is smaller than the gain from the direct answer.
+
+\subsection{Model families and scales}
 \label{sec:families}
 
-Table~\ref{tab:family} repeats the treatment on five further base models. The
-derivation procedure transfers across the dense models. Every control below
-14B parameters writes no accepted derivation at any chain length, and every
-treated dense model except OLMo-2 writes them on 96 to 100 percent of problems
-at every chain length, including the models whose accuracy did not improve.
-OLMo-2 reaches about a quarter, at chain length 5 as well as 25, so its shorter
-context does not explain the gap. The mixture of experts does not acquire the
-procedure in either rendering, with at most 4.5 percent accepted at any depth
-from one seed. The 14B control reaches 7.5 percent at chain length 25 by
-reasoning in prose, and its treated counterpart reaches 99 percent.
+Table~\ref{tab:family} repeats the experiment on Qwen2.5-3B, Qwen2.5-14B,
+Llama-3.1-8B and OLMo-2-7B. The derivation-writing ability transfers across
+the Qwen and Llama models. Every control below 14B writes no accepted
+derivation at any chain length, and every Qwen and Llama model trained with
+derivations writes accepted derivations on 96 to 100 percent of problems at
+every chain length. The 14B control reaches 7.5 percent at chain length 25 by
+reasoning in prose, and the same model trained with derivations reaches 99
+percent. OLMo-2 acquires the ability only in part, at about a quarter of the
+problems with the English rendering at chain length 5 as well as 25, so its
+shorter context does not explain the gap.
 
-The accuracy effect depends on the rendering and on the model. The English
-rendering raises ProofWriter accuracy on every dense model, by 3.4 to 15.5
-points, and it is the most stable condition in the study, with the two Llama
-seeds agreeing to 0.8 points where the Llama control varies by 8.6. The formal
-rendering raises accuracy on Qwen at all three scales and lowers it on OLMo-2
-by 12.2 points, which is outside both seed spreads. On the mixture of experts
-both renderings lower accuracy, the formal one by 26.2 points and the English
-one by 33.0, and in each case the answer distribution collapses onto a single
-label. Section~\ref{sec:prior} explains these losses.
+The accuracy gain on ProofWriter transfers with the English rendering to
+every model, by 3.6 points on Qwen2.5-3B, 10.6 on Qwen2.5-14B, 15.5 on
+Llama-3.1-8B and 11.4 on OLMo-2-7B. The formal rendering improves the three
+Qwen models and Llama, but it lowers accuracy on OLMo-2 by 12.2 points.
+FOLIO and GPQA-Diamond move by less than the seed spread of the respective
+control on Qwen2.5-3B and Llama-3.1-8B, whose controls already score at or
+near 100 percent on the chain subtasks of BIG-Bench Hard, so the additional
+gains observed on Qwen2.5-7B correspond to a deficit that the 7B model has
+and the others do not. Section~\ref{sec:analysis} explains the loss on
+OLMo-2.
 
 \input{tab_family}
 
-\subsection{General benchmarks}
-\label{sec:bbh}
+\subsection{A second instruction corpus}
+\label{sec:corpus}
 
-On Qwen2.5-7B the eight general benchmarks of Table~\ref{tab:general} in the
-appendix stay within a few points of the control, and the three that move
-beyond the seed spread move upward. BIG-Bench Hard rises by 2.7 points, and
-resolving it by subtask places the gain in the eight subtasks whose answer is
-obtained by propagating a truth value or a state along a chain. These rise
-from 62.2 to 68.9 percent while the other nineteen move within one point. Web
-of lies, the subtask closest in form to the generated data, rises from 85.5 to
-97.6 percent. GPQA-Diamond shows a similar pattern, since the 73 items that
-ask for a computed value rise from 22.8 to 35.6 percent while the 125 items
-that ask for a fact are unchanged. Multi-hop question answering gains between
-one and three points of F1, and HumanEval and MBPP do not move. The formal
-rendering costs 11 points on a long-context task that counts common words,
-which involves aggregation and no propagation, and this cost is absent for
-the English rendering.
+Table~\ref{tab:corpus} repeats the experiment with a different instruction
+corpus, 100{,}000 single-turn examples of Tulu 3 \citep{lambert2025tulu} in
+place of Dolci. The two controls behave very differently on ProofWriter. The
+model tuned on Dolci answers ``true'' on 73 percent of the items and the
+model tuned on Tulu 3 answers ``false'' on 82 percent, while the gold labels
+are 40 and 43 percent respectively. Replacing 5 percent of either corpus by
+formal derivations moves the answer distribution toward the gold labels, by
+23 points on Dolci and 8 points on Tulu 3, and improves accuracy on both.
+The gain is smaller on Tulu 3, whose control is already 14 points more
+accurate, which is consistent with the account of Section~\ref{sec:prior}.
 
-The gains on BIG-Bench Hard and GPQA-Diamond are specific to the 7B model. On
-Llama-3.1-8B and Qwen2.5-3B the control already scores 99.8 and 99.6 on web of
-lies, no chain subtask moves by more than 1.8 points, and the macro average
-moves by less than one. We therefore interpret these gains as the repair of a
-deficit that the 7B model happens to have, and we return to what that deficit
-is in Section~\ref{sec:procedure}.
+\input{tab_corpus}
+
+\subsection{Ablations}
+\label{sec:ablations}
+
+Three ablations on Qwen2.5-7B separate the two effects of the derivations.
+The first shuffles the lines of every training proof, which preserves every
+token, the vocabulary, the length and the conclusion, and destroys only the
+order in which the facts follow. On ProofWriter at depth 3 the ordered
+English derivations improve accuracy by 12.6 points over the control and the
+shuffled ones by 7.8 points, compared with 1.0 point for length-matched
+ordinary documents, so about three fifths of the improvement survives. On
+FOLIO almost none of it does, since the ordered conditions improve accuracy
+by 5.4 and 4.4 points and the shuffled one by 1.5 points. The model trained
+on shuffled derivations also writes no derivation that the checker accepts.
+
+The second ablation varies the depth of the training proofs, and
+Table~\ref{tab:depth} reports it. Trained on five-hop proofs, the model
+writes accepted derivations on every five-hop problem but on only about a
+tenth of the fifteen-hop problems with the formal rendering, whereas the
+model trained on proofs of up to 25 hops stays above 99 percent everywhere.
+Benchmark accuracy is indifferent to the training depth and lies between 46
+and 51 percent on ProofWriter and between 54 and 58 percent on FOLIO in every
+cell.
+
+\input{tab_depth2}
+
+The third ablation removes the instruction data. Trained on derivations
+alone, in either rendering, the model writes a derivation the checker
+accepts on every generator problem and scores zero on every benchmark,
+because when asked a plain question it emits the opening token of the only
+format it knows and stops. The derivations and the instruction data are
+therefore both necessary.
 
 \section{Analysis}
 \label{sec:analysis}
 
-\subsection{A bias in the answer distribution, and where it comes from}
+\subsection{The bias in the answer distribution}
 \label{sec:prior}
 
-ProofWriter presents a theory together with a claim and asks whether the claim
-is true, false or unknown. Splitting the decidable items by the polarity of the
-claim and by the gold label gives Table~\ref{tab:mechanism}. The Qwen2.5-7B
-control answers correctly on 98.5 percent of the claims that are negated and
-true and on 17.6 percent of the claims that are negated and false. It asserts
-that the claim holds in three cases out of four across the whole evaluation
-set, while the gold labels are close to balanced. The derivations correct
-this. Accuracy on the negated and false claims rises to 56.9 percent, the
-probability of answering ``true'' falls from 0.73 to 0.50, and the three
-remaining cells move by a few points at most. FOLIO shows the same shape, with
-the false and uncertain items gaining and the true ones fixed, and a
-log-likelihood probe in Appendix~\ref{sec:probe-table} shows the change to be
-mostly a shift of the decision margin on negated claims with a small
-discrimination component.
+ProofWriter presents a theory together with a claim and asks whether the
+claim is true, false or unknown. Table~\ref{tab:mechanism} splits the
+decidable items by the polarity of the claim and by the gold label. The
+control is almost always right when the claim is true and mostly wrong when
+the claim is negated and false, where its accuracy is 17.6 percent, because
+it asserts the claim in three cases out of four regardless of its content.
+The derivations move the answer distribution toward the gold labels, and
+the improvement is concentrated in the negated and false claims, whose
+accuracy rises to 56.9 percent at the 25 percent share, while the other
+three cells change by a few points. FOLIO shows the same pattern, with the
+false and uncertain items gaining and the true ones fixed. A log-likelihood
+probe in Appendix~\ref{sec:probe-table} shows that the change is mostly a
+shift of the decision margin on negated claims and to a smaller extent a
+gain in discrimination.
 
 \input{tab_mech_main}
 
-Table~\ref{tab:corpus} shows by manipulation that the bias comes from the
-instruction corpus. We train the same base model with the same recipe on a
-second instruction corpus drawn from Tulu 3, which has a different source and
-task distribution. Its control answers ``false'' on 82 percent of items where
-ours answers ``true'' on 73. The same 5 percent of derivations pulls both
-distributions toward the labels, by 23 points of excess on one corpus and 12
-on the other, and accuracy rises on both. One of three treated seeds on the
-second corpus did not learn the format and behaves as a control, so 5 percent
-sits at the reliability threshold there where it is comfortably above it on
-ours.
+This account also explains the loss on OLMo-2 in Section~\ref{sec:families}.
+Across the models of Tables~\ref{tab:family} and~\ref{tab:corpus}, the
+change in accuracy on ProofWriter follows how far the derivations move the
+answer distribution toward or away from the gold labels. The OLMo-2 control
+is already close to the gold distribution, with an excess of 8.6 points, and
+the formal derivations push it 46 points toward ``unknown'', so its accuracy
+falls, whereas the English derivations move it toward the labels and its
+accuracy rises. On every model, the English rendering moves the answer
+distribution toward the labels.
 
-\input{tab_corpus}
-
-The same account covers the losses of Section~\ref{sec:families}. Across the
-nine treated models from three families, accuracy moves with how far the
-treatment pulls the answer distribution toward or away from the label
-distribution. OLMo-2 starts well calibrated, with an excess of 8.6 points, and
-the formal derivations push it to 46 points of excess toward ``unknown'', so
-it loses accuracy. The mixture of experts starts with the highest control
-accuracy in the study, and the formal derivations remove ``false'' from its
-answers entirely while the English ones collapse it onto ``unknown''. The
-English rendering moves every dense model toward the labels. Since the excess
-of the control's answer distribution over the label distribution can be
-measured before any training, and since the sign of the accuracy change agrees
-with the sign of the change in that excess in every one of the nine models,
-the diagnostic can be used to decide whether and which rendering to inject
-before a model is trained.
-
-\subsection{A procedure for carrying a value through a chain}
+\subsection{Carrying a value through a chain}
 \label{sec:procedure}
 
-Three manipulations on Qwen2.5-7B separate the procedure from the correction
-of the bias. The first shuffles the lines of every training proof, which
-preserves every token, the vocabulary, the length and the conclusion, and
-destroys only the order in which the facts follow. On ProofWriter at depth 3
-the ordered English derivations gain 12.6 points over the control and the
-shuffled ones gain 7.8, against 1.0 for length-matched ordinary documents, so
-about three fifths of the effect survives. On FOLIO almost none of it does,
-since the ordered conditions gain 5.4 and 4.4 points and the shuffled one gains
-1.5. A shuffled derivation still ends in a verdict and still carries negated
-conclusions, which is what the correction of the bias requires, but it no
-longer exhibits an inference, which is what FOLIO rewards.
+The ablations show that the second effect requires ordered proofs of
+sufficient depth and produces no gain on FOLIO when the order is destroyed.
+It can also be observed directly on a benchmark task. Web of lies, the
+subtask of BIG-Bench Hard closest in form to the generated data, states for
+each of five people whether they tell the truth given the previous person,
+so the answer is obtained by carrying a truth value along the chain. We read
+the value each model carries at every position in its chain of thought over
+all 250 items. The control is correct on the intermediate value at the third
+step on 98 percent of items and at the fifth step on 86 percent, so it loses
+the value along the chain, whereas the model trained with formal
+derivations is correct on 99 and 98 percent. Every model answers correctly
+on essentially every item whose intermediate values are all correct, so the
+12-point gain on this subtask is fully accounted for by the retained value.
+Appendix~\ref{sec:wol-table} gives the full analysis, and the tracking
+subtasks show the same pattern.
 
-The second manipulation varies the depth of the training proofs, and
-Table~\ref{tab:depth} reports it. Trained on five-hop proofs, the formal
-rendering writes accepted derivations on every five-hop problem and on about
-a tenth of the fifteen-hop problems, whereas the condition trained at chain
-length 25 stays above 99 percent everywhere. Benchmark accuracy is indifferent
-to the training depth and lies between 46 and 51 percent on ProofWriter and
-between 54 and 58 on FOLIO in every cell. The procedure therefore depends on
-the depth of the training proofs while the correction of the bias does not.
+\section{Discussion}
+\label{sec:discussion}
 
-\input{tab_depth2}
+\paragraph{Two mechanisms.} The generated derivations teach no facts, and
+the experiments indicate that they act on the model in two ways that come
+apart under every manipulation we applied. The first is a procedure for
+carrying a value through a chain, which requires ordered proofs, is bounded
+by the depth of the training proofs, appears at 1 percent of the mixture,
+and accounts for the gains on FOLIO, on the chain subtasks of BIG-Bench Hard
+and on the quantitative items of GPQA-Diamond. The second is a shift of the
+answer distribution toward the labels, which survives shuffling, is
+indifferent to depth, requires about 5 percent of the mixture, and accounts
+for most of the gain on ProofWriter. The second effect depends on the bias
+of the model before training, which we could measure from the control alone,
+and the sign of the change in accuracy agreed with the sign of the change in
+the bias on every model we trained. This suggests a simple diagnostic. The
+answer distribution of an instruction-tuned model on a benchmark, compared
+with the label distribution, indicates whether the derivations will help and
+in which rendering.
 
-The third manipulation removes the instruction data. Trained on derivations
-alone, in either rendering, the model writes a derivation the checker accepts
-on every generated problem and scores zero on every benchmark, because when
-asked a plain question it emits the opening token of the only format it knows
-and stops. The derivations supply the procedure and the instruction mixture
-supplies the ability to respond to an arbitrary prompt, and neither is
-sufficient on its own.
+\paragraph{Notation.} The English rendering is the better default on the
+evidence of this paper. It improves accuracy on every dense model, whereas
+the formal rendering improves Qwen and Llama and harms OLMo-2. It generalises
+further beyond its training depth, since trained on fifteen-hop proofs it
+writes accepted derivations on 99.5 percent of 25-hop problems where the
+formal rendering reaches 45 percent, and trained on five-hop proofs it
+reaches 85.5 percent at fifteen hops where the formal rendering reaches 13.3
+percent. A controlled study on the generator alone, reported in
+Appendix~\ref{sec:crossover}, finds the formal rendering ahead at the deepest
+training depth when the evaluation depth is held fixed, so the two renderings
+should be compared separately at the training depth and beyond it.
 
-The procedure can also be observed directly on a benchmark task. Web of lies
-asks whether the last of a chain of people tells the truth, given a statement
-about each person's honesty in terms of the previous one, so the answer is
-obtained by carrying a truth value along the chain. Reading the value each
-model carries at every position over all 250 items shows the control losing
-it between the third and the fifth step, where its accuracy on the
-intermediate value falls from 0.981 to 0.855, while the treated model retains
-it, at 0.993 and 0.976. Every model answers correctly on essentially every
-item whose intermediate values are all correct, so the accuracy gain on this
-subtask is fully accounted for by the retained value.
-Appendix~\ref{sec:wol-table} gives the full analysis.
-
-\subsection{Chain-of-thought prompting}
-
-If the improvement consisted of the model reasoning more, asking the control
-to reason aloud would close the gap. Under a prompt that requests a chain of
-reasoning before the answer, the Qwen2.5-7B control reaches 39.9 percent on
-ProofWriter at depth 3, the formal conditions reach 45.3, 49.5 and 55.8
-percent at 5, 10 and 25 percent of the mixture, and the English conditions
-reach 44.1, 43.8 and 47.0. The advantage of the treated models is preserved
-under the prompt, and for the formal rendering it grows with the share.
-
-\subsection{Notation}
-\label{sec:notation}
-
-We find the English rendering to be the better default for three reasons.
-It raises accuracy on every dense model measured, where the formal rendering
-raises it on Qwen and lowers it on OLMo-2, and on the one sparse model both
-renderings fail alike. It carries no measurable cost on aggregation tasks,
-where the formal rendering costs 11 points on long-context word counting.
-Finally, it extrapolates further beyond its training depth. Trained on
-fifteen-hop proofs it writes accepted derivations on 99.5 percent of 25-hop
-problems where the formal rendering manages 45 percent, and trained on
-five-hop proofs it reaches 85.5 percent at fifteen hops where the formal
-rendering reaches 13.3. A controlled study on the generator alone, reported in
-Appendix~\ref{sec:crossover}, finds formal supervision ahead at the deepest
-training band when the evaluation depth is held fixed. Performance at the
-training depth and extrapolation beyond it therefore have to be reported
-separately, and on the second the English rendering is ahead at every band.
-
-\section{Checking the derivations}
-\label{sec:substrate}
-
-A derivation written in a fixed format can be checked by a program. Our
-checker reads the premises of an item and accepts a proof line when the line
-is a premise or follows from lines already established, in either notation.
-On the generator's own problems, a derivation the checker accepts carries the
-correct answer in 99 percent of samples, so selecting the first accepted
-derivation out of sixteen matches the accuracy of asking whether any of the
-sixteen is correct, without access to a gold answer. On ProofWriter the
-checker reproduces the published gold label on 99, 95, 91, 91 and 84 percent
-of items at depths 0 through 5, and its residual errors are answers of
-``unknown'' on decided items, so it under-credits. An accepted derivation on
-ProofWriter is correct between 53 and 69 percent of the time, because a third
-of the items ask whether a claim is underivable and a forward chain never
-demonstrates that. On GSM8K the coupling nearly disappears, since a wrong
-answer there usually follows from correct arithmetic inside a wrong plan.
-
-The coupling between validity and correctness is the property that training
-against a verifier depends on, and it is usually obtained from a domain that
-ships with a verifier, such as mathematics with a numeric answer or code with
-a test suite \citep{lambert2025tulu, yue2025does}. Within the domain of the
-generator, the trained procedure supplies the same property in the model's own
-output, and a reward that pays for an accepted derivation is available for
-every problem the generator can pose. We do not train against this reward in
-the present paper, and the results above show that the coupling weakens as
-soon as the checker is incomplete for the task, as it is on ProofWriter and
-on GSM8K. We therefore regard the checkable derivations as a starting point
-for verifier-based training on deduction and not as a general substitute for
-task-specific verifiers.
+\paragraph{Checking the derivations.} A derivation in the trained format is
+checked by the same program that wrote the training data. On the generator's
+own problems, a derivation the checker accepts carries the correct answer in
+99 percent of samples, so selecting the first accepted derivation out of
+sixteen matches the accuracy of selecting with the gold answer. On
+ProofWriter the checker reproduces the published label on 84 to 99 percent
+of items depending on the depth, and an accepted derivation is correct
+between 53 and 69 percent of the time, because a third of the items ask
+whether a claim is underivable and a forward chain cannot show that. The
+coupling between validity and correctness therefore holds where the checker
+is complete for the task, which makes the trained format a candidate for
+verifier-based training on deduction \citep{lambert2025tulu, yue2025does},
+although we do not pursue this here.
 
 \section{Limitations}
 \label{sec:limits}
 
-Four further generators built to match specific target tasks, namely a
-program variable carried through assignment and branching, membership in a
-reachable set with half the questions unreachable, a position in a temporal
-order, and a quantity carried through unit conversions, improve none of their
-targets when mixed at 5 percent. Temporal sequences on BIG-Bench Hard falls by
-4 to 5 points in both renderings where the deduction data in English raises
-it, HumanEval falls by 5.2 points, and long-context variable tracking does not
-move. Matching the latent structure of a generator to a task is therefore not
-sufficient to improve that task, and our results should not be read as a
-general method for engineering capabilities from generated data.
-
-The accuracy gains beyond ProofWriter, on FOLIO, on the chain subtasks of
-BIG-Bench Hard and on the quantitative half of GPQA-Diamond, are measured on
-Qwen2.5-7B and do not replicate on the other families, whose controls are
-already at ceiling on the subtasks concerned. The procedure is installed only
-partially on OLMo-2, and it is absent on the mixture of experts, which has one
-seed and whose sharded training ran several times slower than a dense model of
-its active size, so a pathology specific to sparse routing under our trainer
-cannot be excluded. Our checker is sound but incomplete, since it cannot
-certify that a fact is underivable. The models trained on the Tulu corpus are
-verbose and do not reliably stop after a short answer, so their accuracies are
-scored on partly degenerate text, although their answer distributions are
-unambiguous and the within-corpus comparison is sound.
+The gains beyond ProofWriter are established on Qwen2.5-7B, and the other
+models we study either lack the corresponding deficit or have not been
+evaluated on every benchmark. The models range from 3B to 14B parameters and
+the instruction mixtures from 100{,}000 examples, so the effect of the
+derivations under larger models and longer post-training remains open. The
+checker is sound but incomplete, since it cannot certify that a fact is
+underivable, which limits its use on benchmarks with unknown labels. Finally,
+the two renderings differ in their effect on OLMo-2, and we explain this
+through the answer distribution but have not identified what in the
+pretraining of that model produces its different starting point.
 
 \section{Conclusion}
 
 We have shown that a small fraction of program-generated deduction data,
 substituted into an ordinary instruction mixture, improves an
 instruction-tuned model on deduction and multi-step benchmarks well beyond
-the generator's domain, and that 1 percent of the mixture is enough to
-install a derivation-writing procedure that instruction tuning alone does not
-produce. The gains arise from two separable mechanisms. The data teaches a
-procedure for carrying a value through a chain of steps, which shuffled and
-shallow proofs remove, and it corrects a bias in the answer distribution that
-the instruction corpus installs, which we established by changing the corpus.
-The second mechanism predicts the sign of the accuracy change across nine
-treated models from three families, including the models on which the formal
-rendering lowers accuracy, and the English rendering of the proofs improves
-accuracy on every dense model we studied. We hope that these results
-encourage the use of program-generated data as a complement to model-written
-synthetic data, and that the diagnostic based on the answer distribution
-proves useful in deciding when to apply it.
+the generator's domain, and that 1 percent of the mixture is enough to teach
+a derivation-writing ability that instruction tuning alone does not produce.
+The gains arise from two separable mechanisms. The data teaches the model to
+carry a value through a chain of steps, which shuffled and shallow proofs
+remove, and it corrects a bias in the answer distribution that the
+instruction corpus produces, which we established by changing the corpus.
+The English rendering of the proofs improved accuracy on every model we
+studied, and the answer distribution of the untrained model predicted the
+direction of the change in every case. We hope that these results encourage
+the use of program-generated data as a complement to model-written synthetic
+data in post-training.
 
 \bibliographystyle{iclr2027/iclr2027_conference}
 \bibliography{iclr2027/references}

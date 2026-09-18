@@ -222,7 +222,10 @@ without the template and report it in Table~\ref{tab:bbh}.
 \section{General Benchmarks}
 \label{sec:general-table}
 
-\input{tab_general}
+Table~\ref{tab:general} in the main text reports the general benchmarks.
+The three seeds of the Qwen2.5-7B control span 0.3 points on GSM8K, 0.1 on
+MMLU, 0.8 on ARC-Challenge, 0.6 on LogiQA, 0.0 on HellaSwag, 0.4 on PIQA and
+1.0 on WinoGrande, which is the noise floor of a single cell.
 
 \section{Notation Crossover on the Generator}
 \label{sec:crossover}
@@ -347,6 +350,22 @@ Arm & AUC pooled & AUC negated & AUC positive & $P(\text{argmax}=\text{true})$ \
 \label{sec:metrics}
 
 Answer accuracy is computed after extracting the final answer field.
+
+\paragraph{Benchmark subsets.} The chain subtasks of BIG-Bench Hard are web of
+lies, tracking shuffled objects (three, five and seven objects), logical
+deduction (three, five and seven objects) and formal fallacies. The
+quantitative subset of GPQA-Diamond is defined by two regular expressions
+applied to the question text. An item is quantitative if the question
+contains a number followed by a physical unit (nm, mm, cm, km, kg, mol, ml,
+eV, keV, MeV, GeV, K, Hz, MHz, GHz, degrees, percent, pc, AU, or a solar
+mass or radius symbol), or if it contains a digit and asks for a value,
+ratio, factor, energy, wavelength, number, probability, concentration, pH,
+mass, radius, velocity or temperature, or contains ``calculate'',
+``compute'', ``how many'', ``by what factor'' or ``what fraction''. The
+rule assigns 73 items to the quantitative subset and 125 to the remainder,
+and it depends only on the question text. The sign test
+compares, for each item, the pooled runs trained with derivations against
+the pooled control runs.
 \passk{k} uses the unbiased estimator of \citet{chen2021evaluating} over the
 sixteen samples. Formal joint validity requires a correct answer and a
 mechanically valid formal trace. English joint validity requires a correct
