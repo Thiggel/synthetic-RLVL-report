@@ -205,7 +205,7 @@ instruction corpus and show which training data corrects it.
 \subsection{Generated data}
 \label{sec:data}
 
-The generator samples a set of constants, a set of unary predicates and a set
+Our generator samples a set of constants, a set of unary predicates and a set
 of implication rules, chooses a target chain length, and constructs a problem
 whose answer follows from the premises by that many applications of modus
 ponens. It then solves the problem by forward chaining and writes the
@@ -225,11 +225,10 @@ chain lengths of up to 25 and the longest occupies 7{,}700 tokens.
 
 \subsection{Training}
 
-The instruction corpus is Dolci \citep{olmo2025olmo2}, the post-training
-corpus of OLMo 3, from which we draw 100{,}000 single-turn examples. A
+We use Dolci \citep{olmo2025olmo2} as our main instruction corpus, the post-training
+corpus of OLMo 3, from which we draw 100{,}000 single-turn examples (see Section \ref{sec:ablations} for results on Tulu). A
 mixture with share $p$ replaces a fraction $p$ of these examples by generated
-derivations, so that every model trains on the same number of examples. We
-call the model trained on the unmodified 100{,}000 examples the control. We fine-tune each base model on each mixture for
+derivations, so that every model trains on the same number of examples. We further train a \textit{control} baseline on the unmodified 100{,}000 examples. We fine-tune each base model on each mixture for
 one epoch with a global batch of 128 sequences and a context window of
 8{,}192 tokens. Fewer than 0.5 percent of the examples exceed the window and
 are truncated. The main sweep trains Qwen2.5-7B at shares of 1, 5, 10 and 25
@@ -359,7 +358,7 @@ of their properties matter. We vary the instruction corpus the derivations
 are mixed into, the order of the lines within each derivation, the depth of
 the proofs, and whether any instruction data is present at all. The first
 manipulation tests whether the gain depends on the instruction corpus, and
-the remaining 3 separate the 2 effects that the derivations have, the
+the remaining three separate the two effects that the derivations have, the
 correction of the answer distribution and the derivation-writing procedure.
 
 \paragraph{A second instruction corpus.}
@@ -367,8 +366,8 @@ correction of the answer distribution and the derivation-writing procedure.
 Table~\ref{tab:corpus} repeats the experiment with 100{,}000 single-turn
 examples of Tulu 3 \citep{lambert2025tulu} in place of Dolci. The two
 corpora leave the control with opposite biases. The model tuned on Dolci
-answers ``true'' on 73 percent of the ProofWriter items and the model tuned
-on Tulu 3 answers ``false'' on 82 percent, while the gold labels are 40
+answers "true" on 73 percent of the ProofWriter items and the model tuned
+on Tulu 3 answers "false" on 82 percent, while the gold labels are 40
 percent true and 43 percent false. Replacing 5 percent of either corpus by
 formal derivations moves the answers toward the labels in both cases, by 23
 points on Dolci, from 73 to 50 percent, and by 8 points on Tulu 3, from 82
@@ -430,19 +429,19 @@ The derivations move the answer distribution toward the gold labels, and
 the improvement is concentrated in the negated and false claims, whose
 accuracy rises by 39.3 points to 56.9 percent at the 25 percent share. The
 other 3 cells move by less than 5 points. In a typical item the theory contains
-``If someone is young then they visit the dog. Red people are young. If the
-rabbit visits the dog then the dog is red.'' together with facts from which
-the rabbit is red, and the claim is ``The dog is not red''. The control
-answers ``true'' and the models trained with derivations answer ``false''.
+"If someone is young then they visit the dog. Red people are young. If the
+rabbit visits the dog then the dog is red." together with facts from which
+the rabbit is red, and the claim is "The dog is not red". The control
+answers "true" and the models trained with derivations answer "false".
 FOLIO shows the same pattern, with the false and uncertain items gaining and
 the true ones fixed. A log-likelihood probe in
 Appendix~\ref{sec:probe-table} shows that the change is mostly a shift of
 the decision margin on negated claims, since the probability that the model
-prefers ``true'' falls from 64.0 to 48.0 percent, and to a smaller extent a gain in
+prefers "true" falls from 64.0 to 48.0 percent, and to a smaller extent a gain in
 discrimination, since the area under the ranking curve over all decidable
 items rises from 66.2 to 77.0 percent with the English rendering. Two perturbation
 probes in Appendix~\ref{sec:perturbation} confirm that most of the
-additional ``false'' answers depend on the premises.
+additional "false" answers depend on the premises.
 
 \input{tab_mech_main}
 
@@ -452,7 +451,7 @@ change in accuracy on ProofWriter follows how far the derivations move the
 answer distribution toward or away from the gold labels. The OLMo-2 control
 is already close to the gold distribution, since its most frequent answer
 exceeds the gold frequency of that label by 8.6 points, and the formal
-derivations push it 46 points toward ``unknown'', so its accuracy falls,
+derivations push it 46 points toward "unknown", so its accuracy falls,
 whereas the English derivations move it toward the labels and its accuracy
 rises. On every model, the English rendering moves the answer distribution
 toward the labels. Since the answer distribution of the control
@@ -464,11 +463,11 @@ whether the derivations will help a given model and in which rendering.
 
 The procedure that the derivations teach can also be observed directly on
 a benchmark task. Web of lies, the subtask of BIG-Bench Hard
-closest in form to the generated data, states for each of 5 people whether
+closest in form to the generated data, states for five people whether
 they tell the truth given the previous person, so the answer is obtained by
 carrying a truth value along the chain. The formal rendering at 10 percent
 improves this subtask by 12.1 points, whereas the English rendering improves
-it by at most 3.5 points at any share. The model writes 1 numbered line per
+it by at most 3.5 points at any share. The model writes one numbered line per
 person, so we read the truth value it carries at every position and compare
 it with the value the chain implies, over all 250 items. The control is
 correct on the intermediate value at the third step on 98 percent of items
@@ -502,10 +501,7 @@ correct answer on 99 percent of the generator's problems.
 \section{Limitations}
 \label{sec:limits}
 
-The gains beyond ProofWriter are established on Qwen2.5-7B, and the other
-models we study either lack the corresponding deficit or have not been
-evaluated on every benchmark. Only the Qwen2.5-7B runs are replicated, and
-the 32B model is trained once with the formal rendering only. The
+The
 instruction mixtures are 100{,}000 examples, so the effect of the
 derivations under longer post-training remains open. We do not compare
 with synthetic deduction data written by a language model. Finally, we
@@ -522,7 +518,7 @@ mechanisms produce the gains. The data teaches the model to carry a value
 through a chain of steps, which shuffling the proofs removes, and it
 reduces a bias in the answer distribution that the instruction corpus
 produces, which we established by changing the corpus. The English
-rendering improved ProofWriter accuracy on every model we studied, and the
+rendering improved accuracy on every model we studied, and the
 answer distribution of the control predicted the direction of the change.
 Program-generated data is therefore a usable complement to model-written
 synthetic data in post-training.
