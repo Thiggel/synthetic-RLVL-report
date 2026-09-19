@@ -232,7 +232,7 @@ no marker of which one a given derivation uses. The conditioned form prepends
 one sentence to each training prompt that names the notation the derivation
 will use, and we evaluate it with the same two sentences and with no sentence
 at all. We train the plain form at shares of 2, 5, 10 and 20 percent and the
-conditioned form at 2, 5 and 10 percent, on Dolci and on the same base model as
+conditioned form at 2, 5, 10 and 20 percent, on Dolci and on the same base model as
 Table~\ref{tab:corpus}.
 
 Transfer follows the share and not the conditioning. The plain mixture at 10
@@ -243,16 +243,18 @@ less and are not ordered by their share. The plain mixture at 20 percent gains
 10.3 points at inference depth 3 and 1.8 points on FOLIO, below the 10 percent
 mixture on both. At the matched share of 5 percent the conditioned mixture is
 2.4 points above the plain one at inference depth 3 and 1.5 points below it on
-FOLIO, and at the matched share of 10 percent it is 4.0 points below it at
-inference depth 3 and 2.0 points below it on FOLIO.
+FOLIO, at the matched share of 10 percent it is 4.0 points below it at
+inference depth 3 and 2.0 points below it on FOLIO, and at the matched share of
+20 percent it is 2.4 points below it at inference depth 3 and 0.5 points above
+it on FOLIO.
 
 What the conditioning buys is control of the notation. The conditioned models
 write a derivation the checker accepts under either instruction, at 96.5 to
-100 percent in both renderings and at all three shares. At 2 and 5 percent
+100 percent in both renderings and at all four shares. At 2 and 5 percent
 they write almost no accepted derivation when neither instruction is present,
-at 20.0 and 15.0 percent, while at 10 percent they write one at 99.0 percent,
-so the instruction is required for the notation and not for the derivation
-itself. The plain model at 2 percent writes an accepted derivation when it is
+at 20.0 and 15.0 percent, while at 10 and 20 percent they write one at 99.0 and
+100.0 percent, so the instruction is required for the notation at the larger
+shares and not for the derivation itself. The plain model at 2 percent writes an accepted derivation when it is
 left to choose, and it also follows the formal instruction in form, with a
 formal block in 100 percent of its answers at chain length 25, but the checker
 accepts 1.5 percent of those derivations. Training on both renderings without a
