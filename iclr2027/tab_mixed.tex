@@ -1,0 +1,32 @@
+\begin{table}[t]
+\caption{Mixtures that contain both renderings of the same derivations, with
+and without a notation instruction in training. The first three columns give
+the percentage of held-out generator problems at chain length 25 for which the
+checker accepts the written derivation, under a prompt that asks for no
+particular notation, a prompt that asks for a formal derivation and a prompt
+that asks for an English one. PW d3 and PW d5 are accuracy in percent on
+ProofWriter at inference depths 3 and 5 and FOLIO is accuracy in percent. The
+first two rows repeat the control and the 5 percent \formal{} mixture of
+Table~\ref{tab:corpus} for comparison. All rows are single runs. A dash marks a
+measurement we did not run.}
+\label{tab:mixed}
+\begin{center}
+\footnotesize
+\begin{tabular}{lcccccc}
+\toprule
+ & \multicolumn{3}{c}{\branchproof{} by prompt} & & & \\
+\cmidrule(lr){2-4}
+Mixture & none & formal & English & PW d3 & PW d5 & FOLIO \\
+\midrule
+control                        & $0.3$  & --     & --      & $39.3$ & $41.2$ & $51.4$ \\
+5\% \formal{}                  & $99.3$ & --     & --      & $50.0$ & $48.9$ & $57.8$ \\
+\midrule
+2\% both renderings            & $92.5$ & $1.5$  & $99.0$  & $47.0$ & $47.0$ & $51.2$ \\
+5\% both renderings            & $95.0$ & --     & --      & $40.8$ & $42.2$ & $54.2$ \\
+10\% both renderings           & $99.5$ & --     & --      & $52.6$ & $51.0$ & $56.7$ \\
+2\% both, conditioned          & $20.0$ & $97.0$ & $99.5$  & $47.0$ & $46.8$ & $50.7$ \\
+5\% both, conditioned          & $15.0$ & $96.5$ & $100.0$ & $43.2$ & $43.6$ & $52.7$ \\
+\bottomrule
+\end{tabular}
+\end{center}
+\end{table}

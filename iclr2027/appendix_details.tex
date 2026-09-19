@@ -222,6 +222,40 @@ removes the instruction data.
 
 \input{tab_alone}
 
+\subsection{Both renderings in one mixture}
+\label{sec:mixed-table}
+
+Every mixture in the main text carries a single rendering of the derivations.
+Table~\ref{tab:mixed} reports mixtures that carry both renderings of the same
+derivations, in two forms. The plain form interleaves the two renderings with
+no marker of which one a given derivation uses. The conditioned form prepends
+one sentence to each training prompt that names the notation the derivation
+will use, and we evaluate it with the same two sentences and with no sentence
+at all. We train the plain form at shares of 2, 5 and 10 percent and the
+conditioned form at 2 and 5 percent, on Dolci and on the same base model as
+Table~\ref{tab:corpus}.
+
+Transfer follows the share and not the conditioning. The plain mixture at 10
+percent gains 13.3 points on ProofWriter at inference depth 3, 9.8 points at
+depth 5 and 5.3 points on FOLIO over the control, which is at the level of the
+5 percent \formal{} mixture, while the plain mixtures at 2 and 5 percent gain
+less and are not ordered by their share. At the matched share of 5 percent the
+conditioned mixture is 2.4 points above the plain one at inference depth 3 and
+1.5 points below it on FOLIO.
+
+What the conditioning buys is control of the notation. The conditioned models
+write a derivation the checker accepts under either instruction, at 96.5 to
+100 percent in both renderings and at both shares, and they write no
+derivation at all when neither instruction is present. The plain model at 2
+percent writes an accepted derivation when it is left to choose, and it also
+follows the formal instruction in form, with a formal block in 100 percent of
+its answers at chain length 25, but the checker accepts 1.5 percent of those
+derivations. Training on both renderings without a marker therefore leaves a
+model that can imitate the notation it is asked for without being able to
+derive in it, which the one added sentence repairs.
+
+\input{tab_mixed}
+
 \subsection{ProofWriter by inference depth}
 \label{sec:depth-figure}
 

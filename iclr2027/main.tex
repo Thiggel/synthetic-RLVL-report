@@ -312,6 +312,11 @@ ProofWriter at depth 1 and under the reasoning prompt, on GPQA-Diamond and
 on 2WikiMultihopQA. The two effects therefore have different thresholds.
 Appendices~\ref{sec:folio-table} and~\ref{sec:depth-figure} resolve FOLIO
 by gold label and ProofWriter by inference depth.
+Each mixture here carries a single rendering. Appendix~\ref{sec:mixed-table}
+trains on mixtures that carry both renderings of the same derivations and
+finds that the transfer follows the share while one added sentence naming the
+notation is what lets a single model write an accepted derivation in either
+rendering on request.
 
 Table~\ref{tab:main} also compares direct answers on ProofWriter with
 answers given after a requested chain of reasoning. The control gains 0.6
