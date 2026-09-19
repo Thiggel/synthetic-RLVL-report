@@ -33,6 +33,9 @@
 \definecolor{formalcol}{RGB}{40,104,178}
 \definecolor{natcol}{RGB}{34,139,94}
 
+\newcommand{\yuki}[1]{\textcolor{red}{[Yuki]: {#1}}}
+
+
 \title{Garbage In, Performance Out: The Surprising Effect of Symbolically Generated Deduction Data on LLMs}
 
 \author{Anonymous authors}
@@ -46,7 +49,7 @@ Synthetic training data for language models is almost always written by
 another language model, and its quality is bounded by the model that writes
 it. We study the opposite extreme, a corpus of multi-hop deduction problems
 and their solutions that a short program generates without any model in the
-loop. The documents are correct by construction, but they carry no world
+loop. \yuki{for a first-two sentences it's too convoluted. Maybe rather: Synthetic data has been a big thing. TYpically the goal is to be as natural as possible. We study whether programaitcally generated multi-hop data can give gains, despite sounding unreal.. or something} The documents are correct by construction, but they carry no world
 knowledge, use abstract constant names and apply a single inference rule
 throughout. We replace a small fraction of a standard instruction-tuning
 mixture with such documents while keeping the number of training examples
@@ -55,14 +58,15 @@ Qwen2.5-7B, replacing 5 to 10 percent of the mixture raises accuracy by 14
 points on ProofWriter, 6 points on FOLIO, 7 points on the multi-step subtasks
 of BIG-Bench Hard and up to 7 points on the quantitative items of
 GPQA-Diamond, and it leaves general benchmarks unchanged. The gain on
-ProofWriter holds on models of 3 families and from 3B to 32B parameters. As
+ProofWriter holds on models of 3 families and from 3B to 32B parameters. \yuki{ might be good to say that these benchmarks cover very different domains (i.e. gains aren't only in the domain that we train/add more data)} As
 little as 1 percent of the mixture teaches the model to write long
-derivations that a symbolic checker accepts, an ability that no control
+derivations that a symbolic checker accepts, an ability that no control \yuki{throughout paper: don't use "control" or "experimental arm". smells to much like claude (and is too fuzzy! is it a baseline, then call it baseline. is it ablation or variant then that.. }
 model in our study has.
-Two mechanisms account for the gains. The generated data teaches the model to
+Two mechanisms account for the gains. \yuki{can you make these two next sentences more clear? it's not really understandable what it means. }The generated data teaches the model to
 carry an intermediate value through a chain of steps, and it reduces a
 systematic bias in the answers of instruction-tuned models that we trace to
 the instruction corpus itself.
+\yuki{maybe end with something answering the "so what" Q?}
 \end{abstract}
 
 \input{fig_design}
@@ -80,7 +84,7 @@ bounded by the knowledge and the reasoning of the model that writes it, and
 repeated training on such text has been shown to narrow the distribution of
 the trained model \citep{shumailov2024collapse, dohmatob2025strong}.
 
-Synthetic data can also be written by a program. A generator of a few
+Synthetic data can also be written \yuki{"written"} by a program. A generator of a few
 hundred lines can sample a multi-hop deduction problem, solve it by forward
 chaining and write the solution out, which yields documents that are correct
 by construction and unlimited in number. Corpora of this kind have been used
@@ -95,11 +99,11 @@ anything beyond the generator's own problems.
 
 In this work we show that such data does improve a general instruction-tuned
 model by a substantial margin, and investigate the causes behind this. We fine-tune base
-models on a fixed instruction mixture of 100{,}000 examples in which a
+models on a fixed instruction mixture of 100{,}000 examples \yuki{leave out the number. ablate the dataset size in experiments (ideally). also check if gains remain after GRPO. }in which a
 fraction of the instruction examples is replaced by generated derivations.
 Each derivation is written in one of two renderings of the same underlying
 proof, either as a formal proof with declared symbols and numbered lines or
-as a sequence of English sentences. On Qwen2.5-7B \citep{qwen2025qwen25},
+as a sequence of English sentences. On Qwen2.5-7B \citep{qwen2025qwen25}, \yuki{only Q2.5? no Q3.5 or Olmo?}
 replacing 5 to 10 percent of the mixture improves accuracy on ProofWriter
 \citep{tafjord2021proofwriter} by 13.9 points, on FOLIO
 \citep{han2024folio} by 6.4 points, on the multi-step subtasks of BIG-Bench
@@ -112,7 +116,7 @@ accepted derivation.
 
 We then ask how documents without content can have this effect, and we find
 two mechanisms. First, the derivations teach the model to carry an
-intermediate value through a chain of steps. Shuffling the lines of the
+intermediate value through a chain of steps. \yuki{shorten this next sentence: along lines of "as we show by shuffling training proof steps.. "}Shuffling the lines of the
 training proofs removes this effect, the depth of the training proofs bounds
 how far the model can write derivations, and on the multi-step subtasks of BIG-Bench Hard we can observe the
 untrained model losing the carried value midway through a chain. Second,
@@ -122,14 +126,14 @@ claim holds in three cases out of four, and the whole accuracy gain comes
 from the negated claims that are false. We show that this bias originates in
 the instruction corpus, since training the same base model on a second
 instruction corpus produces the opposite bias, which the same derivations
-correct in the opposite direction.
+correct in the opposite direction. \yuki{sentence has too many "sames" that I do not understand the content . rewrite }
 
 Our contributions are as follows. (i)~We show that a small fraction of
 program-generated deduction data, substituted into an ordinary instruction
 mixture, improves an instruction-tuned model on deduction and multi-step
 benchmarks well beyond the generator's domain (Section~\ref{sec:results}).
 (ii)~We show that the derivation-writing ability appears at 1 percent of
-the mixture on Qwen2.5-7B and that it and the ProofWriter gain transfer to
+the mixture on Qwen2.5-7B and that it and the gains transfer to
 3 model families and to models from 3B to 32B parameters
 (Section~\ref{sec:families}). (iii)~We identify the two mechanisms behind
 the gains and separate them by manipulating the order, the depth and the
@@ -226,8 +230,8 @@ chain lengths of up to 25 and the longest occupies 7{,}700 tokens.
 \subsection{Training}
 
 We use Dolci \citep{olmo2025olmo2} as our main instruction corpus, the post-training
-corpus of OLMo 3, from which we draw 100{,}000 single-turn examples (see Section \ref{sec:ablations} for results on Tulu). A
-mixture with share $p$ replaces a fraction $p$ of these examples by generated
+corpus of OLMo 3, from which we draw 100{,}000 single-turn examples (see Section \ref{sec:ablations} for results on Tulu \yuki{unclear what Tulu is to the reader here. either explain or leave it to 4.3}). A
+mixture with share $p$ replaces a \yuki{random} fraction $p$ of these examples by generated
 derivations, so that every model trains on the same number of examples. We further train a \textit{control} baseline on the unmodified 100{,}000 examples. We fine-tune each base model on each mixture for
 one epoch with a global batch of 128 sequences and a context window of
 8{,}192 tokens. Fewer than 0.5 percent of the examples exceed the window and
@@ -361,7 +365,7 @@ deficit of the 7B model that the others do not have.
 \label{sec:ablations}
 
 The gains above come from the generated derivations of
-Section~\ref{sec:data}, and 4 further experiments on Qwen2.5-7B ask which
+Section~\ref{sec:data}, and four further sets of experiments on Qwen2.5-7B ask which
 of their properties matter. We vary the instruction corpus the derivations
 are mixed into, the order of the lines within each derivation, the depth of
 the proofs, and whether any instruction data is present at all. The first
@@ -371,6 +375,7 @@ correction of the answer distribution and the derivation-writing procedure.
 
 \paragraph{A second instruction corpus.}
 \label{sec:corpus}
+\yuki{the dataset size should I think be also ablated. does the effect remain at larger SFT datasets etc. }
 Table~\ref{tab:corpus} repeats the experiment with 100{,}000 single-turn
 examples of Tulu 3 \citep{lambert2025tulu} in place of Dolci. The two
 corpora leave the control with opposite biases. The model tuned on Dolci
@@ -434,6 +439,7 @@ format it knows and stops. The derivations and the instruction data are
 therefore both necessary.
 
 \section{Discussion}
+\yuki{would be good to have some qualitative results too}
 \label{sec:discussion}
 
 \subsection{Answer distribution}

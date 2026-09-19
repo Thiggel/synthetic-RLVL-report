@@ -22,9 +22,10 @@ common to the two.}
 and the English rendering at 10 percent of the mixture.}
 \label{fig:overview-b}
 \end{subfigure}
-\caption{Left: a sample from our program-synthetic dataset which can be rendered in formal or prose notation. Replacing 5 to 10 percent of the instruction mixture with such
+\caption{Left: \yuki{might make sense to show visually that this data is generated automatically from python? similarly a visualusation of the usual SFT dataset in addition might be nice. then you can show "old way"== SFT data only; and new-way = SFT + tiny fraction of this)}a sample from our program-synthetic dataset which can be rendered in formal or prose notation. Replacing 5 to 10 percent of the instruction mixture with such
 examples gives the results on the right. \branchproof{} is the fraction of
-held-out generator problems at chain length 25 with an accepted derivation. Table~\ref{tab:main} gives the full share sweep.}
+held-out generator problems at chain length 25 with an accepted derivation. Table~\ref{tab:main} gives the full share sweep.
+\yuki{see comment above about "control"; the legend might be better with "100\% IT", "95\% IT + 5\% Formal" etc. also, why is there no english 5\%? also an "average across all benchmarks" would be good to see. the gains to the baseline could be also shown with arrows for each bar-group with a "+11.9\%" etc. }}
 \label{fig:overview}
 \end{minipage}
 \end{center}
