@@ -3,8 +3,8 @@
 \centering
 \begin{tikzpicture}
 \begin{axis}[
-  width=0.62\linewidth, height=5.2cm,
-  xmin=0.7, xmax=5.3, ymin=82, ymax=101,
+  width=0.66\linewidth, height=2.0cm,
+  xmin=0.7, xmax=7.1, ymin=82, ymax=101,
   xtick={1,2,3,4,5},
   ytick={85,90,95,100},
   tick align=outside, tick pos=left,
@@ -13,20 +13,20 @@
   grid=major, grid style={gray!16, line width=0.3pt},
   axis line style={gray!55},
   label style={font=\footnotesize}, tick label style={font=\scriptsize},
-  legend style={at={(1.03,0.5)}, anchor=west, draw=none, fill=none,
-                font=\scriptsize, row sep=-1pt},
   every axis plot/.append style={line width=1.0pt},
 ]
   \addplot [gray, mark=o, mark size=1.5pt, dashed] coordinates {(1,100) (2,100.0) (3,98.1) (4,92.1) (5,85.5)};
   \addplot [natcol, mark=square*, mark size=1.5pt] coordinates {(1,100) (2,100.0) (3,98.4) (4,93.2) (5,87.5)};
   \addplot [formalcol, mark=triangle*, mark size=2pt, densely dotted] coordinates {(1,100) (2,100.0) (3,98.7) (4,95.2) (5,92.8)};
   \addplot [formalcol, mark=*, mark size=1.5pt] coordinates {(1,100) (2,100.0) (3,99.3) (4,97.7) (5,97.6)};
-  \legend{control, English 10\%, Formal 1\%, Formal 10\%}
+  \node[anchor=west, font=\scriptsize, gray]      at (axis cs:5.12,85.5) {baseline};
+  \node[anchor=west, font=\scriptsize, natcol]    at (axis cs:5.12,87.7) {\nat{} 10\%};
+  \node[anchor=west, font=\scriptsize, formalcol] at (axis cs:5.12,92.8) {\formal{} 1\%};
+  \node[anchor=west, font=\scriptsize, formalcol] at (axis cs:5.12,97.6) {\formal{} 10\%};
 \end{axis}
 \end{tikzpicture}
 \caption{Fraction of web of lies items on which the truth value the model
 carries is still correct at each position of the chain, for Qwen2.5-7B, in
-percent, over all 250 items and every run. The first person's value is
-given in the question. \yuki{put each legend item next to the lines, much easier to read that wya. }}
+percent, over all 250 items and every run.}
 \label{fig:steps}
 \end{figure}

@@ -167,7 +167,7 @@ mass, radius, velocity or temperature, or contains ``calculate'',
 ``compute'', ``how many'', ``by what factor'' or ``what fraction''. The rule
 assigns 73 items to the quantitative subset and 125 to the remainder, and it
 depends only on the question text. The sign test compares, for each item,
-the pooled runs trained with derivations against the pooled control runs.
+the pooled runs trained with derivations against the pooled baseline runs.
 
 \paragraph{Overlap audit.} No evaluation item of ProofWriter, FOLIO or the
 BIG-Bench Hard subtasks shares an eight-gram with any training derivation.
@@ -181,7 +181,7 @@ with a chain of thought, HumanEval and MBPP report pass@1 from a single
 greedy sample, and MMLU, ARC-Challenge, LogiQA, HellaSwag, PIQA and
 WinoGrande are scored by log-likelihood over the answer options with the
 default prompts of the evaluation harness. The 3 runs of the Qwen2.5-7B
-control span 0.3 points on GSM8K, 0.1 on MMLU, 0.8 on ARC-Challenge, 0.6 on
+baseline span 0.3 points on GSM8K, 0.1 on MMLU, 0.8 on ARC-Challenge, 0.6 on
 LogiQA, 0.0 on HellaSwag, 0.4 on PIQA and 1.0 on WinoGrande. Rows for the
 English rendering at 25 percent and some code rows are still being
 evaluated.
@@ -237,7 +237,7 @@ Table~\ref{tab:corpus}.
 
 Transfer follows the share and not the conditioning. The plain mixture at 10
 percent gains 13.3 points on ProofWriter at inference depth 3, 9.8 points at
-depth 5 and 5.3 points on FOLIO over the control, which is at the level of the
+depth 5 and 5.3 points on FOLIO over the baseline, which is at the level of the
 5 percent \formal{} mixture, while the plain mixtures at 2 and 5 percent gain
 less and are not ordered by their share. The plain mixture at 20 percent gains
 10.3 points at inference depth 3 and 1.8 points on FOLIO, below the 10 percent
@@ -277,7 +277,7 @@ failure is confined to the smallest share, and the plain mixtures at 5, 10 and
 \caption{Ranking of decidable ProofWriter items by the log-likelihood margin
 between ``true'' and ``false'' on Qwen2.5-7B, area under the ranking curve
 (AUC) and the probability of preferring ``true'', both in percent, for 1 run with a second run in parentheses. The pooled column mixes the
-two polarities and the next two columns rank within a polarity. \longdoc{} is a length-matched control that
+two polarities and the next two columns rank within a polarity. \longdoc{} is a length-matched baseline that
 replaces the same share of the mixture with ordinary long documents.}
 \label{tab:probe}
 \begin{center}
@@ -300,8 +300,8 @@ Mixture & AUC pooled & AUC negated & AUC positive & $P(\text{argmax}=\text{true}
 
 The first probe toggles the polarity of the claim and leaves the theory
 untouched, so a model that ignores negation answers both versions
-identically. The control does so on 37.6 percent of decidable items and the
-length-matched control on 37.6 percent, against 28.5 percent for the formal
+identically. The baseline does so on 37.6 percent of decidable items and the
+length-matched baseline on 37.6 percent, against 28.5 percent for the formal
 and 24.2 percent for the English mixture, with a second run within half a
 point throughout. Every model answers the positive version of a negated and
 false item correctly about 68 percent of the time, so the models separate on
@@ -312,7 +312,7 @@ the gold label unknown, and asks whether the additional ``false'' answers
 survive. They largely do not, which is what a premise-grounded answer
 predicts. The probability that the formal mixture answers ``false'' on these
 items falls from 53.0 to 27.0 percent once the supporting facts are gone, and the
-control falls from 35.0 to 20.0 percent. The English mixture retains more, falling
+baseline falls from 35.0 to 20.0 percent. The English mixture retains more, falling
 from 67.0 to 46.0 percent, so about two thirds of its advantage on this cell
 survives the removal of the evidence for it. The formal rendering therefore
 buys a smaller gain that is more firmly tied to the premises, and the
@@ -322,7 +322,7 @@ negated claims.
 \section{Qualitative Examples}
 \label{sec:examples}
 
-Each example below is an item that the Qwen2.5-7B control answers
+Each example below is an item that the Qwen2.5-7B baseline answers
 incorrectly and that the models trained with 10 percent formal and 10
 percent English derivations both answer correctly, all from the same run
 of each condition. The
@@ -344,7 +344,7 @@ cow then the dog likes the cow. If someone needs the dog and the dog is kind
 then the dog needs the rabbit.'' The claim is ``The dog does not need the
 rabbit'', which is false, since the rabbit is kind, therefore likes the dog,
 therefore the dog is kind, and the rabbit needs the dog, so the dog needs
-the rabbit. The control answers ``True'' and both trained models answer
+the rabbit. The baseline answers ``True'' and both trained models answer
 ``False''. The item in Section~\ref{sec:prior} has the same structure.
 
 \paragraph{FOLIO.} The premises are ``A Japanese game company created the
@@ -352,10 +352,10 @@ game the Legend of Zelda. All games on the Top 10 list are made by Japanese
 game companies. If a game sells more than one million copies, then it will
 be included in the Top 10 list. The Legend of Zelda sold more than one
 million copies.'' The claim ``The Legend of Zelda is not on the Top 10 list''
-is false. The control answers ``Uncertain'' and both trained models answer
+is false. The baseline answers ``Uncertain'' and both trained models answer
 ``False''. A second item has the premises ``Beethoven leads the Vienna Music
 Society. Vienna Music Society is an orchestra. Orchestras are led by
-conductors.'' and the claim ``Beethoven is not a conductor''. The control
+conductors.'' and the claim ``Beethoven is not a conductor''. The baseline
 answers ``True'' and both trained models answer ``False''.
 
 \paragraph{Web of lies.} A second item beyond the one in
@@ -367,7 +367,7 @@ Section~\ref{sec:procedure}.
 the truth. Delbert says Willian lies. Shalonda says Delbert tells the truth.
 Does Shalonda tell the truth?
 
-\textbf{Control.} (1) Jim lies. (2) Since Jim lies and Yoland says Jim lies,
+\textbf{Baseline.} (1) Jim lies. (2) Since Jim lies and Yoland says Jim lies,
 Yoland tells the truth. (3) Willian tells the truth. (4) Since Willian tells
 the truth and Delbert says Willian lies, Delbert lies. (5) Since we know from
 (4) that Delbert \emph{tells the truth}, and Shalonda says Delbert tells the
@@ -383,11 +383,11 @@ lies. So the answer is No.
 hold a brown, purple, orange, pink and blue present respectively, and the
 pairs Claire and Eve, Claire and Bob, Alice and Dave, Bob and Claire, and
 Bob and Alice swap in turn. The question is which present Eve holds at the
-end. Both models write out the full state after every swap. The control
+end. Both models write out the full state after every swap. The baseline
 performs the second swap between Claire and Bob incorrectly, giving Bob the
 orange present and returning the blue present to Eve, and answers blue,
 whereas the trained models carry the state correctly through all five swaps
-and answer orange. On a second item the control reaches the correct final
+and answer orange. On a second item the baseline reaches the correct final
 state and then selects the wrong option letter, which the trained models do
 not.
 
@@ -395,20 +395,20 @@ not.
 contains an off-centre cavity with a charge $+q$ inside, and the question
 asks for the field at a point $P$ outside the conductor at distance $L$ from
 the centre of the conductor and $l$ from the centre of the cavity. The
-control writes that the field ``is the same as if the charge were
+baseline writes that the field ``is the same as if the charge were
 concentrated at the center of the cavity'' and answers $q/(4\pi\epsilon_0
 l^2)$. The trained models write that the conductor shields the position of
 the charge, so the field is that of a charge at the centre of the conductor,
 and answer $q/(4\pi\epsilon_0 L^2)$. In a second item the question gives a
 size estimate for a loop diagram containing the factor $1/(4\pi)^6$ and asks
-for the number of loops. The control reads the exponent as the loop count and
+for the number of loops. The baseline reads the exponent as the loop count and
 answers 6, whereas the model trained with formal derivations writes that each
 loop contributes a factor $1/(4\pi)^2$ and answers 3.
 
 \subsection{Web of lies}
 \label{sec:wol-example}
 
-The item below shows the failure of the Qwen2.5-7B control on web of lies
+The item below shows the failure of the Qwen2.5-7B baseline on web of lies
 described in Section~\ref{sec:procedure} and its absence after training.
 
 \begin{small}
@@ -417,7 +417,7 @@ described in Section~\ref{sec:procedure} and its absence after training.
 Helene tells the truth. Jamey says Kandi lies. Ka says Jamey lies. Does Ka
 tell the truth?
 
-\textbf{Control.} (1) Vina tells the truth. (2) Since Vina tells the truth
+\textbf{Baseline.} (1) Vina tells the truth. (2) Since Vina tells the truth
 and Helene says Vina lies, Helene lies. (3) Since we know from (2) that
 Helene \emph{tells the truth}, and Kandi says Helene tells the truth, Kandi
 tells the truth. (4) Jamey lies. (5) Ka tells the truth. So the answer is
@@ -468,8 +468,8 @@ later improves its first attempt.
 
 The crossover follows from the supervision alone, since the prompt, the
 answer and the latent proof are identical in the two conditions at every
-depth. It survives a control that equates the number of supervised target
-tokens by subsampling the longer condition, a control that removes a schema
+depth. It survives a baseline that equates the number of supervised target
+tokens by subsampling the longer condition, a baseline that removes a schema
 marker which identifies the active branch on 80 percent of training examples
 (out-of-distribution \passk{1} of $43.1\pm7.7$ percent for \formal{} and
 $78.5\pm14.9$ for \nat{}), and a replication with a second run. Concatenating
@@ -485,8 +485,8 @@ The same derivations can enter during midtraining. We midtrained Qwen2.5-7B
 on 2.5 billion tokens, 2{,}385 steps at sequence length 8{,}192 with a
 global batch of 128 sequences, with a tenth of the loss tokens replaced by
 72{,}000 generated documents packed without splitting, and then applied the
-same instruction tuning to every condition. The conditions are the control,
-a length-matched control that replaces the same tokens by ordinary long
+same instruction tuning to every condition. The conditions are the baseline,
+a length-matched baseline that replaces the same tokens by ordinary long
 documents (\longdoc{}), and the formal and English renderings, with 1
 midtraining run per condition. Table~\ref{tab:midtrain} reports the
 results. That route also produces the gain on ProofWriter, 12.6 points for
@@ -499,7 +499,7 @@ instruction-tuning route reaches the same accuracy, generalises further on
 long chains, carries no cost on LogiQA, and adds nothing when the two are
 applied in sequence. The midtrained base models write checker-valid
 derivations on every generator problem up to chain length 25 when prompted
-in the format of their training documents, and the control base writes
+in the format of their training documents, and the baseline base writes
 none. Ordinary instruction tuning removes this ability, and the lower half
 of Table~\ref{tab:midtrain} shows what remains of it after instruction
 tuning, where the derivations raise greedy accuracy on the generator's
