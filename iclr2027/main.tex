@@ -114,17 +114,17 @@ second instruction corpus leaves it asserting that the claim fails in four
 cases out of five, and adding the derivations then moves its answers back
 toward the labels from the other side.
 
-Our contributions are as follows. (i)~We show that a small fraction of
+Our contributions are as follows: (1)~We show that a small fraction of
 program-generated deduction data, substituted into an ordinary instruction
 mixture, improves an instruction-tuned model on deduction and multi-step
 benchmarks well beyond the generator's domain (Section~\ref{sec:results}).
-(ii)~We show that the derivation-writing ability appears at 1 percent of
+(2)~We show that the derivation-writing ability appears at 1 percent of
 the mixture on Qwen2.5-7B and that it and the gains transfer to
 3 model families and to models from 3B to 32B parameters
-(Section~\ref{sec:families}). (iii)~We identify the two mechanisms behind
+(Section~\ref{sec:families}). (3)~We identify the two mechanisms behind
 the gains and separate them by manipulating the order, the depth and the
 presence of the training proofs and by changing the instruction corpus
-(Sections~\ref{sec:ablations} and~\ref{sec:discussion}). (iv)~We find that the
+(Sections~\ref{sec:ablations} and~\ref{sec:discussion}). (4)~We find that the
 English rendering of the proofs generalises further in depth and improves
 ProofWriter accuracy on every model we study, whereas the formal rendering
 helps some models and harms others (Section~\ref{sec:discussion}).
