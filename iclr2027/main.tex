@@ -368,18 +368,19 @@ Table~\ref{tab:corpus} repeats the experiment with 100{,}000 single-turn
 examples of Tulu 3 \citep{lambert2025tulu} in place of Dolci. The two
 corpora leave the baseline with opposite biases. The model tuned on Dolci
 answers "true" on 73 percent of the ProofWriter items and the model tuned on
-Tulu 3 answers "false" on 82 percent, while the gold labels are 40 percent
+Tulu 3 answers "false" on 83 percent, while the gold labels are 40 percent
 true and 43 percent false. Replacing 5 percent of either corpus by formal
 derivations moves the answers toward the labels in both cases, by 23 points
-on Dolci and by 12 on Tulu 3, and teaches the derivation procedure on both,
-with the checker accepting 97.5 percent of the derivations the Tulu 3 mixture
-writes at chain length 25 and none of those the baseline writes. The accuracy
-that follows from the correction does not. On Dolci the mixture gains 10.7
-points at inference depth 3, 7.7 at depth 5 and 6.4 on FOLIO, and on Tulu 3 it
-loses 0.8, 3.2 and 2.5 points, where the baseline is already 17 points more
-accurate at inference depth 3 and little room is left to repair. The
-correction therefore does not depend on one corpus, and it turns into accuracy
-only where the corpus leaves a bias large enough to cost accuracy.
+on Dolci and by 6 on Tulu 3, and teaches the derivation procedure on both,
+with the checker accepting derivations at chain length 25 from the Tulu 3
+mixture and none of those the baseline writes. The accuracy that follows from
+the correction is smaller on Tulu 3. On Dolci the mixture gains 10.7 points at
+inference depth 3, 7.7 at depth 5 and 6.4 on FOLIO, and on Tulu 3 it gains 1.0
+at inference depth 3 and 1.9 on FOLIO and is level at depth 5, where the
+baseline is already 14 points more accurate at inference depth 3 and little
+room is left to repair. The correction therefore does not depend on one
+corpus, and it turns into accuracy on both, by the wider margin where the
+corpus leaves the wider bias.
 
 \input{tab_corpus}
 
