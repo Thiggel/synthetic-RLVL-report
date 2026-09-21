@@ -50,28 +50,35 @@
 \maketitle
 
 \begin{abstract}
-Synthetic training data for language models is almost always written by
-another language model, and its quality is bounded by the model that writes
-it. We study the opposite extreme, a corpus of multi-hop deduction problems
-and their solutions that a short program generates without any model in the
-loop. \yuki{for a first-two sentences it's too convoluted. Maybe rather: Synthetic data has been a big thing. TYpically the goal is to be as natural as possible. We study whether programaitcally generated multi-hop data can give gains, despite sounding unreal.. or something} The documents are correct by construction, but they carry no world
-knowledge, use abstract constant names and apply a single inference rule
-throughout. We replace a small fraction of a standard instruction-tuning
-mixture with such documents while keeping the number of training examples
-fixed, and we find that they improve the resulting model substantially. On
-Qwen2.5-7B, replacing 5 to 10 percent of the mixture raises accuracy by 14
-points on ProofWriter, 6 points on FOLIO, 7 points on the multi-step subtasks
-of BIG-Bench Hard and up to 7 points on the quantitative items of
-GPQA-Diamond, and it leaves general benchmarks unchanged. The gain on
-ProofWriter holds on models of 3 families and from 3B to 32B parameters. \yuki{ might be good to say that these benchmarks cover very different domains (i.e. gains aren't only in the domain that we train/add more data)} As
-little as 1 percent of the mixture teaches the model to write long
-derivations that a symbolic checker accepts, an ability that no baseline \yuki{throughout paper: don't use "control" or "experimental arm". smells to much like claude (and is too fuzzy! is it a baseline, then call it baseline. is it ablation or variant then that.. }
+Synthetic training data has become a standard ingredient in the training of
+language models, and the usual aim is to make it read as much like natural
+text as possible. We study the opposite extreme, a corpus of multi-hop
+deduction problems and their solutions that a short program generates without
+any model in the loop, and we ask whether data that sounds nothing like
+natural text still improves a model. The documents are correct by
+construction, but they carry no world knowledge, use abstract constant names
+and apply a single inference rule throughout. We replace a small fraction of a
+standard instruction-tuning mixture with such documents while keeping the
+number of training examples fixed, and we find that they improve the resulting
+model substantially. On Qwen2.5-7B, replacing 5 to 10 percent of the mixture
+raises accuracy by 14 points on ProofWriter, 6 points on FOLIO, 7 points on
+the multi-step subtasks of BIG-Bench Hard and up to 7 points on the
+quantitative items of GPQA-Diamond, and it leaves general benchmarks
+unchanged. These benchmarks cover first-order logic, multi-step word
+problems, graduate-level science questions and multi-hop question answering
+over natural documents, so the gain is not confined to the domain of the added
+data. The gain on ProofWriter holds on models of 3 families and from 3B to 32B
+parameters. As little as 1 percent of the mixture teaches the model to write
+long derivations that a symbolic checker accepts, an ability that no baseline
 model in our study has.
-Two mechanisms account for the gains. \yuki{can you make these two next sentences more clear? it's not really understandable what it means. }The generated data teaches the model to
-carry an intermediate value through a chain of steps, and it reduces a
-systematic bias in the answers of instruction-tuned models that we trace to
-the instruction corpus itself.
-\yuki{maybe end with something answering the "so what" Q?}
+Two mechanisms account for the gains. The generated data teaches the model to
+hold an intermediate result and carry it through a chain of dependent steps,
+which is what the multi-step benchmarks ask for, and it corrects a systematic
+bias toward one of the answer labels that instruction tuning leaves behind,
+which we trace to the instruction corpus itself. Program-generated data is
+cheap, checkable and free of the ceiling that a teacher model imposes, and
+these results show that a small amount of it buys reasoning ability that
+model-written synthetic data is not needed for.
 \end{abstract}
 
 \input{fig_design}
@@ -245,7 +252,12 @@ examples. We fine-tune each base model on each mixture for one epoch with a
 global batch of 128 sequences and a context window of 8{,}192 tokens, which
 fewer than 0.5 percent of the examples exceed. The main sweep trains
 Qwen2.5-7B at shares of 1, 5, 10 and 25 percent in both renderings with 3
-runs per configuration, and we report the mean over runs throughout. In the
+runs per configuration, and we report the mean over runs throughout. A third family of mixtures, \formal{} + \nat{}, carries both
+renderings of the same derivations at the same 4 shares and prepends one
+sentence to each training prompt that names the rendering the derivation will
+use, which trains a single model that writes a derivation in either notation
+on request. We evaluate it with the same prompts as the other mixtures, which
+name no notation. In the
 same way we train Qwen2.5-3B, Qwen2.5-14B, Qwen2.5-32B, Llama-3.1-8B and
 OLMo-2-7B at the 5 percent formal and 10 percent English shares. All models
 are base models, which keeps the instruction tuning identical across
@@ -321,7 +333,18 @@ ProofWriter at depth 1 and under the reasoning prompt, on GPQA-Diamond and
 on 2WikiMultihopQA. The two effects therefore have different thresholds.
 Appendices~\ref{sec:folio-table} and~\ref{sec:depth-figure} resolve FOLIO
 by gold label and ProofWriter by inference depth.
-Each mixture here carries a single rendering. Appendix~\ref{sec:mixed-table}
+The \formal{} + \nat{} mixtures gain 3.0 to 3.5 points on average between 1
+and 10 percent, above either single rendering at 1 percent and below the
+formal one at 5 and 10 percent, so carrying both renderings costs little where
+transfer saturates, and they are the best condition on the multi-step subtasks
+of BIG-Bench Hard. Their behaviour on \branchproof{} differs from the single
+renderings. At 1 and 5 percent the model writes an accepted derivation on 25.5
+and 15.0 percent of problems when the prompt names no notation, and from 10
+percent on it writes one on every problem, while under a prompt that does name
+a notation it derives on 96.5 percent of problems and above at every share.
+The added sentence therefore makes the derivation contingent on being asked
+for a notation at the small shares and not at the larger ones.
+Appendix~\ref{sec:mixed-table}
 trains on mixtures that carry both renderings and finds that the transfer
 follows the share while one added sentence naming the notation is what lets
 a single model write an accepted derivation in either rendering on request.
