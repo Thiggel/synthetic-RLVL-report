@@ -54,8 +54,8 @@ Synthetic training data has become a standard ingredient in the training of
 language models, and the usual aim is to make it read as much like natural
 text as possible. We study the opposite extreme, a corpus of multi-hop
 deduction problems and their solutions that a short program generates without
-any model in the loop, and we ask whether data that sounds nothing like
-natural text still improves a model. The documents are correct by
+any model in the loop, and that sounds nothing like natural text. The
+documents are correct by
 construction, but they carry no world knowledge, use abstract constant names
 and apply a single inference rule throughout. We replace a small fraction of a
 standard instruction-tuning mixture with such documents while keeping the
@@ -76,9 +76,8 @@ hold an intermediate result and carry it through a chain of dependent steps,
 which is what the multi-step benchmarks ask for, and it corrects a systematic
 bias toward one of the answer labels that instruction tuning leaves behind,
 which we trace to the instruction corpus itself. Program-generated data is
-cheap, checkable and free of the ceiling that a teacher model imposes, and
-these results show that a small amount of it buys reasoning ability that
-model-written synthetic data is not needed for.
+cheap and checkable and carries no ceiling from a teacher model, and a small
+amount of it buys reasoning ability that no teacher model needs to supply.
 \end{abstract}
 
 \input{fig_design}
@@ -252,12 +251,11 @@ examples. We fine-tune each base model on each mixture for one epoch with a
 global batch of 128 sequences and a context window of 8{,}192 tokens, which
 fewer than 0.5 percent of the examples exceed. The main sweep trains
 Qwen2.5-7B at shares of 1, 5, 10 and 25 percent in both renderings with 3
-runs per configuration, and we report the mean over runs throughout. A third family of mixtures, \formal{} + \nat{}, carries both
-renderings of the same derivations at the same 4 shares and prepends one
-sentence to each training prompt that names the rendering the derivation will
-use, which trains a single model that writes a derivation in either notation
-on request. We evaluate it with the same prompts as the other mixtures, which
-name no notation. In the
+runs per configuration, and we report the mean over runs throughout. A third family of mixtures, \formal{} + \nat{}, carries both renderings at
+the same 4 shares and prepends one sentence to each training prompt naming the
+rendering that derivation uses, which trains a single model that derives in
+either notation on request. We evaluate it with the prompts used for the other
+mixtures, which name no notation. In the
 same way we train Qwen2.5-3B, Qwen2.5-14B, Qwen2.5-32B, Llama-3.1-8B and
 OLMo-2-7B at the 5 percent formal and 10 percent English shares. All models
 are base models, which keeps the instruction tuning identical across
@@ -334,16 +332,12 @@ on 2WikiMultihopQA. The two effects therefore have different thresholds.
 Appendices~\ref{sec:folio-table} and~\ref{sec:depth-figure} resolve FOLIO
 by gold label and ProofWriter by inference depth.
 The \formal{} + \nat{} mixtures gain 3.0 to 3.5 points on average between 1
-and 10 percent, above either single rendering at 1 percent and below the
-formal one at 5 and 10 percent, so carrying both renderings costs little where
-transfer saturates, and they are the best condition on the multi-step subtasks
-of BIG-Bench Hard. Their behaviour on \branchproof{} differs from the single
-renderings. At 1 and 5 percent the model writes an accepted derivation on 25.5
-and 15.0 percent of problems when the prompt names no notation, and from 10
-percent on it writes one on every problem, while under a prompt that does name
-a notation it derives on 96.5 percent of problems and above at every share.
-The added sentence therefore makes the derivation contingent on being asked
-for a notation at the small shares and not at the larger ones.
+and 10 percent and are the best condition on the multi-step subtasks of
+BIG-Bench Hard. Asked for a notation they derive on 96.5 percent of generator
+problems and above at every share, and asked for none they derive on 25.5 and
+15.0 percent at 1 and 5 percent and on every problem from 10 percent upward,
+so the added sentence makes the derivation contingent on the request at the
+small shares only.
 Appendix~\ref{sec:mixed-table}
 trains on mixtures that carry both renderings and finds that the transfer
 follows the share while one added sentence naming the notation is what lets
@@ -405,15 +399,14 @@ Tulu 3 answers "false" on 82 percent, while the gold labels are 40 percent
 true and 43 percent false. Replacing 5 percent of either corpus by formal
 derivations moves the answers toward the labels in both cases, by 23 points
 on Dolci and by 12 on Tulu 3, and teaches the derivation procedure on both,
-with the checker accepting 97.5 percent of the derivations the Tulu 3
-mixture writes at chain length 25 and none of those the baseline writes. The
-accuracy that follows from the correction does not. On Dolci the mixture
-gains 10.7 points at inference depth 3, 7.7 at depth 5 and 6.4 on FOLIO, and
-on Tulu 3 it loses 0.8, 3.2 and 2.5 points on the same benchmarks. The Tulu
-3 baseline is already 17 points more accurate at inference depth 3, so there
-is little room left to repair. The correction therefore does not depend on
-one corpus, and it turns into accuracy only where the corpus leaves a bias
-large enough to cost accuracy.
+with the checker accepting 97.5 percent of the derivations the Tulu 3 mixture
+writes at chain length 25 and none of those the baseline writes. The accuracy
+that follows from the correction does not. On Dolci the mixture gains 10.7
+points at inference depth 3, 7.7 at depth 5 and 6.4 on FOLIO, and on Tulu 3 it
+loses 0.8, 3.2 and 2.5 points, where the baseline is already 17 points more
+accurate at inference depth 3 and little room is left to repair. The
+correction therefore does not depend on one corpus, and it turns into accuracy
+only where the corpus leaves a bias large enough to cost accuracy.
 
 \input{tab_corpus}
 
@@ -469,20 +462,15 @@ asserts the claim in three cases out of four regardless of its content. The
 derivations move the answer distribution toward the gold labels, and the
 improvement is concentrated in the negated and false claims, whose accuracy
 rises by 39.3 points to 56.9 percent at the 25 percent share, while the
-other 3 cells move by less than 5 points. In a typical item the theory contains
-"If someone is young then they visit the dog. Red people are young. If the
-rabbit visits the dog then the dog is red." together with facts from which
-the rabbit is red, and the claim is "The dog is not red". The baseline
-answers "true" and the models trained with derivations answer "false".
-FOLIO shows the same pattern, with the false and uncertain items gaining and
-the true ones fixed. A log-likelihood probe
-(Appendix~\ref{sec:probe-table}) shows that the change is mostly a shift of
-the decision margin on negated claims and to a smaller extent a gain in
-discrimination, and two perturbation probes
+other 3 cells move by less than 5 points. Appendix~\ref{sec:pw-example} gives a typical item on which the baseline
+asserts a negated claim that the theory refutes. FOLIO shows the same
+pattern, with the false and uncertain items gaining and the true ones
+fixed. A log-likelihood probe
+(Appendix~\ref{sec:probe-table}) shows that the change is mostly a shift of the
+decision margin on negated claims, and two perturbation probes
 (Appendix~\ref{sec:perturbation}) confirm that most of the additional "false"
 answers depend on the premises.
 
-\input{tab_mech_main}
 
 This account also explains the loss on OLMo-2 in
 Section~\ref{sec:families}. Across the models of
@@ -491,45 +479,39 @@ accuracy follows how far the derivations move the answer distribution toward
 or away from the gold labels. The OLMo-2 baseline is already close to the gold distribution and the formal
 derivations push it 46 points toward "unknown", so its accuracy falls,
 whereas the English derivations move it toward the labels on every model and
-its accuracy rises. Since that distribution can be measured before any
-derivations are added, it indicates in advance whether they will help a given
-model and in which rendering.
+its accuracy rises. That distribution can be measured before any derivations
+are added, so it indicates in advance whether they will help a given model.
 
 \subsection{Intermediate values in multi-step tasks}
 \label{sec:procedure}
 
-The procedure can also be observed directly on a benchmark task. Web of lies,
-the subtask of BIG-Bench Hard closest in form to the generated data, states
-for five people whether they tell the truth given the previous person, so the
+The procedure can also be observed on a benchmark task. Web of lies, the
+subtask of BIG-Bench Hard closest in form to the generated data, states for
+five people whether they tell the truth given the previous person, so the
 answer is obtained by carrying a truth value along the chain. The formal
 rendering at 10 percent improves it by 12.1 points and the English rendering
-by at most 3.5 points at any share. The model writes one numbered line per
-person, so we read the value it carries at every position over all 250 items.
-The baseline is correct at the third step on 98 percent of items and at the
+by at most 3.5 points at any share. The model writes one numbered line per person, so we read the
+value it carries at every position over all 250 items. The baseline is correct at the third step on 98 percent of items and at the
 fifth on 86 percent, so it loses the value along the chain, whereas the model
 trained with formal derivations is correct on 99 and 98 percent
 (Figure~\ref{fig:steps}). Every model answers correctly on essentially every
 item whose intermediate values are all correct, so the gain is fully
-accounted for by the retained value. Appendix~\ref{sec:wol-example}
-reproduces an item on which the baseline misreads its own conclusion of step
-2 and carries the wrong value to the end.
+accounted for by the retained value. Appendix~\ref{sec:wol-example} gives an
+item on which the baseline misreads its own step 2.
 
 \input{fig_steps}
 
-Table~\ref{tab:steps} in Appendix~\ref{sec:wol-table} reads the value at
-every position for every share, and the object-tracking subtasks behave in
-the same way.
+Table~\ref{tab:steps} in Appendix~\ref{sec:wol-table} reads the value at every
+position for every share, and the object-tracking subtasks behave alike.
 
 \subsection{Notation}
 
-The English rendering is the better default here. It improves ProofWriter accuracy on every model we study, whereas the formal
-rendering improves Qwen and Llama and harms OLMo-2, and trained on 15-hop
-proofs it writes accepted derivations on 99.5 percent of 25-hop problems
-against 45 percent for the formal rendering. The formal rendering is ahead
-on web of lies and, in Appendix~\ref{sec:crossover}, on the generator when
-the training proofs are deepest.
-Accepted derivations carry the correct answer on 99 percent of the
-generator's problems (Appendix~\ref{sec:verification}).
+The English rendering is the better default here. It improves ProofWriter
+accuracy on every model we study, whereas the formal rendering improves Qwen
+and Llama and harms OLMo-2, and trained on 15-hop proofs it writes accepted
+derivations on 99.5 percent of 25-hop problems against 45 percent for formal. The formal rendering is ahead on web of lies and, in
+Appendix~\ref{sec:crossover}, on the generator when the training proofs are
+deepest.
 
 \section{Limitations}
 \label{sec:limits}
@@ -538,8 +520,8 @@ The instruction mixtures are 100{,}000 examples throughout, so the effect at
 other mixture sizes and under longer post-training remains open, and we do not
 test whether the gains survive reinforcement learning or compare with
 deduction data written by a language model. We explain the effect of the two
-renderings on OLMo-2 through its answer distribution without identifying what
-in its pretraining produces that distribution.
+renderings on OLMo-2 through its answer distribution without identifying its
+origin in pretraining.
 
 \section{Conclusion}
 

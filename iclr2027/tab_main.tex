@@ -3,17 +3,15 @@
 instruction mixture replaced by generated derivations, in percent. PW is
 ProofWriter at inference depths 1, 3 and 5, and PW d3 (CoT) is depth 3 under
 a prompt that asks for reasoning before the answer. BBH is the macro average
-over the 27 subtasks of BIG-Bench Hard and BBH-chain the average over its
-8 subtasks in which a value is propagated along a chain, and web of lies is
-the subtask of BIG-Bench Hard closest in form to the generated data. GPQA-quant is
-the subset of 73 GPQA-Diamond items that ask for a computed quantity. The
-three LongBench datasets report F1. \branchproof{} is the fraction of
+over the 27 subtasks of BIG-Bench Hard, BBH-chain the average over its 8
+subtasks in which a value is propagated along a chain, and web of lies the
+subtask closest in form to the generated data. GPQA-quant is the subset of 73
+GPQA-Diamond items that ask for a computed quantity. The three LongBench
+datasets report F1. \branchproof{} is the fraction of
 held-out generator problems at chain length 25 for which the model writes a
-derivation that the checker accepts, measured under a prompt that does not ask
-for a notation, under which \formal{} + \nat{} at 1 and 5 percent answers
-directly on all 200 items and from 10 percent on writes a derivation on every
-item. Bold marks the best condition in each row and cells are shaded by their
-gain over the baseline, green for positive and red for negative. The last row
+derivation that the checker accepts, under a prompt that asks for no notation.
+Bold marks the best condition in each row and cells are shaded by their gain
+over the baseline, green for positive and red for negative. The last row
 averages that gain over the 13 benchmark rows, leaving out \branchproof{}, on
 which the baseline is near zero, and over the remaining 12 for
 \formal{} + \nat{}, for which GPQA-quant is not available. The \formal{} and
