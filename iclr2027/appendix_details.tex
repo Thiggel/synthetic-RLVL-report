@@ -379,17 +379,10 @@ lies. So the answer is No.
 \end{quote}
 \end{small}
 
-\paragraph{Tracking shuffled objects.} Alice, Bob, Claire, Dave and Eve
-hold a brown, purple, orange, pink and blue present respectively, and the
-pairs Claire and Eve, Claire and Bob, Alice and Dave, Bob and Claire, and
-Bob and Alice swap in turn. The question is which present Eve holds at the
-end. Both models write out the full state after every swap. The baseline
-performs the second swap between Claire and Bob incorrectly, giving Bob the
-orange present and returning the blue present to Eve, and answers blue,
-whereas the trained models carry the state correctly through all five swaps
-and answer orange. On a second item the baseline reaches the correct final
-state and then selects the wrong option letter, which the trained models do
-not.
+\paragraph{Tracking shuffled objects.} Beyond the item in
+Section~\ref{sec:procedure}, on an item with 5 holders and 5 swaps the
+baseline reaches the correct final state and then selects the wrong option
+letter, which the trained models do not.
 
 \paragraph{GPQA-Diamond.} An uncharged spherical conductor of radius $R$
 contains an off-centre cavity with a charge $+q$ inside, and the question
@@ -399,11 +392,8 @@ baseline writes that the field ``is the same as if the charge were
 concentrated at the center of the cavity'' and answers $q/(4\pi\epsilon_0
 l^2)$. The trained models write that the conductor shields the position of
 the charge, so the field is that of a charge at the centre of the conductor,
-and answer $q/(4\pi\epsilon_0 L^2)$. In a second item the question gives a
-size estimate for a loop diagram containing the factor $1/(4\pi)^6$ and asks
-for the number of loops. The baseline reads the exponent as the loop count and
-answers 6, whereas the model trained with formal derivations writes that each
-loop contributes a factor $1/(4\pi)^2$ and answers 3.
+and answer $q/(4\pi\epsilon_0 L^2)$. 
+Section~\ref{sec:procedure} gives a second item from this benchmark.
 
 \section{Verification of Derivations}
 \label{sec:verification}

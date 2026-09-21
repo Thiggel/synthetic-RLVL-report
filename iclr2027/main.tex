@@ -503,7 +503,17 @@ Figure~\ref{fig:steps} count.
 \input{fig_steps}
 
 Table~\ref{tab:steps} in Appendix~\ref{sec:wol-table} reads the value at every
-position for every share, and the object-tracking subtasks behave alike.
+position for every share, and the object-tracking subtasks behave alike. On an
+item in which 5 people exchange presents in 5 swaps, all models write out the
+holder of every present after each swap, and the baseline performs the second
+swap incorrectly and answers with the present that the wrong state leaves in
+place, while the trained models carry the state through all 5 swaps. The same
+failure appears outside the multi-step subtasks. On a GPQA-Diamond item that
+gives the size of a loop diagram as a product containing the factor
+$1/(4\pi)^6$ and asks how many loops the diagram has, the baseline reads the
+exponent off the expression and answers 6, whereas the model trained with
+formal derivations writes that each loop contributes a factor $1/(4\pi)^2$ and
+answers 3.
 
 \subsection{Notation}
 
