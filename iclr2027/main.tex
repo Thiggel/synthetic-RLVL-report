@@ -41,7 +41,7 @@
 \newcommand{\yuki}[1]{\textcolor{red}{[Yuki]: {#1}}}
 
 
-\title{Garbage In, Performance Out: The Surprising Effect of Symbolically Generated Deduction Data on LLMs}
+\title{Lead into Gold: The Surprising Effect of Symbolically Generated Deduction Data on LLMs}
 
 \author{Anonymous authors}
 
@@ -50,34 +50,7 @@
 \maketitle
 
 \begin{abstract}
-Synthetic training data has become a standard ingredient in the training of
-language models, and the usual aim is to make it read as much like natural
-text as possible. We study the opposite extreme, a corpus of multi-hop
-deduction problems and their solutions that a short program generates without
-any model in the loop, and that sounds nothing like natural text. The
-documents are correct by
-construction, but they carry no world knowledge, use abstract constant names
-and apply a single inference rule throughout. We replace a small fraction of a
-standard instruction-tuning mixture with such documents while keeping the
-number of training examples fixed, and we find that they improve the resulting
-model substantially. On Qwen2.5-7B, replacing 5 to 10 percent of the mixture
-raises accuracy by 14 points on ProofWriter, 6 points on FOLIO, 7 points on
-the multi-step subtasks of BIG-Bench Hard and up to 7 points on the
-quantitative items of GPQA-Diamond, and it leaves general benchmarks
-unchanged. These benchmarks cover first-order logic, multi-step word
-problems, graduate-level science questions and multi-hop question answering
-over natural documents, so the gain is not confined to the domain of the added
-data. The gain on ProofWriter holds on models of 3 families and from 3B to 32B
-parameters. As little as 1 percent of the mixture teaches the model to write
-long derivations that a symbolic checker accepts, an ability that no baseline
-model in our study has.
-Two mechanisms account for the gains. The generated data teaches the model to
-hold an intermediate result and carry it through a chain of dependent steps,
-which is what the multi-step benchmarks ask for, and it corrects a systematic
-bias toward one of the answer labels that instruction tuning leaves behind,
-which we trace to the instruction corpus itself. Program-generated data is
-cheap and checkable and carries no ceiling from a teacher model, and a small
-amount of it buys reasoning ability that no teacher model needs to supply.
+Synthetic data now supplies much of the instruction tuning of language models, and it is usually written by another language model with the goal of sounding as natural as possible. We ask whether data at the opposite extreme also helps, a corpus of multi-hop deduction problems and their solutions that a short program generates with no model in the loop. The documents are correct by construction, but they carry no world knowledge and they name their constants abstractly. We replace a small fraction of a standard instruction-tuning mixture with such documents while holding the number of training examples fixed. On Qwen2.5-7B, replacing 5 to 10 percent of the mixture raises accuracy by 14 points on ProofWriter, 6 points on FOLIO, 7 points on the multi-step subtasks of BIG-Bench Hard and up to 7 points on the quantitative items of GPQA-Diamond, and it leaves general benchmarks unchanged. These benchmarks cover formal logic, language inference, word problems and the sciences, so the gain is not confined to the domain of the added documents. The gain on ProofWriter holds on models of 3 families and from 3B to 32B parameters. As little as 1\% of the mixture teaches the model to write long derivations that a symbolic checker accepts, an ability that no baseline model in our study has. Two mechanisms account for the gains. The model learns to carry an intermediate conclusion forward through a chain of steps instead of restarting from the premises, and it stops preferring one answer label over the others, a bias we trace to the instruction corpus itself. Data of this kind costs almost nothing to produce and needs no teacher model, so it is available to anyone who trains for multi-step reasoning.
 \end{abstract}
 
 \input{fig_design}
@@ -250,9 +223,9 @@ number of examples, and the baseline trains on the unmodified 100{,}000
 examples. We fine-tune each base model on each mixture for one epoch with a
 global batch of 128 sequences and a context window of 8{,}192 tokens, which
 fewer than 0.5 percent of the examples exceed. The main sweep trains
-Qwen2.5-7B at shares of 1, 5, 10 and 25 percent in both renderings with 3
-runs per configuration, and we report the mean over runs throughout. A third family of mixtures, \formal{} + \nat{}, carries both renderings at
-the same 4 shares and prepends one sentence to each training prompt naming the
+Qwen2.5-7B at shares of 1, 5, 10 and 25 percent in both renderings with three
+runs per configuration, and we report the mean over runs throughout. A third family of mixtures, \formal{} + \nat{}, combines both renderings at
+the same four shares and prepends one sentence to each training prompt naming the
 rendering that derivation uses, which trains a single model that derives in
 either notation on request. We evaluate it with the prompts used for the other
 mixtures, which name no notation. In the
