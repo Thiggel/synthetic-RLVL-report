@@ -518,16 +518,17 @@ answers 3.
 
 \subsection{Notation}
 
-The two renderings answer to different budgets. On the model we study most
-closely the formal rendering carries the larger average gain and keeps rising
-with the share where the English rendering has already peaked, and it is ahead
-wherever the task most resembles the generator. Its advantage is not portable.
-The English rendering helps every model we try, while the formal rendering helps
-some families and harms others, and it is the English rendering that keeps
-writing accepted derivations well past the chain lengths it was trained on. We
-therefore read the formal rendering as the sharper instrument and the English
-rendering as the safer default, and we recommend the formal rendering at a large
-share only once a family is known to take it.
+The two renderings are useful under different conditions. On the model we study
+most closely the formal rendering carries the larger average gain and continues
+to improve as the share grows, where the English rendering has already reached
+its best value, and it is also ahead on the benchmarks that most resemble the
+generator. This advantage does not carry over to the other model families. The
+English rendering improves every model we try, whereas the formal rendering
+improves some families and harms others, and it is also the English rendering
+that keeps writing accepted derivations well past the chain lengths it was
+trained on. We therefore treat the English rendering as the safer default and
+recommend the formal rendering at a large share only for a family that is known
+to take it.
 
 \section{Limitations}
 \label{sec:limits}

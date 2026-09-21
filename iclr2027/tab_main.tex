@@ -1,5 +1,5 @@
 \begin{table}[t]
-\caption{Replacing part of the instruction mixture with generated derivations in Qwen2.5-7B, reported as accuracy in \%. Bold marks the best condition in each row and cells are shaded by the gain over the baseline. The last row averages that gain over the benchmark rows, leaving out \branchproof{}, on which the baseline is near zero.}
+\caption{Replacing part of the instruction mixture with generated derivations in Qwen2.5-7B, reported as accuracy in \%. Bold marks the best condition in each row and cells are shaded by the gain over the baseline. The average gain row averages that gain over the benchmark rows above it. \branchproof{} is reported separately below that row and is not part of the average, since its baseline is near zero.}
 \label{tab:main}
 \begin{center}
 \small
@@ -24,9 +24,10 @@ GPQA-quant   & 22.8 & \cellcolor{green!7}23.3 & \cellcolor{green!21}27.9 & \cell
 HotpotQA     & 55.5 & \cellcolor{red!8}54.6 & \cellcolor{green!7}56.1 & \cellcolor{red!8}54.8 & \cellcolor{red!6}55.2 & \cellcolor{red!6}55.4 & \cellcolor{red!6}55.4 & \cellcolor{green!9}56.6 & \cellcolor{green!7}56.1 & 55.5 & \cellcolor{green!9}56.6 & \cellcolor{green!8}56.3 & \cellcolor{green!10}\textbf{56.7} \\
 2WikiMQA     & 39.7 & 39.7 & \cellcolor{green!10}41.3 & \cellcolor{green!10}41.3 & \cellcolor{green!7}40.3 & \cellcolor{green!6}40.0 & \cellcolor{green!10}41.2 & \cellcolor{green!11}41.6 & \cellcolor{green!15}\textbf{42.7} & \cellcolor{green!11}41.4 & \cellcolor{red!7}39.5 & \cellcolor{green!8}40.5 & \cellcolor{green!8}40.3 \\
 MuSiQue      & 31.1 & \cellcolor{green!6}31.3 & \cellcolor{green!10}32.7 & \cellcolor{red!6}31.0 & \cellcolor{green!7}31.6 & \cellcolor{green!9}32.2 & \cellcolor{green!15}\textbf{34.2} & \cellcolor{green!11}32.8 & \cellcolor{red!6}31.0 & \cellcolor{green!9}32.1 & \cellcolor{green!13}33.5 & \cellcolor{green!8}31.6 & \cellcolor{green!8}31.8 \\
-\branchproof{} & 0.3 & 93.2 & 99.3 & 99.2 & 100.0 & 98.3 & 99.7 & 100.0 & 100.0 & 25.5 & 15.0 & 99.0 & 100.0 \\
 \midrule
 Average gain & --- & \cellcolor{green!9}$+1.2$ & \cellcolor{green!20}$+5.0$ & \cellcolor{green!20}$+4.8$ & \cellcolor{green!27}$+7.1$ & \cellcolor{green!7}$+0.6$ & \cellcolor{green!16}$+3.5$ & \cellcolor{green!19}$+4.6$ & \cellcolor{green!18}$+4.2$ & \cellcolor{green!15}$+3.0$ & \cellcolor{green!16}$+3.2$ & \cellcolor{green!17}$+3.5$ & \cellcolor{green!14}$+2.5$ \\
+\midrule
+\branchproof{} & 0.3 & 93.2 & 99.3 & 99.2 & 100.0 & 98.3 & 99.7 & 100.0 & 100.0 & 25.5 & 15.0 & 99.0 & 100.0 \\
 \bottomrule
 \end{tabular}}
 \end{center}
