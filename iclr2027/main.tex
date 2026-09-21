@@ -520,11 +520,11 @@ answers 3.
 
 On Qwen2.5-7B the formal rendering has the larger average gain at every share,
 by 1.5 points at 5 percent and by 2.9 at 25 percent, where it is still improving
-and the English rendering has passed its peak. It is also ahead on web of lies
-and, in Appendix~\ref{sec:crossover}, on the generator when the training proofs
-are deepest. We still recommend the English rendering as the default because it
-is the safer one across models. It improves ProofWriter accuracy on every model
-we study, whereas the formal rendering improves Qwen and Llama and harms OLMo-2,
+and the English rendering has passed its peak, and it is ahead on web of lies and
+on the generator when the training proofs are deepest
+(Appendix~\ref{sec:crossover}). We still recommend the English rendering as the
+default because it is the safer one across models. It improves ProofWriter
+accuracy on every model we study, whereas the formal rendering improves Qwen and Llama and harms OLMo-2,
 and trained on 15-hop proofs it writes accepted derivations on 99.5 percent of
 25-hop problems against 45 percent for formal. On a fixed family that takes it,
 the formal rendering at a large share is stronger.
@@ -547,11 +547,9 @@ replaces a small fraction of the instruction mixture. Two separable mechanisms
 produce the gains. The data teaches the model to carry a value along a chain
 of steps, which shuffling removes, and it corrects a bias in the answer
 distribution. Neither mechanism needs a teacher model, a human annotator or a
-token of scraped text, and the derivations are correct by construction, so the
-supply is bounded only by how much of it one cares to generate. Part of what
-post-training buys is therefore procedural and can be manufactured, and the same
-apparatus extends to any procedure whose intermediate states a program can write
-down and check.
+token of scraped text. Part of what post-training buys is therefore procedural
+and can be manufactured, and the same apparatus extends to any procedure whose
+intermediate states a program can write down and check.
 
 \subsection*{AI use statement}
 
