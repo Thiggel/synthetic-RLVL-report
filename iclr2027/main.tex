@@ -542,7 +542,14 @@ applies a single inference rule, improves an instruction-tuned model when it
 replaces a small fraction of the instruction mixture. Two separable mechanisms
 produce the gains. The data teaches the model to carry a value along a chain
 of steps, which shuffling removes, and it corrects a bias in the answer
-distribution.
+distribution. Neither mechanism needs a teacher model, a human annotator or a
+token of scraped text, and the derivations are correct by construction, so the
+supply is bounded only by how much of it one cares to generate. We read this as
+evidence that a part of what post-training buys is procedural and can be
+manufactured. The same apparatus extends to any procedure whose intermediate
+states a program can write down and check, and if narrow generators each repair
+a different failure, the question turns from what data to collect into what
+procedures to write.
 
 \subsection*{AI use statement}
 
