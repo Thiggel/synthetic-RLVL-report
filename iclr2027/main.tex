@@ -251,7 +251,7 @@ examples. We fine-tune each base model on each mixture for one epoch with a
 global batch of 128 sequences and a context window of 8{,}192 tokens, which
 fewer than 0.5 percent of the examples exceed. The main sweep trains
 Qwen2.5-7B at shares of 1, 5, 10 and 25 percent in both renderings with 3
-runs per configuration, and we report the mean over runs throughout. A third family of mixtures, \formal{} + \nat{}, carries both renderings at
+seeds per configuration, and all reported numbers are means over seeds. A third family of mixtures, \formal{} + \nat{}, carries both renderings at
 the same 4 shares and prepends one sentence to each training prompt naming the
 rendering that derivation uses, which trains a single model that derives in
 either notation on request. We evaluate it with the prompts used for the other
