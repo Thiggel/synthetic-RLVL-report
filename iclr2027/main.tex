@@ -518,16 +518,16 @@ answers 3.
 
 \subsection{Notation}
 
-On Qwen2.5-7B the formal rendering has the larger average gain at every share,
-by 1.5 points at 5 percent and by 2.9 at 25 percent, where it is still improving
-and the English rendering has passed its peak, and it is ahead on web of lies and
-on the generator when the training proofs are deepest
-(Appendix~\ref{sec:crossover}). We still recommend the English rendering as the
-default because it is the safer one across models. It improves ProofWriter
-accuracy on every model we study, whereas the formal rendering improves Qwen and Llama and harms OLMo-2,
-and trained on 15-hop proofs it writes accepted derivations on 99.5 percent of
-25-hop problems against 45 percent for formal. On a fixed family that takes it,
-the formal rendering at a large share is stronger.
+The two renderings answer to different budgets. On the model we study most
+closely the formal rendering carries the larger average gain and keeps rising
+with the share where the English rendering has already peaked, and it is ahead
+wherever the task most resembles the generator. Its advantage is not portable.
+The English rendering helps every model we try, while the formal rendering helps
+some families and harms others, and it is the English rendering that keeps
+writing accepted derivations well past the chain lengths it was trained on. We
+therefore read the formal rendering as the sharper instrument and the English
+rendering as the safer default, and we recommend the formal rendering at a large
+share only once a family is known to take it.
 
 \section{Limitations}
 \label{sec:limits}
