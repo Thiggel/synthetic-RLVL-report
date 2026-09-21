@@ -435,8 +435,11 @@ asserts the claim in three cases out of four regardless of its content. The
 derivations move the answer distribution toward the gold labels, and the
 improvement is concentrated in the negated and false claims, whose accuracy
 rises by 39.3 points to 56.9 percent at the 25 percent share, while the
-other 3 cells move by less than 5 points. Appendix~\ref{sec:pw-example} gives a typical item on which the baseline
-asserts a negated claim that the theory refutes. FOLIO shows the same
+other 3 cells move by less than 5 points. A typical item of this kind gives a theory containing ``If someone is
+young then they visit the dog. Red people are young. If the rabbit visits
+the dog then the dog is red.'' together with facts from which the rabbit is
+red, and the claim ``The dog is not red''. The baseline asserts the claim
+and the models trained with derivations refute it. FOLIO shows the same
 pattern, with the false and uncertain items gaining and the true ones
 fixed. A log-likelihood probe
 (Appendix~\ref{sec:probe-table}) shows that the change is mostly a shift of the
@@ -471,8 +474,31 @@ fifth on 86 percent, so it loses the value along the chain, whereas the model
 trained with formal derivations is correct on 99 and 98 percent
 (Figure~\ref{fig:steps}). Every model answers correctly on essentially every
 item whose intermediate values are all correct, so the gain is fully
-accounted for by the retained value. Appendix~\ref{sec:wol-example} gives an
-item on which the baseline misreads its own step 2.
+accounted for by the retained value. The item below is one on
+which the baseline misreads its own step 2.
+
+\begin{small}
+\begin{quote}
+\textbf{Question.} Vina tells the truth. Helene says Vina lies. Kandi says
+Helene tells the truth. Jamey says Kandi lies. Ka says Jamey lies. Does Ka
+tell the truth?
+
+\textbf{Baseline.} (1) Vina tells the truth. (2) Since Vina tells the truth
+and Helene says Vina lies, Helene lies. (3) Since we know from (2) that
+Helene \emph{tells the truth}, and Kandi says Helene tells the truth, Kandi
+tells the truth. (4) Jamey lies. (5) Ka tells the truth. So the answer is
+Yes.
+
+\textbf{With 10 percent formal derivations.} (1) Vina tells the truth. (2)
+Helene lies. (3) Since we know from (2) that Helene lies, and Kandi says
+Helene tells the truth, Kandi lies. (4) Jamey tells the truth. (5) Ka lies.
+So the answer is No.
+\end{quote}
+\end{small}
+
+The baseline states the value correctly at step 2 and reads the opposite
+value off its own line at step 3, which is the failure the chain positions in
+Figure~\ref{fig:steps} count.
 
 \input{fig_steps}
 
