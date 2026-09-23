@@ -50,7 +50,7 @@
 \maketitle
 
 \begin{abstract}
-Synthetic data now supplies much of the instruction tuning of language models, and it is usually written by another language model with the goal of sounding as natural as possible. We ask whether data at the opposite extreme also helps, a corpus of multi-hop deduction problems and their solutions that a short program generates with no model in the loop. The documents are correct by construction, but they carry no world knowledge and they name their constants abstractly. We replace a small fraction of a standard instruction-tuning mixture with such documents while holding the number of training examples fixed. On Qwen2.5-7B, replacing 5 to 10 percent of the mixture raises accuracy by 14 points on ProofWriter, 6 points on FOLIO, 7 points on the multi-step subtasks of BIG-Bench Hard and up to 7 points on the quantitative items of GPQA-Diamond, and it leaves general benchmarks unchanged. These benchmarks cover formal logic, language inference, word problems and the sciences, so the gain is not confined to the domain of the added documents. The gain on ProofWriter holds on models of 3 families and from 3B to 32B parameters. As little as 1\% of the mixture teaches the model to write long derivations that a symbolic checker accepts, an ability that no baseline model in our study has. Two mechanisms account for the gains. The model learns to carry an intermediate conclusion forward through a chain of steps instead of restarting from the premises, and it stops preferring one answer label over the others, a bias we trace to the instruction corpus itself. Data of this kind costs almost nothing to produce and needs no teacher model, so it is available to anyone who trains for multi-step reasoning.
+Synthetic data now supplies much of the instruction tuning of language models, and it is usually written by another language model with the goal of sounding as natural as possible. We ask whether data at the opposite extreme also helps, a corpus of multi-hop deduction problems and their solutions that a short program generates with no model in the loop. The documents are correct by construction, but they carry no world knowledge and they name their constants abstractly. We replace a small fraction of a standard instruction-tuning mixture with such documents while holding the number of training examples fixed. On Qwen2.5-7B, replacing 25 percent of the mixture with formal proofs raises accuracy by 16 points on ProofWriter, 5 points on FOLIO, 5 points on the multi-step subtasks of BIG-Bench Hard and 13 points on the quantitative items of GPQA-Diamond, and by 7 points on average over 13 benchmarks, while it leaves general benchmarks unchanged. The same proofs written in English raise the average by 5 points at 10 percent of the mixture. These benchmarks cover formal logic, language inference, word problems and the sciences, so the gain is not confined to the domain of the added documents. The gain on ProofWriter holds on models of 3 families and from 3B to 32B parameters. As little as 1\% of the mixture teaches the model to write long derivations that a symbolic checker accepts, an ability that no baseline model in our study has. Two mechanisms account for the gains. The model learns to carry an intermediate conclusion forward through a chain of steps instead of restarting from the premises, and it stops preferring one answer label over the others, a bias we trace to the instruction corpus itself. Data of this kind costs almost nothing to produce and needs no teacher model, so it is available to anyone who trains for multi-step reasoning.
 \end{abstract}
 
 \input{fig_design}
@@ -88,11 +88,14 @@ fraction of the instruction examples is replaced by generated derivations.
 Each derivation is written in one of two renderings of the same underlying
 proof, either as a formal proof with declared symbols and numbered lines or
 as a sequence of English sentences. On Qwen2.5-7B \citep{qwen2025qwen25},
-replacing 5 to 10 percent of the mixture improves accuracy on ProofWriter
-\citep{tafjord2021proofwriter} by 13.9 points, on FOLIO
-\citep{han2024folio} by 6.4 points, on the multi-step subtasks of BIG-Bench
-Hard by 6.7 points and on the quantitative items of GPQA-Diamond by up to
-7.3 points, and it leaves general benchmarks unchanged. Replacing only 1
+replacing 25 percent of the mixture with the formal rendering improves
+accuracy on ProofWriter \citep{tafjord2021proofwriter} at depth 3 with
+chain-of-thought prompting by 15.9 points, on FOLIO \citep{han2024folio}
+by 4.8 points, on the multi-step subtasks of BIG-Bench Hard by 5.4 points
+and on the quantitative items of GPQA-Diamond by 12.8 points. Averaged over
+the 13 benchmarks of Table~\ref{tab:main}, the gain is 7.1 points for the
+formal rendering at 25 percent and 4.6 points for the English rendering at
+10 percent, and general benchmarks are unchanged. Replacing only 1
 percent of the mixture is enough for this model to write derivations of
 more than 50 lines that a symbolic checker accepts, at 1.8 times the chain
 length seen in training, whereas no baseline model in our study writes an
@@ -268,8 +271,9 @@ ratio or factor (Appendix~\ref{sec:metrics}).
 \subsection{Main results}
 
 Table~\ref{tab:main} reports the results for Qwen2.5-7B across the replaced
-share, and Figure~\ref{fig:overview} shows the formal rendering at 5
-percent and the English rendering at 10 percent. Replacing 5 to 10 percent
+share, and Figure~\ref{fig:overview} shows the formal rendering at 25
+percent and the English rendering at 10 percent, the share with the largest
+average gain for each rendering. Replacing 5 to 10 percent
 of the instruction mixture with generated derivations improves every
 deduction and multi-step benchmark. On
 ProofWriter the English rendering at 10 percent improves accuracy by 6.4
