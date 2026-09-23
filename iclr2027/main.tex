@@ -522,7 +522,7 @@ improves some families and harms others, and it is also the English rendering
 that keeps writing accepted derivations well past the chain lengths it was
 trained on. We therefore treat the English rendering as the safer default and
 recommend the formal rendering at a large share only for a family that is known
-to take it.
+to absorb it well.
 
 \section{Limitations}
 \label{sec:limits}
@@ -536,16 +536,7 @@ origin in pretraining.
 
 \section{Conclusion}
 
-Deduction data written by a program, which contains no world knowledge and
-applies a single inference rule, improves an instruction-tuned model when it
-replaces a small fraction of the instruction mixture. The gains come from two
-separable mechanisms: the data teaches the model to track a value along a
-chain of steps, an effect that shuffling removes, and it corrects a bias in
-the answer distribution. The data is produced without a teacher model, human
-annotation or web text. A program can therefore produce part of the
-post-training data, and the same kind of generator can be written for any
-procedure in which a program can write down and check each intermediate
-state.
+In this paper we showed that deduction data written by a program improves an instruction-tuned model on deduction and multi-step benchmarks when it replaces a small fraction of the instruction mixture. These results give evidence that part of the post-training data can be replaced by data that a program writes and verifies without a teacher model or human annotation. Such data is correct by construction and unlimited in quantity. Arithmetic, the execution of algorithms and planning are further procedures in which a program can write down and check each intermediate state, and each offers a source of training data that requires only a generator, all of which should be explored in further research.
 
 \subsection*{AI use statement}
 
