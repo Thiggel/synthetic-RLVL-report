@@ -316,11 +316,7 @@ BIG-Bench Hard. Asked for a notation they derive on 96.5 percent of generator
 problems and above at every share, and asked for none they derive on 25.5 and
 15.0 percent at 1 and 5 percent and on every problem from 10 percent upward,
 so the added sentence makes the derivation contingent on the request at the
-small shares only.
-Appendix~\ref{sec:mixed-table}
-trains on mixtures that contain both renderings and finds that the transfer
-follows the share while one added sentence naming the notation lets
-a single model write an accepted derivation in either rendering on request.
+small shares only (Appendix~\ref{sec:mixed-table}).
 
 Table~\ref{tab:main} also compares direct answers on ProofWriter with
 answers given after a requested chain of reasoning. The baseline gains 0.6
@@ -361,12 +357,8 @@ deficit the others do not have.
 \subsection{Ablations}
 \label{sec:ablations}
 
-Four further sets of experiments on Qwen2.5-7B ask which properties of the
-derivations matter. We vary the instruction corpus they are mixed into,
-which tests whether the gain depends on that corpus, and we vary the order
-of the lines within each derivation, the depth of the proofs and whether any
-instruction data is present at all, which separate the two effects that the
-derivations have.
+Four further experiments on Qwen2.5-7B ask which properties of the
+derivations matter.
 
 \paragraph{A second instruction corpus.}
 \label{sec:corpus}
@@ -427,9 +419,6 @@ the instruction data are both necessary.
 \section{Discussion}
 \label{sec:discussion}
 
-Appendix~\ref{sec:examples} gives benchmark items that the baseline answers
-incorrectly together with the answers of the trained models.
-
 \subsection{Answer distribution}
 \label{sec:prior}
 
@@ -470,7 +459,8 @@ are added, so it indicates in advance whether they will help a given model.
 \subsection{Intermediate values in multi-step tasks}
 \label{sec:procedure}
 
-The procedure can also be observed on a benchmark task. Web of lies, the
+The procedure can also be observed on a benchmark task
+(further items in Appendix~\ref{sec:examples}). Web of lies, the
 subtask of BIG-Bench Hard closest in form to the generated data, states for
 five people whether they tell the truth given the previous person, and the
 answer is obtained by propagating a truth value along the chain. The formal
@@ -481,8 +471,7 @@ items. The baseline is correct at the third step on 98 percent of items and
 at the fifth on 86 percent. The model trained with formal derivations is
 correct on 99 and 98 percent (Figure~\ref{fig:steps}). Every model answers
 correctly on essentially every item on which all intermediate values are
-correct, which means the retained value accounts for the whole gain. The item below is one on
-which the baseline misreads its own step 2.
+correct, which means the retained value accounts for the whole gain.
 
 \begin{small}
 \begin{quote}
@@ -503,9 +492,8 @@ So the answer is No.
 \end{quote}
 \end{small}
 
-The baseline states the value correctly at step 2 and reads the opposite
-value off its own line at step 3, which is the failure the chain positions in
-Figure~\ref{fig:steps} count.
+The baseline reads the opposite of its own step 2 at step 3, the failure
+Figure~\ref{fig:steps} counts.
 
 \input{fig_steps}
 
