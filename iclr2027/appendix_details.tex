@@ -129,10 +129,10 @@ warmup ratio 0.03 and learning rate $5\times10^{-6}$. The learning rate is
 the one used by our earlier instruction-tuning runs on the same corpus and
 is held fixed across conditions. The 3 runs per configuration on Qwen2.5-7B
 differ only in the random seed, and only the final checkpoint is kept. Before
-training starts, the mixture is tokenized and the examples whose target
+training starts, the mixture is tokenized and the examples with a target that
 would be cut by the sequence length are counted. The run aborts if that
 count exceeds 0.5 percent, which prevents a condition from training on
-derivations whose conclusions have been removed. No run aborted. Qwen2.5-32B
+derivations with their conclusions removed. No run aborted. Qwen2.5-32B
 and the second-corpus runs use the same configuration, the former on two
 nodes.
 
@@ -146,13 +146,13 @@ generation. The reasoning prompt for ProofWriter asks the model to reason
 step by step and to give the final answer on its own last line. GPQA-Diamond
 uses the four-option mirror of the benchmark and asks the model to work
 through the options briefly and end with ``Answer: X''. BIG-Bench Hard ships
-as a chain-of-thought few-shot task whose answer extractor reads a plain
+as a chain-of-thought few-shot task with an answer extractor that reads a plain
 continuation, and applying the chat template to its shots makes the
 extractor match nothing for every condition, so this one suite is run without
 the template. The LongBench multi-hop datasets use the standard prompt and
 report F1. \branchproof{} prompts the model in the format of its training
-documents and scores the fraction of items whose derivation the checker
-accepts and whose answer is correct.
+documents and scores the fraction of items for which the checker accepts
+the derivation and the answer is correct.
 
 \paragraph{Benchmark subsets.} The chain subtasks of BIG-Bench Hard are web
 of lies, tracking shuffled objects (three, five and seven objects), logical
@@ -225,8 +225,8 @@ removes the instruction data.
 \subsection{Both renderings in one mixture}
 \label{sec:mixed-table}
 
-Every mixture in the main text carries a single rendering of the derivations.
-Table~\ref{tab:mixed} reports mixtures that carry both renderings of the same
+Every mixture in the main text contains a single rendering of the derivations.
+Table~\ref{tab:mixed} reports mixtures that contain both renderings of the same
 derivations, in two forms. The plain form interleaves the two renderings with
 no marker of which one a given derivation uses. The conditioned form prepends
 one sentence to each training prompt that names the notation the derivation
@@ -248,8 +248,8 @@ inference depth 3 and 2.0 points below it on FOLIO, and at the matched share of
 20 percent it is 2.4 points below it at inference depth 3 and 0.5 points above
 it on FOLIO.
 
-What the conditioning buys is control of the notation. The conditioned models
-write a derivation the checker accepts under either instruction, at 96.5 to
+With the notation instruction, the model writes the notation that the
+prompt asks for. The conditioned models write a derivation the checker accepts under either instruction, at 96.5 to
 100 percent in both renderings and at all four shares. At 2 and 5 percent
 they write almost no accepted derivation when neither instruction is present,
 at 20.0 and 15.0 percent, while at 10 and 20 percent they write one at 99.0 and
@@ -315,7 +315,7 @@ items falls from 53.0 to 27.0 percent once the supporting facts are gone, and th
 baseline falls from 35.0 to 20.0 percent. The English mixture retains more, falling
 from 67.0 to 46.0 percent, so about two thirds of its advantage on this cell
 survives the removal of the evidence for it. The formal rendering therefore
-buys a smaller gain that is more firmly tied to the premises, and the
+gives a smaller gain that is more firmly tied to the premises, and the
 English rendering a larger gain of which part is a shifted default for
 negated claims.
 
@@ -400,7 +400,7 @@ Section~\ref{sec:procedure} gives a second item from this benchmark.
 
 A derivation in the trained format is
 checked by the same program that wrote the training data. On the generator's
-own problems, a derivation the checker accepts carries the correct answer in
+own problems, a derivation the checker accepts contains the correct answer in
 99 percent of samples, so selecting the first accepted derivation out of
 16 matches the accuracy of selecting with the gold answer. On
 ProofWriter the checker reproduces the published label on 84 to 99 percent
@@ -415,7 +415,7 @@ although we do not pursue this here.
 \section{Notation Crossover on the Generator}
 \label{sec:crossover}
 
-A controlled study on the generator alone shows that the ordering of the two
+An experiment on the generator problems alone shows that the ordering of the two
 renderings in depth generalisation depends on the depth of the training
 proofs. We fine-tune OLMo-3-7B with LoRA adapters on 50{,}000 paired
 examples per condition, one condition per rendering, for 10{,}000 optimizer
@@ -457,11 +457,11 @@ midtraining run per condition. Table~\ref{tab:midtrain} reports the
 results. That route also produces the gain on ProofWriter, 12.6 points for
 the English rendering at inference depth 3, which a second instruction-tuning
 run reproduces to within 0.1 points, and the gain again lies in the items
-whose gold label is false. It also leaves the general benchmarks flat apart
+with the gold label false. It also leaves the general benchmarks flat apart
 from a loss of 2 to 3 points on LogiQA that the second run reproduces.
-Midtraining is the more expensive route and buys no more, since the
+Midtraining is the more expensive route and gives no further gain, since the
 instruction-tuning route reaches the same accuracy, generalises further on
-long chains, carries no cost on LogiQA, and adds nothing when the two are
+long chains, does not lower LogiQA accuracy, and adds nothing when the two are
 applied in sequence. The midtrained base models write checker-valid
 derivations on every generator problem up to chain length 25 when prompted
 in the format of their training documents, and the baseline base writes

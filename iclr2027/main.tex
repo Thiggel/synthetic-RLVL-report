@@ -50,7 +50,7 @@
 \maketitle
 
 \begin{abstract}
-Synthetic data now supplies much of the instruction tuning of language models, and it is usually written by another language model with the goal of sounding as natural as possible. We ask whether data at the opposite extreme also helps, a corpus of multi-hop deduction problems and their solutions that a short program generates with no model in the loop. The documents are correct by construction, but they carry no world knowledge and they name their constants abstractly. We replace a small fraction of a standard instruction-tuning mixture with such documents while holding the number of training examples fixed. On Qwen2.5-7B, replacing 25 percent of the mixture with formal proofs raises accuracy by 16 points on ProofWriter, 5 points on FOLIO, 5 points on the multi-step subtasks of BIG-Bench Hard and 13 points on the quantitative items of GPQA-Diamond, and by 7 points on average over 13 benchmarks, while it leaves general benchmarks unchanged. The same proofs written in English raise the average by 5 points at 10 percent of the mixture. These benchmarks cover formal logic, language inference, word problems and the sciences, so the gain is not confined to the domain of the added documents. The gain on ProofWriter holds on models of 3 families and from 3B to 32B parameters. As little as 1\% of the mixture teaches the model to write long derivations that a symbolic checker accepts, an ability that no baseline model in our study has. Two mechanisms account for the gains. The model learns to carry an intermediate conclusion forward through a chain of steps instead of restarting from the premises, and it stops preferring one answer label over the others, a bias we trace to the instruction corpus itself. Data of this kind costs almost nothing to produce and needs no teacher model, so it is available to anyone who trains for multi-step reasoning.
+Synthetic data now supplies much of the instruction tuning of language models, and it is usually written by another language model with the goal of sounding as natural as possible. We ask whether data at the opposite extreme also helps, a corpus of multi-hop deduction problems and their solutions that a short program generates with no model in the loop. The documents are correct by construction, but they contain no world knowledge and they name their constants abstractly. We replace a small fraction of a standard instruction-tuning mixture with such documents while holding the number of training examples fixed. On Qwen2.5-7B, replacing 5 to 25 percent of the mixture with such documents raises accuracy by up to 16 points on ProofWriter, 6 points on FOLIO, 7 points on the multi-step subtasks of BIG-Bench Hard and 13 points on the quantitative items of GPQA-Diamond, while general benchmarks are unchanged. Averaged over 13 benchmarks, formal proofs at 25 percent of the mixture raise accuracy by 7 points and the same proofs written in English by 5 points. These benchmarks cover formal logic, language inference, word problems and the sciences, all of which lie outside the domain of the generator. The gain on ProofWriter holds on models of 3 families and from 3B to 32B parameters. As little as 1\% of the mixture teaches the model to write long derivations that a symbolic checker accepts, an ability that no baseline model in our study has. We trace the gains to two mechanisms. First, the model learns to apply each rule to the conclusion of the previous step, and so tracks an intermediate conclusion along a chain. Second, it stops preferring one answer label over the others, a bias that originates in the instruction corpus itself. Data of this kind is cheap to produce and needs no teacher model.
 \end{abstract}
 
 \input{fig_design}
@@ -82,17 +82,19 @@ lines, so there is little reason to expect them to improve a model on
 anything beyond the generator's own problems.
 
 In this work we show that such data does improve a general instruction-tuned
-model by a substantial margin, and investigate the causes behind this. We fine-tune base
+model by 7.1 points on average over 13 benchmarks, and we identify two
+mechanisms behind the gain. We fine-tune base
 models on an instruction mixture of fixed size in which a
 fraction of the instruction examples is replaced by generated derivations.
 Each derivation is written in one of two renderings of the same underlying
 proof, either as a formal proof with declared symbols and numbered lines or
 as a sequence of English sentences. On Qwen2.5-7B \citep{qwen2025qwen25},
-replacing 25 percent of the mixture with the formal rendering improves
-accuracy on ProofWriter \citep{tafjord2021proofwriter} at depth 3 with
-chain-of-thought prompting by 15.9 points, on FOLIO \citep{han2024folio}
-by 4.8 points, on the multi-step subtasks of BIG-Bench Hard by 5.4 points
-and on the quantitative items of GPQA-Diamond by 12.8 points. Averaged over
+replacing 5 to 25 percent of the mixture with generated derivations
+improves accuracy on ProofWriter \citep{tafjord2021proofwriter} at depth 3
+with chain-of-thought prompting by up to 15.9 points, on FOLIO
+\citep{han2024folio} by up to 6.4 points, on the multi-step subtasks of
+BIG-Bench Hard by up to 6.9 points and on the quantitative items of
+GPQA-Diamond by up to 12.8 points. Averaged over
 the 13 benchmarks of Table~\ref{tab:main}, the gain is 7.1 points for the
 formal rendering at 25 percent and 4.6 points for the English rendering at
 10 percent, and general benchmarks are unchanged. Replacing only 1
@@ -104,10 +106,10 @@ Qwen2.5 at 3B, 7B and 32B, on Qwen3-30B-A3B, on Llama-3.1-8B and on
 OLMo-2-7B.
 
 We then ask how documents without content can have this effect, and we find
-two mechanisms. First, the derivations teach the model to carry an
+two mechanisms. First, the derivations teach the model to track an
 intermediate value through a chain of steps, as we show by shuffling the
 lines of the training proofs, which removes the effect, and by observing the
-baseline model lose the carried value midway through a chain on the
+baseline model lose the intermediate value midway through a chain on the
 multi-step subtasks of BIG-Bench Hard. Second,
 the derivations correct a systematic bias in the answers of the
 instruction-tuned model. On ProofWriter the baseline model asserts that a
@@ -200,11 +202,11 @@ instruction corpus and show which training data corrects it.
 
 Our generator samples a set of constants, a set of unary predicates and a set
 of implication rules, chooses a target chain length, and constructs a problem
-whose answer follows from the premises by that many applications of modus
+in which the answer follows from the premises by that many applications of modus
 ponens. It then solves the problem by forward chaining and writes the
 solution out. Constants are named $c_0$ through $c_{25}$ and predicates are
 drawn from a short list of colour and direction words, so that the documents
-carry no world knowledge. The proof that the generator constructs is
+contain no world knowledge. The proof that the generator constructs is
 written out in one of two renderings, both shown in
 Figure~\ref{fig:overview}. The formal rendering
 declares the constants and the predicate symbols, states the premises as
@@ -258,12 +260,12 @@ Appendix~\ref{sec:general-table}. No evaluation item shares an eight-gram
 with any training derivation.
 
 For two benchmarks we additionally report a subset. BBH-chain averages the
-eight subtasks of BIG-Bench Hard whose answer is obtained by propagating a
+eight subtasks of BIG-Bench Hard in which the answer is obtained by propagating a
 truth value or a state along a sequence of steps, namely web of lies, the
 three object-tracking subtasks, the three logical-deduction subtasks and
-formal fallacies, and GPQA-quant consists of the 73 items of GPQA-Diamond
-whose question contains a number with a physical unit or asks for a value,
-ratio or factor (Appendix~\ref{sec:metrics}).
+formal fallacies. GPQA-quant consists of the 73 items of GPQA-Diamond
+that contain a number with a physical unit or ask for a value, ratio or
+factor (Appendix~\ref{sec:metrics}).
 
 \section{Results}
 \label{sec:results}
@@ -316,16 +318,16 @@ problems and above at every share, and asked for none they derive on 25.5 and
 so the added sentence makes the derivation contingent on the request at the
 small shares only.
 Appendix~\ref{sec:mixed-table}
-trains on mixtures that carry both renderings and finds that the transfer
-follows the share while one added sentence naming the notation is what lets
+trains on mixtures that contain both renderings and finds that the transfer
+follows the share while one added sentence naming the notation lets
 a single model write an accepted derivation in either rendering on request.
 
 Table~\ref{tab:main} also compares direct answers on ProofWriter with
 answers given after a requested chain of reasoning. The baseline gains 0.6
-points from reasoning aloud, so prompting does not close the gap to the
-models trained with derivations. For the formal rendering the score under
-the reasoning prompt grows with the share and reaches 55.8 percent, whereas
-for the English rendering the direct answer is more accurate at every share.
+points from reasoning aloud, and prompting alone does not close the gap to
+the models trained with derivations. For the formal rendering the score under
+the reasoning prompt grows with the share and reaches 55.8 percent. For the
+English rendering the direct answer is more accurate at every share.
 
 \subsection{Model families and scales}
 \label{sec:families}
@@ -438,7 +440,7 @@ is almost always right when the claim is true and mostly wrong when the
 claim is negated and false, where its accuracy is 17.6 percent, because it
 asserts the claim in three cases out of four regardless of its content. The
 derivations move the answer distribution toward the gold labels, and the
-improvement is concentrated in the negated and false claims, whose accuracy
+improvement is concentrated in the negated and false claims. Their accuracy
 rises by 39.3 points to 56.9 percent at the 25 percent share, while the
 other 3 cells move by less than 5 points. A typical item of this kind gives a theory containing ``If someone is
 young then they visit the dog. Red people are young. If the rabbit visits
@@ -460,9 +462,9 @@ Section~\ref{sec:families}. Across the models of
 Tables~\ref{tab:family} and~\ref{tab:corpus}, the change in ProofWriter
 accuracy follows how far the derivations move the answer distribution toward
 or away from the gold labels. The OLMo-2 baseline is already close to the gold distribution and the formal
-derivations push it 46 points toward "unknown", so its accuracy falls,
-whereas the English derivations move it toward the labels on every model and
-its accuracy rises. That distribution can be measured before any derivations
+derivations push it 46 points toward "unknown", and its accuracy falls. The
+English derivations move the distribution toward the labels on every model,
+and accuracy rises. That distribution can be measured before any derivations
 are added, so it indicates in advance whether they will help a given model.
 
 \subsection{Intermediate values in multi-step tasks}
@@ -470,16 +472,16 @@ are added, so it indicates in advance whether they will help a given model.
 
 The procedure can also be observed on a benchmark task. Web of lies, the
 subtask of BIG-Bench Hard closest in form to the generated data, states for
-five people whether they tell the truth given the previous person, so the
-answer is obtained by carrying a truth value along the chain. The formal
+five people whether they tell the truth given the previous person, and the
+answer is obtained by propagating a truth value along the chain. The formal
 rendering at 10 percent improves it by 12.1 points and the English rendering
-by at most 3.5 points at any share. The model writes one numbered line per person, so we read the
-value it carries at every position over all 250 items. The baseline is correct at the third step on 98 percent of items and at the
-fifth on 86 percent, so it loses the value along the chain, whereas the model
-trained with formal derivations is correct on 99 and 98 percent
-(Figure~\ref{fig:steps}). Every model answers correctly on essentially every
-item whose intermediate values are all correct, so the gain is fully
-accounted for by the retained value. The item below is one on
+by at most 3.5 points at any share. The model writes one numbered line per
+person, and we read the value it writes at every position over all 250
+items. The baseline is correct at the third step on 98 percent of items and
+at the fifth on 86 percent. The model trained with formal derivations is
+correct on 99 and 98 percent (Figure~\ref{fig:steps}). Every model answers
+correctly on essentially every item on which all intermediate values are
+correct, which means the retained value accounts for the whole gain. The item below is one on
 which the baseline misreads its own step 2.
 
 \begin{small}
@@ -512,7 +514,7 @@ position for every share, and the object-tracking subtasks behave alike. On an
 item in which 5 people exchange presents in 5 swaps, all models write out the
 holder of every present after each swap, and the baseline performs the second
 swap incorrectly and answers with the present that the wrong state leaves in
-place, while the trained models carry the state through all 5 swaps. The same
+place, while the trained models track the state correctly through all 5 swaps. The same
 failure appears outside the multi-step subtasks. On a GPQA-Diamond item that
 gives the size of a loop diagram as a product containing the factor
 $1/(4\pi)^6$ and asks how many loops the diagram has, the baseline reads the
@@ -523,10 +525,10 @@ answers 3.
 \subsection{Notation}
 
 The two renderings are useful under different conditions. On the model we study
-most closely the formal rendering carries the larger average gain and continues
+most closely the formal rendering gives the larger average gain and continues
 to improve as the share grows, where the English rendering has already reached
 its best value, and it is also ahead on the benchmarks that most resemble the
-generator. This advantage does not carry over to the other model families. The
+generator. This advantage does not hold for the other model families. The
 English rendering improves every model we try, whereas the formal rendering
 improves some families and harms others, and it is also the English rendering
 that keeps writing accepted derivations well past the chain lengths it was
@@ -546,15 +548,16 @@ origin in pretraining.
 
 \section{Conclusion}
 
-Deduction data written by a program, which carries no world knowledge and
+Deduction data written by a program, which contains no world knowledge and
 applies a single inference rule, improves an instruction-tuned model when it
-replaces a small fraction of the instruction mixture. Two separable mechanisms
-produce the gains. The data teaches the model to carry a value along a chain
-of steps, which shuffling removes, and it corrects a bias in the answer
-distribution. Neither mechanism needs a teacher model, a human annotator or a
-token of scraped text. Part of what post-training buys is therefore procedural
-and can be manufactured, and the same apparatus extends to any procedure whose
-intermediate states a program can write down and check.
+replaces a small fraction of the instruction mixture. The gains come from two
+separable mechanisms: the data teaches the model to track a value along a
+chain of steps, an effect that shuffling removes, and it corrects a bias in
+the answer distribution. The data is produced without a teacher model, human
+annotation or web text. A program can therefore produce part of the
+post-training data, and the same kind of generator can be written for any
+procedure in which a program can write down and check each intermediate
+state.
 
 \subsection*{AI use statement}
 
