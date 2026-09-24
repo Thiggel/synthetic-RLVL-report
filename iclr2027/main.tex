@@ -1,5 +1,6 @@
 \documentclass{article}
 
+\usepackage{wrapfig}
 \usepackage{iclr2027_conference,times}
 \usepackage{booktabs}
 \usepackage{colortbl}
@@ -102,8 +103,7 @@ percent of the mixture is enough for this model to write derivations of
 more than 50 lines that a symbolic checker accepts, at 1.8 times the chain
 length seen in training, whereas no baseline model in our study writes an
 accepted derivation. Section~\ref{sec:families} repeats the comparison on
-Qwen2.5 at 3B, 7B and 32B, on Qwen3-30B-A3B, on Llama-3.1-8B and on
-OLMo-2-7B.
+Qwen2.5 at 3B, 14B and 32B, on Llama-3.1-8B and on OLMo-2-7B.
 
 We then ask how documents without content can have this effect, and we find
 two mechanisms. First, the derivations teach the model to track an
@@ -328,8 +328,9 @@ English rendering the direct answer is more accurate at every share.
 \subsection{Model families and scales}
 \label{sec:families}
 
+\input{tab_family}
 Table~\ref{tab:family} repeats the experiment on Qwen2.5-3B, Qwen2.5-14B,
-Qwen2.5-32B, Llama-3.1-8B and OLMo-2-7B with both renderings. The
+Llama-3.1-8B and OLMo-2-7B with both renderings. The
 derivation-writing ability transfers to every Qwen and Llama model. The
 baselines below 14B write no accepted derivation at any chain length, the
 14B baseline reaches 7.5 percent at chain length 25 by reasoning in prose,
@@ -338,11 +339,14 @@ derivations on 93 to 100 percent of problems at every chain length. OLMo-2 acqui
 fifth of the problems at chain length 5 as well as 25, so its shorter
 context does not explain the gap.
 
+\input{tab_qwen32b}
 The gain on ProofWriter transfers to every model. With the English rendering
 it is 3.2 points on Qwen2.5-3B, 10.6 on Qwen2.5-14B, 15.5 on Llama-3.1-8B
-and 10.8 on OLMo-2-7B, where the English run of Qwen2.5-32B is still
-training, and with the formal rendering it is 3.9, 10.7, 6.2 and 8.6 points
-on the 4 Qwen models from 3B to 32B and 3.0 points on Llama-3.1-8B. The
+and 10.8 on OLMo-2-7B, and with the formal rendering it is 3.9, 10.7 and
+6.2 points on the 3 Qwen models from 3B to 14B and 3.0 points on
+Llama-3.1-8B. Table~\ref{tab:qwen32b} shows the formal rendering on
+Qwen2.5-32B, where it raises ProofWriter accuracy at depth 3 by 8.6 points
+and GPQA-Diamond accuracy by 2.6 points. The
 formal rendering lowers ProofWriter accuracy on OLMo-2 by 12.2 points,
 because it moves an answer distribution that was already close to the labels
 onto "unknown", an effect Section~\ref{sec:prior} develops in more detail.
@@ -351,8 +355,6 @@ except for GPQA-Diamond on Qwen2.5-14B, which improves by 4.5 points. The
 baselines of these models already score at or near 100 percent on the chain
 subtasks of BIG-Bench Hard, so the gain there on Qwen2.5-7B repairs a
 deficit the others do not have.
-
-\input{tab_family}
 
 \subsection{Ablations}
 \label{sec:ablations}
