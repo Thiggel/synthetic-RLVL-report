@@ -122,7 +122,8 @@ Therefore, c is cedar.
 \section{Training Details}
 \label{sec:sweep-details}
 
-Every model trains for one epoch on $10^5$ examples, full-parameter under
+Every model trains for one epoch on $10^5$ examples, except in the size
+ablation of Table~\ref{tab:size}, full-parameter under
 fully sharded data parallelism with gradient checkpointing, in bfloat16,
 with a global batch of 128 sequences, a maximum sequence length of 8{,}192,
 warmup ratio 0.03 and learning rate $5\times10^{-6}$. The learning rate is
@@ -156,18 +157,29 @@ the derivation and the answer is correct.
 
 \paragraph{Benchmark subsets.} The chain subtasks of BIG-Bench Hard are web
 of lies, tracking shuffled objects (three, five and seven objects), logical
-deduction (three, five and seven objects) and formal fallacies. The
-quantitative subset of GPQA-Diamond is defined by two regular expressions
-applied to the question text. An item is quantitative if the question
-contains a number followed by a physical unit (nm, mm, cm, km, kg, mol, ml,
-eV, keV, MeV, GeV, K, Hz, MHz, GHz, degrees, percent, pc, AU, or a solar
-mass or radius symbol), or if it contains a digit and asks for a value,
-ratio, factor, energy, wavelength, number, probability, concentration, pH,
-mass, radius, velocity or temperature, or contains ``calculate'',
-``compute'', ``how many'', ``by what factor'' or ``what fraction''. The rule
-assigns 73 items to the quantitative subset and 125 to the remainder, and it
-depends only on the question text. The sign test compares, for each item,
-the pooled runs trained with derivations against the pooled baseline runs.
+deduction (three, five and seven objects) and formal fallacies. GPQA-Diamond
+contains questions that require computing a quantity through several
+dependent steps and questions that test recall of a concept, and only the
+first kind involves a procedure of the kind the derivations teach. We
+separate the two with a rule that reads only the question text, so that
+neither the gold answers nor the outputs of any model enter the split, and
+anyone can recompute the subset from the public dataset. An item is
+quantitative if its question, matched without regard to case, contains a
+number followed by a unit,
+\begin{alltt}\footnotesize
+\textbackslash{}b\textbackslash{}d+(\textbackslash{}.\textbackslash{}d+)?\textbackslash{}s*(nm|mm|cm|km|kg|mol|ml|eV|keV|MeV|GeV|K|Hz|MHz|GHz
+    |deg|\textdegree|%|pc|AU|M_|R_)
+\end{alltt}
+or contains a digit and matches
+\begin{alltt}\footnotesize
+\textbackslash{}b(what is the (value|ratio|factor|energy|wavelength|number|probability
+    |concentration|pH|mass|radius|velocity|temperature)|calculate|compute
+    |how many|by what factor|what fraction)\textbackslash{}b
+\end{alltt}
+where the line breaks are for display only. The rule assigns 73 of the 198
+items to the quantitative subset and 125 to the remainder. The sign test
+compares, for each item, the pooled runs trained with derivations against
+the pooled baseline runs.
 
 \paragraph{Overlap audit.} No evaluation item of ProofWriter, FOLIO or the
 BIG-Bench Hard subtasks shares an eight-gram with any training derivation.

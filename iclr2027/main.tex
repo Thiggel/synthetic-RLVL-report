@@ -13,6 +13,8 @@
 \usepackage{xcolor}
 \usepackage{hyperref}
 \usepackage{url}
+\usepackage{alltt}
+\usepackage{textcomp}
 \usepackage{amsmath}
 \usepackage{amsthm}
 \usepackage{amssymb}
@@ -229,7 +231,9 @@ examples. We fine-tune each base model on each mixture for one epoch with a
 global batch of 128 sequences and a context window of 8{,}192 tokens, which
 fewer than 0.5 percent of the examples exceed. The main sweep trains
 Qwen2.5-7B at shares of 1, 5, 10 and 25 percent in both renderings with 3
-seeds per configuration, and all reported numbers are means over seeds. A third family of mixtures, \formal{} + \nat{}, combines both renderings at
+seeds per configuration, and all reported numbers are means over seeds. To vary the
+size of the mixture we further train the baseline and the English rendering at 5
+and 10 percent on 25{,}000, 50{,}000 and 200{,}000 examples, with one seed each. A third family of mixtures, \formal{} + \nat{}, combines both renderings at
 the same 4 shares and prepends one sentence to each training prompt naming the
 rendering that derivation uses, which trains a single model that derives in
 either notation on request. We evaluate it with the prompts used for the other
@@ -311,19 +315,27 @@ on 2WikiMultihopQA. The two effects therefore have different thresholds.
 Appendices~\ref{sec:folio-table} and~\ref{sec:depth-figure} resolve FOLIO
 by gold label and ProofWriter by inference depth.
 The \formal{} + \nat{} mixtures gain 3.0 to 3.5 points on average between 1
-and 10 percent and are the best condition on the multi-step subtasks of
-BIG-Bench Hard. Asked for a notation they derive on 96.5 percent of generator
-problems and above at every share, and asked for none they derive on 25.5 and
-15.0 percent at 1 and 5 percent and on every problem from 10 percent upward,
-so the added sentence makes the derivation contingent on the request at the
-small shares only (Appendix~\ref{sec:mixed-table}).
+and 10 percent. Asked for no notation they derive on 25.5 and 15.0 percent of
+problems at 1 and 5 percent and on every problem from 10 percent upward
+(Appendix~\ref{sec:mixed-table}).
 
-Table~\ref{tab:main} also compares direct answers on ProofWriter with
-answers given after a requested chain of reasoning. The baseline gains 0.6
-points from reasoning aloud, and prompting alone does not close the gap to
-the models trained with derivations. For the formal rendering the score under
-the reasoning prompt grows with the share and reaches 55.8 percent. For the
-English rendering the direct answer is more accurate at every share.
+Under a requested chain of reasoning on ProofWriter the baseline gains only
+0.6 points, the formal rendering reaches 55.8 percent at 25 percent, and the
+English rendering stays below its direct answer at every fraction of derivations.
+
+\input{tab_size}
+Table~\ref{tab:size} ablates the size of the instruction-tuning dataset
+between 25{,}000 and 200{,}000 examples. The average accuracy of the baseline
+drops by about 2 points from 100{,}000 examples on, mostly on ProofWriter,
+while the average of the mixtures with derivations varies by less than 2 points
+across all sizes. Replacing 5 or 10 percent of the examples therefore raises
+the average at every size, and most with 100{,}000 examples. Web of lies and
+2WikiMQA improve at every size and MuSiQue in the two larger mixtures, while
+FOLIO, BIG-Bench Hard and GPQA-Diamond move in both directions. The gain does
+not grow with the absolute number of derivations, since the same 5{,}000
+derivations raise the average by less in the mixture of 50{,}000 examples than
+in the mixture of 100{,}000. The checker accepts nearly every derivation at
+every size.
 
 \subsection{Model families and scales}
 \label{sec:families}
@@ -351,10 +363,7 @@ formal rendering lowers ProofWriter accuracy on OLMo-2 by 12.2 points,
 because it moves an answer distribution that was already close to the labels
 onto "unknown", an effect Section~\ref{sec:prior} develops in more detail.
 FOLIO and GPQA-Diamond move by less than 3 points on the other models,
-except for GPQA-Diamond on Qwen2.5-14B, which improves by 4.5 points. The
-baselines of these models already score at or near 100 percent on the chain
-subtasks of BIG-Bench Hard, so the gain there on Qwen2.5-7B repairs a
-deficit the others do not have.
+except for GPQA-Diamond on Qwen2.5-14B, which improves by 4.5 points.
 
 \subsection{Ablations}
 \label{sec:ablations}
@@ -373,14 +382,10 @@ true and 43 percent false. Replacing 5 percent of either corpus by formal
 derivations moves the answers toward the labels in both cases, by 23 points
 on Dolci and by 6 on Tulu 3, and teaches the derivation procedure on both,
 with the checker accepting derivations at chain length 25 from the Tulu 3
-mixture and none of those the baseline writes. The accuracy that follows from
-the correction is smaller on Tulu 3. On Dolci the mixture gains 10.7 points at
-inference depth 3, 7.7 at depth 5 and 6.4 on FOLIO, and on Tulu 3 it gains 1.0
-at inference depth 3 and 1.9 on FOLIO and is level at depth 5, where the
-baseline is already 14 points more accurate at inference depth 3 and little
-room is left to repair. The correction therefore does not depend on one
-corpus, and it turns into accuracy on both, by the wider margin where the
-corpus leaves the wider bias.
+mixture and none of those the baseline writes. The accuracy that follows is smaller on Tulu 3,
+where the mixture gains 1.0 point at inference depth 3 and 1.9 on FOLIO
+against 10.7 and 6.4 on Dolci, since the Tulu 3 baseline is already 14 points
+more accurate at depth 3.
 
 \input{tab_corpus}
 
@@ -394,10 +399,9 @@ ordinary long documents. On ProofWriter at inference depth 3 the ordered
 English derivations improve accuracy by 12.6 points over the baseline and
 the shuffled ones by 7.8, against 1.0 for the length-matched baseline, and
 on FOLIO by 4.4 points in English and 5.4 in the formal rendering against
-1.5 for the shuffled ones. The model trained on shuffled derivations writes
-no derivation that the checker accepts. The order of the lines is therefore
-what teaches the derivation-writing procedure, while the tokens alone
-account for most of the ProofWriter gain.
+1.5 for the shuffled ones, which yield no accepted derivation. The order of
+the lines teaches the procedure, while the tokens alone account for most of
+the ProofWriter gain.
 
 \input{tab_shuffle}
 
@@ -411,12 +415,9 @@ training depth.
 \input{tab_depth2}
 
 \paragraph{Derivations alone.}
-Trained on derivations alone, in either rendering, the model writes a
-derivation the checker accepts on every generator problem and scores zero on
-every benchmark, because when asked a plain question it emits the opening
-token of the only format it knows and stops
-(Table~\ref{tab:alone}, Appendix~\ref{sec:alone-table}). The derivations and
-the instruction data are both necessary.
+Trained on derivations alone, the model writes accepted derivations on every
+generator problem and scores zero on every benchmark, because it answers every
+question with the opening token of a derivation (Appendix~\ref{sec:alone-table}).
 
 \section{Discussion}
 \label{sec:discussion}
@@ -433,11 +434,7 @@ asserts the claim in three cases out of four regardless of its content. The
 derivations move the answer distribution toward the gold labels, and the
 improvement is concentrated in the negated and false claims. Their accuracy
 rises by 39.3 points to 56.9 percent at the 25 percent share, while the
-other 3 cells move by less than 5 points. A typical item of this kind gives a theory containing ``If someone is
-young then they visit the dog. Red people are young. If the rabbit visits
-the dog then the dog is red.'' together with facts from which the rabbit is
-red, and the claim ``The dog is not red''. The baseline asserts the claim
-and the models trained with derivations refute it. FOLIO shows the same
+other 3 cells move by less than 5 points. FOLIO shows the same
 pattern, with the false and uncertain items gaining and the true ones
 fixed. A log-likelihood probe
 (Appendix~\ref{sec:probe-table}) shows that the change is mostly a shift of the
@@ -529,10 +526,9 @@ to absorb it well.
 \section{Limitations}
 \label{sec:limits}
 
-The instruction mixtures are 100{,}000 examples throughout, so the effect at
-other mixture sizes and under longer post-training remains open, and we do not
-test whether the gains survive reinforcement learning or compare with
-deduction data written by a language model. We explain the effect of the two
+The mixtures contain at most 200{,}000 examples, and we do not test whether
+the gains survive reinforcement learning or compare with deduction data
+written by a language model. We explain the effect of the two
 renderings on OLMo-2 through its answer distribution without identifying its
 origin in pretraining.
 
