@@ -233,7 +233,7 @@ fewer than 0.5 percent of the examples exceed. The main sweep trains
 Qwen2.5-7B at shares of 1, 5, 10 and 25 percent in both renderings with 3
 seeds per configuration, and all reported numbers are means over seeds. To vary the
 size of the mixture we further train the baseline and the English rendering at 5
-and 10 percent on 25{,}000, 50{,}000 and 200{,}000 examples, with one seed each. A third family of mixtures, \formal{} + \nat{}, combines both renderings at
+and 10 percent on 25{,}000, 50{,}000 and 200{,}000 examples. A third family of mixtures, \formal{} + \nat{}, combines both renderings at
 the same 4 shares and prepends one sentence to each training prompt naming the
 rendering that derivation uses, which trains a single model that derives in
 either notation on request. We evaluate it with the prompts used for the other
@@ -368,9 +368,9 @@ except for GPQA-Diamond on Qwen2.5-14B, which improves by 4.5 points.
 \subsection{Ablations}
 \label{sec:ablations}
 
-We run four ablations on Qwen2.5-7B. They change the instruction corpus,
-shuffle the lines of each derivation, vary the depth of the training proofs
-and train on derivations alone.
+We run four ablations on Qwen2.5-7B, (1) changing the instruction corpus,
+(2) shuffling the lines of each derivation, (3) varying the depth of the
+training proofs, and (4) training on derivations alone.
 
 \paragraph{A second instruction corpus.}
 \label{sec:corpus}
@@ -439,8 +439,7 @@ pattern, with the false and uncertain items gaining and the true ones
 fixed. A log-likelihood probe
 (Appendix~\ref{sec:probe-table}) shows that the change is mostly a shift of the
 decision margin on negated claims, and two perturbation probes
-(Appendix~\ref{sec:perturbation}) confirm that most of the additional "false"
-answers depend on the premises.
+(Appendix~\ref{sec:perturbation}) confirm that most added "false" answers depend on the premises.
 
 \input{tab_mech_main}
 
