@@ -439,7 +439,7 @@ pattern, with the false and uncertain items gaining and the true ones
 fixed. A log-likelihood probe
 (Appendix~\ref{sec:probe-table}) shows that the change is mostly a shift of the
 decision margin on negated claims, and two perturbation probes
-(Appendix~\ref{sec:perturbation}) confirm that most added "false" answers depend on the premises.
+(Appendix~\ref{sec:perturbation}) confirm that most added "false" answers of the formal mixture depend on the premises.
 
 \input{tab_mech_main}
 
@@ -525,15 +525,23 @@ to absorb it well.
 \section{Limitations}
 \label{sec:limits}
 
-The mixtures contain at most 200{,}000 examples, and we do not test whether
-the gains survive reinforcement learning or compare with deduction data
-written by a language model. We explain the effect of the two
-renderings on OLMo-2 through its answer distribution without identifying its
-origin in pretraining.
+The mixtures contain at most 200{,}000 examples, but the gain is present at
+every size from 25{,}000 to 200{,}000 (Table~\ref{tab:size}). Part of the
+ProofWriter gain could stem from a format familiar from the generator, yet it
+lies in negated claims with the gold label false, and the derivations contain
+no negation and no true-or-false questions. On Qwen2.5-7B accuracy also rises
+on FOLIO, BIG-Bench Hard and GPQA-Diamond, which differ in format from the generator.
+A new default answer is also unlikely, since both mixtures answer a claim and
+its negation identically less often than the baseline and most added
+``false'' answers of the formal mixture vanish without the supporting premises
+(Appendix~\ref{sec:perturbation}). The answer distribution predicts the loss
+on OLMo-2 before training, although we have not identified which property of
+OLMo-2 causes it. Reinforcement learning and deduction data written by a
+language model are left to future work.
 
 \section{Conclusion}
 
-In this paper we showed that deduction data written by a program improves an instruction-tuned model on deduction and multi-step benchmarks when it replaces a small fraction of the instruction mixture. These results give evidence that part of the post-training data can be replaced by data that a program writes and verifies without a teacher model or human annotation. Such data is correct by construction and unlimited in quantity. Arithmetic, the execution of algorithms and planning are further procedures in which a program can write down and check each intermediate state, and each offers a source of training data that requires only a generator, all of which should be explored in further research.
+In this paper we showed that deduction data written by a program improves an instruction-tuned model on deduction and multi-step benchmarks when it replaces a small fraction of the instruction mixture. These results give evidence that part of the post-training data can be replaced by data that a program writes and verifies without a teacher model or human annotation. Such data is correct by construction and unlimited in quantity. Arithmetic, the execution of algorithms and planning are further procedures in which a program can write down and check each intermediate state, and each offers training data that requires only a generator.
 
 \subsection*{AI use statement}
 
