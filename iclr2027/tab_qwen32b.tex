@@ -1,16 +1,18 @@
-\begin{wraptable}{r}{0.36\linewidth}
+\begin{wraptable}{r}{0.40\linewidth}
 \vspace{-12pt}
-\caption{Qwen2.5-32B, accuracy in percent.}
+\caption{Qwen2.5-32B, accuracy in percent on ProofWriter by depth and on GPQA-Diamond.}
 \label{tab:qwen32b}
 \centering
 \scriptsize
-\setlength{\tabcolsep}{3pt}
-\begin{tabular}{lcc}
+\setlength{\tabcolsep}{2.5pt}
+\begin{tabular}{lccccc}
 \toprule
- & Base & \formal \\
+ & \multicolumn{4}{c}{ProofWriter} & GPQA \\
+\cmidrule(lr){2-5}
+ & d1 & d2 & d3 & d5 & Diamond \\
 \midrule
-PW d3 & 32.2 & \textbf{40.8} \\
-GPQA-Diamond & 44.4 & \textbf{47.0} \\
+Base & \textbf{49.6} & 36.6 & 32.2 & 22.2 & 44.4 \\
+\formal & 37.0 & \textbf{41.4} & \textbf{40.8} & \textbf{43.4} & \textbf{47.0} \\
 \bottomrule
 \end{tabular}
 \vspace{-10pt}

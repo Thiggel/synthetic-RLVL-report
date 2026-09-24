@@ -314,7 +314,7 @@ ProofWriter at depth 1 and under the reasoning prompt, on GPQA-Diamond and
 on 2WikiMultihopQA. The two effects therefore have different thresholds.
 Appendices~\ref{sec:folio-table} and~\ref{sec:depth-figure} resolve FOLIO
 by gold label and ProofWriter by inference depth.
-The \formal{} + \nat{} mixtures gain 3.0 to 3.5 points on average between 1
+The \formal{} + \nat{} mixtures gain 3.4 to 4.0 points on average between 1
 and 10 percent. Asked for no notation they derive on 25.5 and 15.0 percent of
 problems at 1 and 5 percent and on every problem from 10 percent upward
 (Appendix~\ref{sec:mixed-table}).
@@ -356,9 +356,9 @@ The gain on ProofWriter transfers to every model. With the English rendering
 it is 3.2 points on Qwen2.5-3B, 10.6 on Qwen2.5-14B, 15.5 on Llama-3.1-8B
 and 10.8 on OLMo-2-7B, and with the formal rendering it is 3.9, 10.7 and
 6.2 points on the 3 Qwen models from 3B to 14B and 3.0 points on
-Llama-3.1-8B. Table~\ref{tab:qwen32b} shows the formal rendering on
-Qwen2.5-32B, where it raises ProofWriter accuracy at depth 3 by 8.6 points
-and GPQA-Diamond accuracy by 2.6 points. The
+Llama-3.1-8B. On Qwen2.5-32B (Table~\ref{tab:qwen32b}) the formal rendering
+raises ProofWriter accuracy at depths 2 to 5, lowers it at depth 1, and
+raises GPQA-Diamond accuracy by 2.6 points. The
 formal rendering lowers ProofWriter accuracy on OLMo-2 by 12.2 points,
 because it moves an answer distribution that was already close to the labels
 onto "unknown", an effect Section~\ref{sec:prior} develops in more detail.
@@ -368,8 +368,9 @@ except for GPQA-Diamond on Qwen2.5-14B, which improves by 4.5 points.
 \subsection{Ablations}
 \label{sec:ablations}
 
-Four further experiments on Qwen2.5-7B ask which properties of the
-derivations matter.
+We run four ablations on Qwen2.5-7B. They change the instruction corpus,
+shuffle the lines of each derivation, vary the depth of the training proofs
+and train on derivations alone.
 
 \paragraph{A second instruction corpus.}
 \label{sec:corpus}
@@ -397,11 +398,10 @@ midtraining at a 10 percent share (Appendix~\ref{sec:midtrain-detail}) and
 are compared with a length-matched baseline that replaces the same share by
 ordinary long documents. On ProofWriter at inference depth 3 the ordered
 English derivations improve accuracy by 12.6 points over the baseline and
-the shuffled ones by 7.8, against 1.0 for the length-matched baseline, and
-on FOLIO by 4.4 points in English and 5.4 in the formal rendering against
-1.5 for the shuffled ones, which yield no accepted derivation. The order of
-the lines teaches the procedure, while the tokens alone account for most of
-the ProofWriter gain.
+the shuffled ones by 7.8, against 1.0 for the length-matched baseline. On
+FOLIO the ordered derivations gain 4.4 points in English and 5.4 in the formal rendering against
+1.5 for the shuffled ones, which yield no accepted derivation. The tokens
+alone account for most of the ProofWriter gain.
 
 \input{tab_shuffle}
 
@@ -453,7 +453,7 @@ or away from the gold labels. The OLMo-2 baseline is already close to the gold d
 derivations push it 46 points toward "unknown", and its accuracy falls. The
 English derivations move the distribution toward the labels on every model,
 and accuracy rises. That distribution can be measured before any derivations
-are added, so it indicates in advance whether they will help a given model.
+are added, so it predicts whether they will help a given model.
 
 \subsection{Intermediate values in multi-step tasks}
 \label{sec:procedure}
@@ -470,7 +470,7 @@ items. The baseline is correct at the third step on 98 percent of items and
 at the fifth on 86 percent. The model trained with formal derivations is
 correct on 99 and 98 percent (Figure~\ref{fig:steps}). Every model answers
 correctly on essentially every item on which all intermediate values are
-correct, which means the retained value accounts for the whole gain.
+correct, so the retained value accounts for the whole gain.
 
 \begin{small}
 \begin{quote}
